@@ -285,7 +285,20 @@ const styles = {
 export default function WorkspaceSettingsPage() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
   const router = useRouter();
-  const { fetchWorkspaces } = useWorkspaceStore();
+  const { workspaces, currentWorkspace, setCurrentWorkspace, fetchWorkspaces } = useWorkspaceStore();
+
+  useEffect(() => {
+    if (workspaces.length === 0) void fetchWorkspaces();
+  }, [workspaces.length, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!currentWorkspace && workspaces.length > 0) {
+      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      if (found) setCurrentWorkspace(found);
+    }
+  }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
+
+  const wsId = currentWorkspace?.id;
 
   const [workspace, setWorkspace] = useState<WorkspaceResponse['workspace'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -306,11 +319,13 @@ export default function WorkspaceSettingsPage() {
   const permissions = usePermissions(workspace?.role ?? null);
 
   useEffect(() => {
+    if (!wsId) return;
+
     async function loadWorkspace() {
       setIsLoading(true);
       try {
         const data = await apiFetch<WorkspaceResponse>(
-          `/workspaces/${encodeURIComponent(workspaceSlug)}`,
+          `/workspaces/${wsId}`,
         );
         setWorkspace(data.workspace);
         setEditName(data.workspace.name);
@@ -327,7 +342,7 @@ export default function WorkspaceSettingsPage() {
     }
 
     void loadWorkspace();
-  }, [workspaceSlug]);
+  }, [wsId]);
 
   async function handleSave(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -342,7 +357,7 @@ export default function WorkspaceSettingsPage() {
     setIsSaving(true);
     try {
       const data = await apiFetch<WorkspaceResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}`,
+        `/workspaces/${wsId}`,
         {
           method: 'PATCH',
           body: { name: editName.trim(), isPublic: editIsPublic },
@@ -368,7 +383,7 @@ export default function WorkspaceSettingsPage() {
     setIsDeleting(true);
     setError('');
     try {
-      await apiFetch(`/workspaces/${encodeURIComponent(workspaceSlug)}`, {
+      await apiFetch(`/workspaces/${wsId}`, {
         method: 'DELETE',
         body: { confirmName: deleteConfirmName },
       });

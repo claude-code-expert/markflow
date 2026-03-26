@@ -19,7 +19,21 @@ export default function DocEditorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { currentWorkspace } = useWorkspaceStore();
+  const { workspaces, currentWorkspace, setCurrentWorkspace, fetchWorkspaces } = useWorkspaceStore();
+
+  useEffect(() => {
+    if (workspaces.length === 0) void fetchWorkspaces();
+  }, [workspaces.length, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!currentWorkspace && workspaces.length > 0) {
+      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      if (found) setCurrentWorkspace(found);
+    }
+  }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
+
+  const wsId = currentWorkspace?.id;
+
   const permissions = usePermissions(currentWorkspace?.role);
   const {
     content, title, saveStatus,
@@ -33,13 +47,14 @@ export default function DocEditorPage() {
 
   // Fetch document — fix wrapper
   const documentQuery = useQuery({
-    queryKey: ['document', workspaceSlug, docId],
+    queryKey: ['document', wsId, docId],
     queryFn: async () => {
       const res = await apiFetch<DocumentResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${docId}`,
+        `/workspaces/${wsId}/documents/${docId}`,
       );
       return res.document;
     },
+    enabled: !!wsId,
   });
 
   // Initialize editor store
@@ -66,13 +81,13 @@ export default function DocEditorPage() {
       setSaveStatus('saving');
       try {
         await apiFetch(
-          `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${docId}`,
+          `/workspaces/${wsId}/documents/${docId}`,
           { method: 'PATCH', body: { title: newTitle, content: newContent } },
         );
         if (isMountedRef.current) {
           setSaveStatus('saved');
           retryCountRef.current = 0;
-          void queryClient.invalidateQueries({ queryKey: ['documents', workspaceSlug] });
+          void queryClient.invalidateQueries({ queryKey: ['documents', wsId] });
         }
       } catch (err) {
         if (!isMountedRef.current) return;
@@ -88,7 +103,7 @@ export default function DocEditorPage() {
         }
       }
     },
-    [workspaceSlug, docId, setSaveStatus, queryClient],
+    [wsId, docId, setSaveStatus, queryClient],
   );
 
   // Debounced auto-save

@@ -174,7 +174,9 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    border: '1.5px solid var(--border)',
+    borderWidth: '1.5px',
+    borderStyle: 'solid',
+    borderColor: 'var(--border)',
     borderRadius: 'var(--radius-sm)',
     padding: '10px 13px',
     fontSize: '14px',

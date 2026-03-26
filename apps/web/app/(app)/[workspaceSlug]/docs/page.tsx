@@ -132,7 +132,23 @@ export default function DocsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { currentWorkspace } = useWorkspaceStore();
+  const { workspaces, currentWorkspace, setCurrentWorkspace, fetchWorkspaces } = useWorkspaceStore();
+
+  // Resolve workspace from slug
+  useEffect(() => {
+    if (workspaces.length === 0) {
+      void fetchWorkspaces();
+    }
+  }, [workspaces.length, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!currentWorkspace && workspaces.length > 0) {
+      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      if (found) setCurrentWorkspace(found);
+    }
+  }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
+
+  const wsId = currentWorkspace?.id;
   const permissions = usePermissions(currentWorkspace?.role);
 
   const categoryIdParam = searchParams.get('categoryId');
@@ -167,27 +183,29 @@ export default function DocsPage() {
   // ---------------------------------------------------------------------------
 
   const tagsQuery = useQuery({
-    queryKey: ['workspace-tags', workspaceSlug],
+    queryKey: ['workspace-tags', wsId],
     queryFn: () =>
       apiFetch<TagsResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/tags`,
+        `/workspaces/${wsId}/tags`,
       ),
+    enabled: !!wsId,
   });
 
   const workspaceTags: Tag[] = tagsQuery.data?.tags ?? [];
 
   const categoriesQuery = useQuery({
-    queryKey: ['categories', workspaceSlug],
+    queryKey: ['categories', wsId],
     queryFn: () =>
       apiFetch<CategoriesTreeResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/categories`,
+        `/workspaces/${wsId}/categories`,
       ),
+    enabled: !!wsId,
   });
 
   const documentsQuery = useQuery({
     queryKey: [
       'documents',
-      workspaceSlug,
+      wsId,
       categoryIdParam,
       sortField,
       sortOrder,
@@ -198,16 +216,17 @@ export default function DocsPage() {
     queryFn: () => {
       const qp = new URLSearchParams();
       qp.set('page', String(page));
-      qp.set('pageSize', String(pageSize));
-      qp.set('sortBy', sortField);
-      qp.set('sortOrder', sortOrder);
+      qp.set('limit', String(pageSize));
+      qp.set('sort', sortField);
+      qp.set('order', sortOrder);
       if (categoryIdParam) qp.set('categoryId', categoryIdParam);
-      if (searchQuery.trim()) qp.set('search', searchQuery.trim());
+      if (searchQuery.trim()) qp.set('q', searchQuery.trim());
       if (selectedTag) qp.set('tag', selectedTag);
       return apiFetch<DocumentsResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents?${qp.toString()}`,
+        `/workspaces/${wsId}/documents?${qp.toString()}`,
       );
     },
+    enabled: !!wsId,
   });
 
   // Reset page when filters change
@@ -250,7 +269,7 @@ export default function DocsPage() {
       const formData = new FormData();
       formData.append('file', file);
       await apiFetch<{ imported: number }>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/import`,
+        `/workspaces/${wsId}/import`,
         { method: 'POST', body: formData },
       );
       void documentsQuery.refetch();

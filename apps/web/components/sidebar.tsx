@@ -160,12 +160,15 @@ function buildCategoryTree(flat: FlatCategory[]): TreeCategory[] {
 
 function FolderTreeSection({ slug }: { slug: string }) {
   const [categories, setCategories] = useState<TreeCategory[]>([]);
+  const { workspaces } = useWorkspaceStore();
+  const wsId = workspaces.find((ws) => ws.slug === slug)?.id;
 
   useEffect(() => {
-    apiFetch<CategoriesResponse>(`/workspaces/${slug}/categories`)
+    if (!wsId) return;
+    apiFetch<CategoriesResponse>(`/workspaces/${wsId}/categories`)
       .then((res) => setCategories(buildCategoryTree(res.categories)))
       .catch(() => setCategories([]));
-  }, [slug]);
+  }, [wsId]);
 
   return (
     <div style={{ padding: '0 6px' }}>

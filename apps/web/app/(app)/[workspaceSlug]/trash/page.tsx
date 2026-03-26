@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '../../../../lib/api';
 import type { Document, TrashResponse, RestoreResponse } from '../../../../lib/types';
+import { useWorkspaceStore } from '../../../../stores/workspace-store';
 
 interface ToastState {
   message: string;
@@ -17,7 +18,21 @@ export default function TrashPage({
 }) {
   const { workspaceSlug } = use(params);
   const queryClient = useQueryClient();
+  const { workspaces, currentWorkspace, setCurrentWorkspace, fetchWorkspaces } = useWorkspaceStore();
   const [toast, setToast] = useState<ToastState>({ message: '', visible: false });
+
+  useEffect(() => {
+    if (workspaces.length === 0) void fetchWorkspaces();
+  }, [workspaces.length, fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!currentWorkspace && workspaces.length > 0) {
+      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      if (found) setCurrentWorkspace(found);
+    }
+  }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
+
+  const wsId = currentWorkspace?.id;
 
   const showToast = useCallback((message: string) => {
     setToast({ message, visible: true });
@@ -34,26 +49,27 @@ export default function TrashPage({
 
   // Fetch trashed documents
   const trashQuery = useQuery({
-    queryKey: ['trash', workspaceSlug],
+    queryKey: ['trash', wsId],
     queryFn: () =>
       apiFetch<TrashResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/trash`,
+        `/workspaces/${wsId}/documents/trash`,
       ),
+    enabled: !!wsId,
   });
 
   // Restore mutation
   const restoreMutation = useMutation({
     mutationFn: (docId: string) =>
       apiFetch<RestoreResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${docId}/restore`,
+        `/workspaces/${wsId}/documents/${docId}/restore`,
         { method: 'POST' },
       ),
     onSuccess: (_data, docId) => {
       const restoredDoc = documents.find((d) => d.id === docId);
       const title = restoredDoc?.title ?? '문서';
       showToast(`"${title}" 문서가 복원되었습니다.`);
-      void queryClient.invalidateQueries({ queryKey: ['trash', workspaceSlug] });
-      void queryClient.invalidateQueries({ queryKey: ['documents', workspaceSlug] });
+      void queryClient.invalidateQueries({ queryKey: ['trash', wsId] });
+      void queryClient.invalidateQueries({ queryKey: ['documents', wsId] });
     },
     onError: (err) => {
       if (err instanceof ApiError) {

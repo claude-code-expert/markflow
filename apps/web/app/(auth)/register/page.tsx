@@ -160,7 +160,9 @@ const styles = {
   input: (hasError: boolean): CSSProperties => ({
     display: 'block',
     width: '100%',
-    border: `1.5px solid ${hasError ? 'var(--red)' : 'var(--border)'}`,
+    borderWidth: '1.5px',
+    borderStyle: 'solid',
+    borderColor: hasError ? 'var(--red)' : 'var(--border)',
     borderRadius: 'var(--radius-sm)',
     padding: '10px 13px',
     fontSize: 14,
