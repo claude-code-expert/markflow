@@ -20,8 +20,8 @@ node_modules
 # production
 /build
 
-# editor package build output
-packages/editor/dist/
+# build output
+dist/
 
 # turbo
 .turbo/
