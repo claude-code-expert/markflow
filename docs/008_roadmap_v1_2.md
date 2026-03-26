@@ -1,6 +1,7 @@
 # 008 — 개발 로드맵 (Development Roadmap)
 
-> **최종 수정:** 2026-03-26
+> **최종 수정:** 2026-03-26 (v1.2.0 반영)
+> **변경 이력:** v1.2.0 — Phase 1 P0 체크리스트 상세화(폴더 관리 UI, DAG 그래프 뷰), Phase 2 P1 체크리스트 DAG 그래프 뷰 API 추가, Phase 3 그래프 뷰 항목 Phase 1~2로 앞당김, Gantt 차트 그래프 뷰 Task 추가
 
 ---
 
@@ -20,9 +21,10 @@ gantt
     프로젝트 셋업 & DB 설계       :p1a, 2026-04-01, 5d
     인증 API (Register/Login)    :p1b, after p1a, 5d
     워크스페이스 & 멤버 관리     :p1c, after p1b, 5d
-    카테고리(폴더) 트리          :p1d, after p1b, 4d
+    카테고리(폴더) CRUD + Closure:p1d, after p1b, 5d
+    폴더 관리 UI (컨텍스트 메뉴) :p1d2, after p1d, 3d
     문서 CRUD API               :p1f, after p1d, 5d
-    문서 링크 시스템             :p1g, after p1f, 4d
+    문서 링크 시스템 (DAG)       :p1g, after p1f, 4d
     Import / Export             :p1h, after p1f, 3d
     프로토타입 통합 & 테스트     :p1i, after p1g, 5d
 
@@ -31,6 +33,7 @@ gantt
     버전 히스토리               :p2b, after p2a, 5d
     링크 프리뷰 (OG)            :p2c, 2026-05-12, 6d
     CSS 테마 시스템             :p2d, after p2c, 5d
+    그래프 뷰 API + 고도화      :p2dag, after p2d, 5d
     실시간 공동편집 (Yjs)       :p2e, 2026-05-19, 10d
     인라인 댓글                 :p2f, after p2e, 7d
     소셜 로그인 (OAuth)         :p2g, 2026-05-26, 5d
@@ -38,7 +41,7 @@ gantt
     MVP 통합 & QA               :p2i, after p2f, 7d
 
     section Phase 3 (Launch)
-    태그 & 그래프 뷰            :p3a, 2026-07-01, 10d
+    태그 고도화 (필터·자동완성)  :p3a, 2026-07-01, 7d
     활동 피드 & 알림            :p3b, after p3a, 7d
     공개 페이지 게시            :p3c, after p3a, 7d
     AI 글쓰기 보조              :p3d, after p3b, 14d
@@ -87,13 +90,19 @@ gantt
 - [ ] 프로필 편집 (이름, 아바타)
 - [ ] 워크스페이스 생성 & 멤버 초대 (4가지 역할)
 - [ ] 초대 수락 API (`GET /invitations/:token`, `POST /invitations/:token/accept`)
-- [ ] 카테고리(폴더) 트리 (무제한 중첩, 드래그-드롭)
+- [ ] 카테고리(폴더) CRUD + Closure Table 계층 관리
+- [ ] **폴더 관리 UI: 사이드바 📁/＋ 버튼, 우클릭 컨텍스트 메뉴 (생성·이름변경·삭제·하위 추가)** 🚧
+- [ ] **새 문서 모달: 카테고리 선택 + 시작 방식 선택** 🚧
 - [ ] 문서 자동 저장 (1초 디바운스)
 - [ ] 문서 버전 스냅샷 생성 (Phase 1: 최대 20개)
-- [ ] Prev / Next / 연관 링크 설정 UI (DOCUMENT_RELATIONS 단일 저장)
+- [ ] Prev / Next / 연관 링크 설정 (DOCUMENT_RELATIONS 단일 저장)
+- [ ] **DAG Pipeline 내비게이션: 메타 패널 미니 DAG + 프리뷰 하단 DAG** 🚧
+- [ ] **그래프 뷰 페이지 (B14): 사이드바 🔗 메뉴, 워크스페이스 전체 DAG** 🚧
 - [ ] 태그 추가/삭제 (`PUT /documents/:id/tags`)
 - [ ] .md Import / .md Export
 - [ ] 역할 기반 권한 제어 (API + UI)
+
+> 🚧 = 프로토타입 UI 구현 완료, 백엔드 연동 대기
 
 ### 기술 부채 허용 범위
 
@@ -127,6 +136,8 @@ gantt
 - [ ] OG 링크 프리뷰 (BullMQ 비동기 처리)
 - [ ] YouTube/Vimeo 임베드
 - [ ] 워크스페이스 CSS 테마 편집기 + 5개 프리셋 + 동적 `<style>` 주입
+- [ ] **그래프 뷰 API (`GET /graph`, `GET /dag-context`) + 실제 데이터 연동** ← Phase 3에서 앞당김
+- [ ] **카테고리 이동 API (`POST .../move`) + Closure Table 동기화**
 - [ ] 실시간 공동편집 (Yjs + y-websocket)
 - [ ] 인라인 댓글 (스레드형)
 - [ ] Google / GitHub OAuth
@@ -155,7 +166,7 @@ gantt
 
 | 기능 | 분기 |
 |------|------|
-| 태그 시스템 + 그래프 뷰 | Q3 2026 |
+| 태그 고도화 (필터·자동완성·태그 관리 페이지) | Q3 2026 |
 | 활동 피드 & 이메일 알림 (ACTIVITY_LOGS 기반) | Q3 2026 |
 | 공개 페이지 게시 (커스텀 도메인) | Q3 2026 |
 | PDF Import (pdfjs-dist 텍스트 추출, 베스트 에포트) | Q3 2026 |

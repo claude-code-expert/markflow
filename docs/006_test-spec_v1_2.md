@@ -1,8 +1,9 @@
 # 006 — 테스트 스펙 (Test Specification)
 
-> **최종 수정:** 2026-03-26
+> **최종 수정:** 2026-03-26 (v1.2.0 반영)
 > **도구:** Vitest (Unit/Integration) · Playwright (E2E) · MSW (API Mock)
 > **목표 커버리지:** Unit 80% · API Integration 100% (핵심 플로우) · E2E 핵심 시나리오
+> **변경 이력:** v1.2.0 — 2.4 폴더 관리 비즈니스 로직 테스트, 3.4 Categories API 테스트, 4.4 폴더 관리 E2E, 4.5 그래프 뷰 E2E 추가
 
 ---
 
@@ -115,6 +116,77 @@ describe('DocumentService', () => {
 })
 ```
 
+### 2.5 폴더(카테고리) 비즈니스 로직 (🚧 신규)
+
+```typescript
+describe('CategoryService', () => {
+  describe('createCategory()', () => {
+    it('이름과 parentId를 받아 카테고리를 생성한다')
+    it('parentId가 null이면 루트에 생성된다')
+    it('같은 부모 아래 중복 이름이면 400 반환')
+  })
+
+  describe('renameCategory()', () => {
+    it('이름을 변경하고 사이드바에 반영된다')
+    it('Editor 이하 역할은 403 반환')
+  })
+
+  describe('deleteCategory()', () => {
+    it('삭제 시 하위 문서의 categoryId가 null로 업데이트된다')
+    it('하위에 다른 카테고리가 있으면 재귀 삭제 처리된다')
+    it('Closure Table에서 모든 ancestor-descendant 행이 제거된다')
+  })
+
+  describe('moveCategory()', () => {
+    it('카테고리를 다른 부모 아래로 이동한다')
+    it('자기 자신의 자손으로 이동 시 400 반환 (순환 구조 방지)')
+  })
+})
+
+describe('FolderContextMenu (UI)', () => {
+  it('폴더 항목 우클릭 시 컨텍스트 메뉴가 표시된다')
+  it('컨텍스트 메뉴가 뷰포트 경계를 벗어나지 않는다')
+  it('외부 클릭 시 컨텍스트 메뉴가 닫힌다')
+  it('Escape 키로 컨텍스트 메뉴가 닫힌다')
+  it('폴더 항목 hover 시 ⋯ 버튼이 표시된다')
+})
+
+describe('NewFolderModal (UI)', () => {
+  it('폴더 이름 입력 시 경로 미리보기가 실시간으로 업데이트된다')
+  it('이름 없이 제출 시 오류 토스트가 표시된다')
+  it('생성 완료 시 사이드바에 폴더가 추가된다')
+})
+
+describe('DeleteFolderModal (UI)', () => {
+  it('폴더 이름 불일치 시 삭제가 차단된다')
+  it('이름 일치 시 폴더 및 하위 항목이 DOM에서 제거된다')
+})
+```
+
+### 2.6 DAG Pipeline Graph (UI) 🚧
+
+```typescript
+describe('DAGPipelineGraph', () => {
+  it('prev → current(+related) → next 스테이지 순서로 렌더링된다')
+  it('current 노드에 pulse 애니메이션 클래스가 적용된다')
+  it('related 노드가 그룹 박스 내에 수직 스택으로 표시된다')
+  it('노드 클릭 시 onNavigate 콜백이 해당 docId로 호출된다')
+  it('compact 모드에서 폰트·패딩이 축소된다')
+})
+
+describe('MiniDAGGraph (메타 패널)', () => {
+  it('메타 패널 내에서 스크롤 없이 전체가 보인다')
+  it('전체 보기 버튼 클릭 시 그래프 뷰 페이지로 이동한다')
+  it('링크 편집 버튼 클릭 시 modal-links가 열린다')
+})
+
+describe('DAGPipelineNav (프리뷰 하단)', () => {
+  it('Prev/Next doc-nav를 대체하여 DAG 형태로 렌더링된다')
+  it('prev 없을 때 prev 스테이지가 표시되지 않는다')
+  it('next 없을 때 next 스테이지가 표시되지 않는다')
+})
+```
+
 ---
 
 ## 3. 통합 테스트 (KMS — 계획)
@@ -195,6 +267,19 @@ describe('Invitation API', () => {
 })
 ```
 
+### 3.4 Categories API (🚧 신규)
+
+```typescript
+describe('Categories API', () => {
+  it('POST /categories → 201, 새 카테고리 생성')
+  it('PATCH /categories/:id → 이름 변경 200')
+  it('DELETE /categories/:id → 하위 문서 categoryId null 처리 후 204')
+  it('중복 이름 POST → 409 반환')
+  it('Viewer 역할의 POST /categories → 403')
+  it('자기 자신을 부모로 이동 → 400 + CIRCULAR_CATEGORY')
+})
+```
+
 ---
 
 ## 4. E2E 테스트
@@ -221,6 +306,58 @@ test('Bold 버튼이 선택 텍스트를 ** 로 감싼다', async ({ page }) => 
 ```typescript
 test('전역 검색으로 문서를 찾아 열 수 있다', async ({ page }) => {
   // Ctrl+/ → 검색어 입력 → 결과 선택 → 에디터 열림
+})
+```
+
+### 4.4 폴더 관리 E2E 🚧 (신규)
+
+```typescript
+test('사이드바 📁 버튼으로 새 폴더를 생성한다', async ({ page }) => {
+  // 1. 📁 버튼 클릭 → 모달 열림
+  // 2. 폴더 이름 입력 → 경로 미리보기 업데이트 확인
+  // 3. 상위 위치 선택
+  // 4. 만들기 클릭 → 사이드바에 폴더 즉시 추가 확인
+})
+
+test('폴더 우클릭 컨텍스트 메뉴로 이름을 변경한다', async ({ page }) => {
+  // 1. 폴더 항목 우클릭 → 컨텍스트 메뉴 표시
+  // 2. 이름 변경 선택 → 모달 열림
+  // 3. 새 이름 입력 → 확인
+  // 4. 사이드바 DOM에서 이름 변경 확인
+})
+
+test('폴더 삭제 시 이름 확인 후 삭제된다', async ({ page }) => {
+  // 1. 컨텍스트 메뉴 → 폴더 삭제
+  // 2. 다른 이름 입력 → 삭제 차단 토스트 확인
+  // 3. 정확한 이름 입력 → 삭제 완료 → 사이드바에서 제거 확인
+})
+
+test('컨텍스트 메뉴 → 새 문서 추가 시 해당 폴더가 기본값으로 설정된다', async ({ page }) => {
+  // 1. 폴더 ⋯ 버튼 클릭 → 새 문서 추가
+  // 2. 모달 열림 → 카테고리 select가 해당 폴더로 선택된 상태 확인
+})
+```
+
+### 4.5 그래프 뷰 E2E 🚧 (신규)
+
+```typescript
+test('사이드바 그래프 뷰 메뉴 클릭 시 DAG 페이지로 이동한다', async ({ page }) => {
+  // 1. 🔗 그래프 뷰 클릭
+  // 2. page-graph 표시 확인
+  // 3. 사이드바 활성 항목 변경 확인
+  // 4. 브레드크럼 "그래프 뷰" 업데이트 확인
+})
+
+test('DAG 노드 클릭 시 해당 문서 에디터로 이동한다', async ({ page }) => {
+  // 1. 그래프 뷰 진입
+  // 2. 문서 노드 클릭
+  // 3. page-editor 표시 + 브레드크럼 변경 확인
+})
+
+test('메타 패널 미니 DAG에서 전체 보기 클릭 시 그래프 뷰 페이지로 이동한다', async ({ page }) => {
+  // 1. 에디터 진입 → 메타 패널 오픈
+  // 2. 미니 DAG 전체 보기 버튼 클릭
+  // 3. 그래프 뷰 페이지 표시 확인
 })
 ```
 

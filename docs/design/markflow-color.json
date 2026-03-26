@@ -1,0 +1,283 @@
+{
+  "$schema": "https://markflow.io/schemas/color-tokens/v1",
+  "name": "MarkFlow Color System",
+  "version": "1.0.0",
+  "description": "Warm-neutral light-mode design tokens for MarkFlow KMS. All values target the default light theme.",
+  "updated": "2026-03-26",
+
+  "base": {
+    "bg": {
+      "value": "#F8F7F4",
+      "description": "Page background — warm off-white. Applied to <body> and page-level areas."
+    },
+    "surface": {
+      "value": "#FFFFFF",
+      "description": "Card, panel, modal, sidebar background."
+    },
+    "surface-2": {
+      "value": "#F1F0EC",
+      "description": "Secondary surface — hover state background, input fills, section backgrounds."
+    },
+    "surface-3": {
+      "value": "#E8E7E1",
+      "description": "Tertiary surface — pressed states, skeleton loader, dividers."
+    }
+  },
+
+  "border": {
+    "border": {
+      "value": "#E2E0D8",
+      "description": "Default border for cards, inputs, panels. 1px or 1.5px."
+    },
+    "border-2": {
+      "value": "#CBC9C0",
+      "description": "Emphasis border — hover on inputs, focus ring alternative, stronger separators."
+    }
+  },
+
+  "text": {
+    "text": {
+      "value": "#1A1916",
+      "description": "Primary text — near-black warm. Page headings, body, nav items."
+    },
+    "text-2": {
+      "value": "#57564F",
+      "description": "Secondary text — medium warm gray. Labels, descriptions, sidebar items."
+    },
+    "text-3": {
+      "value": "#9A9890",
+      "description": "Tertiary text — hint, placeholder, caption, muted metadata."
+    }
+  },
+
+  "accent": {
+    "accent": {
+      "value": "#1A56DB",
+      "description": "Brand primary blue. Buttons, links, active states, focus borders."
+    },
+    "accent-2": {
+      "value": "#EEF3FF",
+      "description": "Accent background — active sidebar item bg, selected state, button hover."
+    },
+    "accent-dk": {
+      "value": "#1343B0",
+      "description": "Darker accent — button hover, pressed state, strong link color."
+    }
+  },
+
+  "semantic": {
+    "teal": {
+      "value": "#0D9488",
+      "description": "Info/neutral positive. Used for embed badges, API-related UI, teal workspace avatars."
+    },
+    "teal-lt": {
+      "value": "#F0FDFA",
+      "description": "Teal light background — badge fills, info panels."
+    },
+    "green": {
+      "value": "#16A34A",
+      "description": "Success / confirmed / saved. Save status indicator, approval badges, plan checkmarks."
+    },
+    "green-lt": {
+      "value": "#F0FDF4",
+      "description": "Green light background — success banner, approval badge bg, prev/next doc nodes."
+    },
+    "amber": {
+      "value": "#D97706",
+      "description": "Warning / pending / caution. Saving status, pending join requests, expiry warnings."
+    },
+    "amber-lt": {
+      "value": "#FFFBEB",
+      "description": "Amber light background — warning panels, invite pending, CSS phase warnings."
+    },
+    "red": {
+      "value": "#DC2626",
+      "description": "Error / danger / delete. Destructive buttons, form error states, error toasts."
+    },
+    "red-lt": {
+      "value": "#FFF1F2",
+      "description": "Red light background — danger zone panel, error banners."
+    },
+    "purple": {
+      "value": "#7C3AED",
+      "description": "Special / role emphasis. Owner/Admin role badges, embed code accents, related-doc nodes."
+    },
+    "purple-lt": {
+      "value": "#F5F3FF",
+      "description": "Purple light background — role badge fills, related doc SVG nodes."
+    }
+  },
+
+  "code-theme": {
+    "code-bg": {
+      "value": "#1A1916",
+      "description": "Code block background (reuses --text token). Dark surface for syntax highlighting."
+    },
+    "code-fg": {
+      "value": "#E2E8F0",
+      "description": "Code block default text color."
+    },
+    "code-keyword": {
+      "value": "#93C5FD",
+      "description": "Syntax keyword color (blue-300) — import, const, function, return."
+    },
+    "code-string": {
+      "value": "#86EFAC",
+      "description": "Syntax string color (green-300) — string literals."
+    },
+    "code-comment": {
+      "value": "#6B7280",
+      "description": "Syntax comment color (gray-500) — // comments."
+    },
+    "code-inline-text": {
+      "value": "#DC2626",
+      "description": "Inline code text color (reuses --red). Renders inside --surface-2 background."
+    }
+  },
+
+  "diagram": {
+    "node-root-fill": {
+      "value": "#F1F0EC",
+      "description": "SVG diagram — root workspace node fill."
+    },
+    "node-root-stroke": {
+      "value": "#CBD5E1",
+      "description": "SVG diagram — root workspace node border."
+    },
+    "node-parent-fill": {
+      "value": "#EEF3FF",
+      "description": "SVG diagram — parent category node fill."
+    },
+    "node-parent-stroke": {
+      "value": "#93C5FD",
+      "description": "SVG diagram — parent category node border."
+    },
+    "node-current-fill": {
+      "value": "#1A56DB",
+      "description": "SVG diagram — current (active) document node fill."
+    },
+    "node-current-stroke": {
+      "value": "#1343B0",
+      "description": "SVG diagram — current document node border."
+    },
+    "node-current-text": {
+      "value": "#FFFFFF",
+      "description": "SVG diagram — text on current document node."
+    },
+    "node-prevnext-fill": {
+      "value": "#F0FDF4",
+      "description": "SVG diagram — previous/next document node fill."
+    },
+    "node-prevnext-stroke": {
+      "value": "#86EFAC",
+      "description": "SVG diagram — previous/next document node border."
+    },
+    "node-related-fill": {
+      "value": "#F5F3FF",
+      "description": "SVG diagram — related document node fill."
+    },
+    "node-related-stroke": {
+      "value": "#C4B5FD",
+      "description": "SVG diagram — related document node border."
+    },
+    "edge-solid": {
+      "value": "#CBD5E1",
+      "description": "SVG diagram — solid edge (parent hierarchy, sequential links)."
+    },
+    "edge-parent-active": {
+      "value": "#93C5FD",
+      "description": "SVG diagram — active parent-to-current edge."
+    },
+    "edge-dashed": {
+      "value": "#C4B5FD",
+      "description": "SVG diagram — dashed edge (related document links)."
+    },
+    "arrowhead": {
+      "value": "#86EFAC",
+      "description": "SVG diagram — arrowhead fill for directional edges."
+    }
+  },
+
+  "badge-matrix": {
+    "blue": {
+      "bg": "#EEF3FF",
+      "text": "#1343B0",
+      "description": "General info badges, Team plan, New document tag."
+    },
+    "green": {
+      "bg": "#F0FDF4",
+      "text": "#16A34A",
+      "description": "Success, approved, personal workspace."
+    },
+    "amber": {
+      "bg": "#FFFBEB",
+      "text": "#D97706",
+      "description": "Pending state, invite waiting, phase warning."
+    },
+    "red": {
+      "bg": "#FFF1F2",
+      "text": "#DC2626",
+      "description": "Error, danger action, critical state."
+    },
+    "purple": {
+      "bg": "#F5F3FF",
+      "text": "#7C3AED",
+      "description": "Owner/Admin role, current user indicator."
+    },
+    "teal": {
+      "bg": "#F0FDFA",
+      "text": "#0D9488",
+      "description": "Editor/Admin role badge, API/embed context."
+    },
+    "gray": {
+      "bg": "#F1F0EC",
+      "text": "#57564F",
+      "description": "Neutral/default badge — version number, viewer role."
+    }
+  },
+
+  "avatar-gradients": {
+    "user-default": {
+      "value": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      "description": "Default user avatar background — purple gradient."
+    },
+    "user-orange": {
+      "value": "linear-gradient(135deg, #f97316, #ea580c)",
+      "description": "Secondary user avatar — orange."
+    },
+    "user-green": {
+      "value": "linear-gradient(135deg, #10b981, #059669)",
+      "description": "Tertiary user avatar — green."
+    }
+  },
+
+  "dark-mode-preview": {
+    "_note": "Phase 2 planned. Values are design intent, not yet implemented.",
+    "bg": "#121210",
+    "surface": "#1A1916",
+    "surface-2": "#222220",
+    "surface-3": "#2A2A27",
+    "border": "#2E2D28",
+    "border-2": "#3D3C37",
+    "text": "#F1F0EC",
+    "text-2": "#A8A79F",
+    "text-3": "#6B6A63",
+    "accent": "#4F80F7",
+    "accent-2": "#1A2444",
+    "accent-dk": "#7AA0FF"
+  },
+
+  "workspace-css-vars": {
+    "_note": "CSS custom properties exposed to workspace-level theme overrides (--mf-* namespace).",
+    "--mf-font-body": "'Pretendard', 'DM Sans', sans-serif",
+    "--mf-font-code": "'JetBrains Mono', monospace",
+    "--mf-color-heading": "#1a1916",
+    "--mf-color-body": "#374151",
+    "--mf-color-link": "#1A56DB",
+    "--mf-color-code-bg": "#f3f4f6",
+    "--mf-color-blockquote": "#6b7280",
+    "--mf-line-height": "1.75",
+    "--mf-max-width": "720px",
+    "--mf-heading-font": "'Sora', var(--mf-font-body)"
+  }
+}

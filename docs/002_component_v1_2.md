@@ -1,8 +1,9 @@
 # 002 — 컴포넌트 설계 (Component Specification)
 
-> **최종 수정:** 2026-03-26
+> **최종 수정:** 2026-03-26 (v1.2.0 반영)
 > **스택:** React 18/19 · TypeScript 5 · CodeMirror 6 · unified/remark/rehype · Tailwind CSS 4 · Zustand
-> **상태 범례:** ✅ 구현 완료 · 📋 계획됨 (KMS)
+> **상태 범례:** ✅ 구현 완료 · 🚧 프로토타입 구현 · 📋 계획됨 (KMS)
+> **변경 이력:** v1.2.0 — DAGPipelineGraph·MiniDAGGraph·FolderContextMenu·NewFolderModal·NewDocModal 신규, CategoryTree 폴더 관리 UX 강화
 
 ---
 
@@ -277,23 +278,124 @@ App (Next.js App Router)
         │   ├── Sidebar
         │   │   ├── WorkspaceHeader
         │   │   ├── GlobalSearch (trigger)
-        │   │   ├── CategoryTree → CategoryNode, DocumentNode
+        │   │   ├── SidebarSectionLabel          ← 📁 NewFolder + ＋ NewDoc 버튼 포함
+        │   │   ├── CategoryTree
+        │   │   │   ├── CategoryNode             ← hover ⋯ 버튼 포함
+        │   │   │   │   └── FolderContextMenu 🚧 ← 우클릭/⋯ 클릭 시 표시
+        │   │   │   └── DocumentNode
+        │   │   ├── GraphViewNavItem 🚧          ← 🔗 그래프 뷰 사이드바 항목
         │   │   └── UserMenu
         │   ├── MainContent (router outlet)
-        │   └── WorkspaceThemeInjector  ← M6: <style> 동적 주입 컴포넌트
+        │   └── WorkspaceThemeInjector           ← <style> 동적 주입
         │
         ├── docs/
         │   └── DocumentListPage → DocumentListToolbar, DocumentList/Grid
         │
+        ├── graph/
+        │   └── GraphViewPage 🚧                ← B14 신규. DAG 전체 워크스페이스 뷰
+        │       ├── DAGToolbar                  ← 범례 + 통계 + 이동 버튼
+        │       └── DAGPipelineGraph 🚧         ← 카테고리·순서·태그 Row별 렌더링
+        │
         └── docs/[docId]/
             └── EditorPage
-                ├── MarkdownEditor         ← @markflow/editor 패키지
+                ├── MarkdownEditor             ← @markflow/editor 패키지
                 ├── DocumentMetaPanel
-                │   ├── LinkManager (RelatedDocsPicker, PrevNextPicker)
-                │   ├── TagInput           ← M3: 태그 입력 UI
-                │   └── VersionHistoryPanel (버전 목록 + DiffViewer)  ← M8
+                │   ├── MiniDAGGraph 🚧        ← B13: 미니 DAG (LinkManager 대체)
+                │   ├── TagInput               ← M3: 태그 입력 UI
+                │   └── VersionHistoryPanel    ← M8: 버전 목록 + DiffViewer
+                ├── PreviewPane
+                │   └── DAGPipelineNav 🚧      ← B5: Prev/Next 내비 → DAG 방식
                 └── CollaborationLayer (Yjs) → RemoteCursors
 ```
+
+### 신규 컴포넌트 스펙 (v1.2.0) 🚧
+
+#### `FolderContextMenu`
+
+```typescript
+interface FolderContextMenuProps {
+  folderName: string
+  position: { x: number; y: number }
+  onClose: () => void
+  onAction: (action: 'new-doc' | 'new-subfolder' | 'rename' | 'move' | 'delete') => void
+}
+```
+
+| 항목 | 내용 |
+|------|------|
+| 표시 조건 | 폴더 항목 우클릭 또는 `⋯` 버튼 클릭 |
+| 위치 | `position: fixed` — 커서 좌표 기준, 뷰포트 경계 초과 방지 |
+| 닫힘 조건 | 외부 클릭, `mouseleave`, `Escape` 키 |
+| z-index | 2000 |
+
+#### `NewFolderModal`
+
+```typescript
+interface NewFolderModalProps {
+  parentFolder?: { id: string; name: string }  // 컨텍스트 메뉴에서 열 때 주입
+  onConfirm: (name: string, parentId: string | null) => void
+  onClose: () => void
+}
+```
+
+| 필드 | 동작 |
+|------|------|
+| 폴더 이름 | 입력 시 `folder-path-preview` 실시간 업데이트 |
+| 상위 위치 | `<select>` — 루트 및 기존 폴더 목록 |
+| 경로 미리보기 | `WorkspaceName / 상위폴더 / 입력중인이름` |
+
+#### `NewDocModal`
+
+```typescript
+interface NewDocModalProps {
+  defaultCategoryId?: string  // 폴더 컨텍스트에서 열 때 주입
+  onConfirm: (title: string, categoryId: string | null, mode: 'blank' | 'template') => void
+  onClose: () => void
+}
+```
+
+#### `DAGPipelineGraph`
+
+```typescript
+interface DAGStage {
+  type: 'root' | 'category' | 'prev' | 'current' | 'next' | 'related'
+  nodes: DAGNode[]
+  label?: string  // 그룹 박스 레이블
+}
+
+interface DAGNode {
+  id: string
+  title: string
+  icon: string
+  meta?: string
+  type: DAGStage['type']
+  onClick?: () => void
+}
+
+interface DAGPipelineGraphProps {
+  rows: DAGPipelineRow[]  // 카테고리별 Row 배열
+  compact?: boolean       // MiniDAG 모드
+}
+```
+
+| 모드 | 사용처 | 특징 |
+|------|--------|------|
+| 기본 | `GraphViewPage` | 다중 Row, 수평 스크롤 |
+| compact (`MiniDAGGraph`) | 메타 패널, 프리뷰 하단 | 단일 Row, 폰트·패딩 축소 |
+
+#### `DAGPipelineNav` (프리뷰 하단)
+
+```typescript
+interface DAGPipelineNavProps {
+  prevDoc?: { id: string; title: string }
+  currentDoc: { id: string; title: string }
+  nextDoc?: { id: string; title: string }
+  relatedDocs?: Array<{ id: string; title: string }>
+  onNavigate: (docId: string) => void
+}
+```
+
+---
 
 ### 상태 관리 (Zustand Stores — 계획)
 

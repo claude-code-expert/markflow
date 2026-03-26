@@ -1,8 +1,12 @@
 # 004 — 데이터 모델 (Data Model & ERD)
 
+> **버전:** 1.2.0
 > **최종 수정:** 2026-03-26
 > **DB:** PostgreSQL 16 · **ORM:** Drizzle ORM
 > **상태:** 📋 계획됨 (KMS SaaS 구축 시 적용)
+> **변경 이력:**
+> - v1.2.0 — `CATEGORY_CLOSURE` 테이블 신규 추가 (무제한 중첩 계층 조회 최적화), `DOCUMENTS`에 `start_mode` 컬럼 추가, `DOCUMENT_RELATIONS`에 DAG 관련 무결성 규칙 보강, 마이그레이션 파일 `0012` 추가
+> - v1.1.0 — `WORKSPACE_JOIN_REQUESTS` 테이블 신규 추가, ERD 관계 업데이트
 
 ---
 
@@ -71,6 +75,19 @@ erDiagram
         timestamp created_at
     }
 
+    WORKSPACE_JOIN_REQUESTS {
+        uuid id PK
+        uuid workspace_id FK
+        uuid requester_id FK
+        text message
+        text status
+        text assigned_role
+        uuid reviewed_by FK
+        timestamp reviewed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
     CATEGORIES {
         uuid id PK
         uuid workspace_id FK
@@ -80,6 +97,12 @@ erDiagram
         real order_index
         timestamp created_at
         timestamp updated_at
+    }
+
+    CATEGORY_CLOSURE {
+        uuid ancestor_id FK
+        uuid descendant_id FK
+        integer depth
     }
 
     DOCUMENTS {
@@ -169,7 +192,10 @@ erDiagram
     WORKSPACES ||--o{ CATEGORIES : "contains"
     WORKSPACES ||--o{ DOCUMENTS : "contains"
     WORKSPACES ||--o{ INVITATIONS : "sends"
+    WORKSPACES ||--o{ WORKSPACE_JOIN_REQUESTS : "receives"
+    USERS ||--o{ WORKSPACE_JOIN_REQUESTS : "submits"
     CATEGORIES ||--o{ CATEGORIES : "parent-child"
+    CATEGORIES ||--o{ CATEGORY_CLOSURE : "closure"
     CATEGORIES ||--o{ DOCUMENTS : "groups"
     DOCUMENTS ||--o{ DOCUMENT_VERSIONS : "versioned as"
     DOCUMENTS ||--o{ DOCUMENT_RELATIONS : "related to"
@@ -215,15 +241,16 @@ CREATE TABLE workspaces (
     owner_id    UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     theme_css   TEXT        DEFAULT '',
     is_public   BOOLEAN     NOT NULL DEFAULT FALSE,
-    -- M4: Root 워크스페이스 여부. 회원가입 시 자동 생성되는 개인 워크스페이스.
+    -- Root 워크스페이스 여부. 회원가입 시 자동 생성되는 개인 워크스페이스.
     -- slug = 'personal-{userId 앞 8자리}', name = 'My Notes', is_root = TRUE
     is_root     BOOLEAN     NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_workspaces_owner ON workspaces(owner_id);
-CREATE INDEX idx_workspaces_slug  ON workspaces(slug);
+CREATE INDEX idx_workspaces_owner  ON workspaces(owner_id);
+CREATE INDEX idx_workspaces_slug   ON workspaces(slug);
+CREATE INDEX idx_workspaces_public ON workspaces(is_public) WHERE is_public = TRUE;
 ```
 
 > **Root 워크스페이스 생성 규칙:** 회원가입 완료(이메일 인증 후) 시점에 서버가 자동으로 `is_root = TRUE` 워크스페이스를 1개 생성한다. 사용자는 이 워크스페이스를 삭제할 수 없고, 이름은 변경 가능하다.
@@ -245,7 +272,74 @@ CREATE INDEX idx_wm_user_id      ON workspace_members(user_id);
 CREATE INDEX idx_wm_workspace_id ON workspace_members(workspace_id);
 ```
 
-### 2.4 categories
+### 2.4 invitations
+
+```sql
+CREATE TABLE invitations (
+    id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id  UUID            NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    inviter_id    UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email         TEXT            NOT NULL,
+    role          workspace_role  NOT NULL DEFAULT 'editor',
+    token         TEXT            NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+    accepted      BOOLEAN         NOT NULL DEFAULT FALSE,
+    expires_at    TIMESTAMPTZ     NOT NULL DEFAULT NOW() + INTERVAL '72 hours',
+    created_at    TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_inv_workspace ON invitations(workspace_id);
+CREATE INDEX idx_inv_token     ON invitations(token);
+CREATE INDEX idx_inv_email     ON invitations(email);
+```
+
+### 2.5 workspace_join_requests ✨ (신규 — v1.1.0)
+
+> 비멤버 사용자가 공개 워크스페이스에 가입 신청을 제출하는 엔티티.  
+> Admin/Owner가 신청을 검토하여 승인 또는 거절한다.
+
+```sql
+CREATE TYPE join_request_status AS ENUM ('pending', 'approved', 'rejected');
+
+CREATE TABLE workspace_join_requests (
+    id             UUID                 PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id   UUID                 NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    requester_id   UUID                 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message        TEXT                 CHECK (char_length(message) <= 500),  -- 신청 메시지 (선택)
+    status         join_request_status  NOT NULL DEFAULT 'pending',
+    assigned_role  workspace_role,      -- 승인 시 부여할 역할 (NULL until approved)
+    reviewed_by    UUID                 REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at    TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ          NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ          NOT NULL DEFAULT NOW(),
+    UNIQUE (workspace_id, requester_id)  -- 동일 워크스페이스에 중복 신청 불가
+);
+
+CREATE INDEX idx_jreq_workspace_status ON workspace_join_requests(workspace_id, status);
+CREATE INDEX idx_jreq_requester        ON workspace_join_requests(requester_id);
+```
+
+**비즈니스 규칙**
+
+| 규칙 | 설명 |
+|------|------|
+| 신청 가능 조건 | `workspaces.is_public = TRUE` 이고 신청자가 아직 멤버가 아닐 것 |
+| 중복 신청 | UNIQUE 제약으로 차단. `409 CONFLICT` 반환 |
+| 승인 처리 | `status = 'approved'` + `workspace_members` INSERT + `reviewed_by`, `reviewed_at` 기록 |
+| 거절 처리 | `status = 'rejected'` + `reviewed_by`, `reviewed_at` 기록 |
+| 재신청 | 거절된 경우 기존 레코드 UPDATE 또는 신규 INSERT (구현 선택) |
+| 알림 | 승인/거절 시 신청자에게 이메일 알림 발송 (Resend) |
+
+**API 엔드포인트**
+
+```
+POST   /workspaces/:id/join-requests          신청 제출 (requester)
+GET    /workspaces/:id/join-requests          신청 목록 조회 (admin+, ?status=pending)
+PATCH  /workspaces/:id/join-requests/:reqId   승인/거절 처리 (admin+)
+DELETE /workspaces/:id/join-requests/:reqId   신청 취소 (requester 본인)
+GET    /me/join-requests                      내 신청 현황 조회 (requester)
+```
+
+### 2.6 categories
 
 ```sql
 CREATE TABLE categories (
@@ -266,7 +360,44 @@ CREATE INDEX idx_categories_parent    ON categories(parent_id);
 
 > **설계 메모:** `order_index`는 Fractional Indexing 방식. 재정렬 시 전체 레코드 업데이트 없이 중간값 삽입. 정밀도 부족 시 전체 재인덱싱.
 
-### 2.5 documents
+### 2.6a category_closure ✨ (신규 — v1.2.0)
+
+무제한 중첩 폴더의 계층 관계를 빠르게 조회하기 위한 Closure Table.
+
+```sql
+CREATE TABLE category_closure (
+    ancestor_id   UUID    NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    descendant_id UUID    NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    depth         INTEGER NOT NULL,  -- 0 = 자기 자신
+    PRIMARY KEY (ancestor_id, descendant_id)
+);
+
+CREATE INDEX idx_closure_ancestor   ON category_closure(ancestor_id);
+CREATE INDEX idx_closure_descendant ON category_closure(descendant_id);
+```
+
+**활용 쿼리 예시**
+
+```sql
+-- 특정 카테고리의 모든 하위 계층 조회 (재귀 없이 O(1))
+SELECT c.*
+FROM categories c
+JOIN category_closure cc ON cc.descendant_id = c.id
+WHERE cc.ancestor_id = :categoryId AND cc.depth > 0;
+
+-- 특정 카테고리의 전체 상위 경로(breadcrumb) 조회
+SELECT c.*
+FROM categories c
+JOIN category_closure cc ON cc.ancestor_id = c.id
+WHERE cc.descendant_id = :categoryId
+ORDER BY cc.depth DESC;
+```
+
+> **삽입 트리거:** 카테고리 생성 시 앱 레이어 또는 DB 트리거에서 closure 행 일괄 삽입.  
+> **삭제 트리거:** `ON DELETE CASCADE`로 자동 정리.  
+> **이동 처리:** 부모 변경 시 기존 closure 행 삭제 후 재삽입 (트랜잭션 내 처리).
+
+### 2.7 documents
 
 ```sql
 CREATE TABLE documents (
@@ -280,16 +411,15 @@ CREATE TABLE documents (
     current_version  INTEGER     NOT NULL DEFAULT 1,
     is_deleted       BOOLEAN     NOT NULL DEFAULT FALSE,
     deleted_at       TIMESTAMPTZ,
+    start_mode       TEXT        NOT NULL DEFAULT 'blank' CHECK (start_mode IN ('blank','template')),  -- v1.2.0
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (workspace_id, slug)
 );
 
--- C2 수정: 한국어 지원을 위해 'english' → 'simple' 형태소 분석기 사용
--- 한국어는 영어 형태소 분석기로 파싱 불가 → 'simple'(토크나이즈만) + pg_trgm 조합 사용
+-- Full-Text Search Index (simple: 한국어·영어 공용)
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Full-Text Search Index (simple: 한국어·영어 공용)
 CREATE INDEX idx_doc_fts ON documents
     USING gin(to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(content,'')));
 
@@ -297,14 +427,12 @@ CREATE INDEX idx_doc_fts ON documents
 CREATE INDEX idx_doc_trgm_title   ON documents USING gin(title   gin_trgm_ops);
 CREATE INDEX idx_doc_trgm_content ON documents USING gin(content gin_trgm_ops);
 
-CREATE INDEX idx_doc_workspace   ON documents(workspace_id);
-CREATE INDEX idx_doc_category    ON documents(category_id);
-CREATE INDEX idx_doc_author      ON documents(author_id);
-CREATE INDEX idx_doc_deleted     ON documents(is_deleted);
-CREATE INDEX idx_doc_updated     ON documents(updated_at DESC);
+CREATE INDEX idx_doc_ws_cat_updated ON documents(workspace_id, category_id, updated_at DESC)
+    WHERE is_deleted = FALSE;
+CREATE INDEX idx_doc_deleted ON documents(is_deleted);
 ```
 
-### 2.6 document_versions
+### 2.8 document_versions
 
 ```sql
 CREATE TABLE document_versions (
@@ -320,7 +448,7 @@ CREATE TABLE document_versions (
 CREATE INDEX idx_dv_doc_id ON document_versions(doc_id, version_num DESC);
 ```
 
-### 2.7 document_relations
+### 2.9 document_relations
 
 ```sql
 CREATE TYPE relation_type AS ENUM ('related', 'prev', 'next');
@@ -334,15 +462,14 @@ CREATE TABLE document_relations (
     UNIQUE (doc_id, related_doc_id, rel_type)
 );
 
--- M10: 연관 문서 최대 20개 제한 (rel_type='related' 기준)
+-- 연관 문서 최대 20개 제한 (rel_type='related' 기준)
 -- 애플리케이션 레이어에서 INSERT 전 COUNT 검사로 적용
--- 선택적 DB 레이어 보호: 트리거로 추가 가능
 
-CREATE INDEX idx_dr_doc_id   ON document_relations(doc_id);
-CREATE INDEX idx_dr_related  ON document_relations(related_doc_id);
+CREATE INDEX idx_dr_doc_id  ON document_relations(doc_id);
+CREATE INDEX idx_dr_related ON document_relations(related_doc_id);
 ```
 
-### 2.8 link_previews
+### 2.10 link_previews
 
 ```sql
 CREATE TYPE preview_type AS ENUM ('website', 'video', 'internal');
@@ -362,7 +489,7 @@ CREATE TABLE link_previews (
 CREATE INDEX idx_lp_expires ON link_previews(expires_at);
 ```
 
-### 2.9 comments
+### 2.11 comments
 
 ```sql
 CREATE TABLE comments (
@@ -381,15 +508,13 @@ CREATE INDEX idx_comments_doc    ON comments(doc_id);
 CREATE INDEX idx_comments_parent ON comments(parent_id);
 ```
 
----
-
-### 2.10 activity_logs & notifications (M9 — Phase 3 사전 설계)
+### 2.12 activity_logs & notifications (Phase 3 사전 설계)
 
 ```sql
--- 활동 피드: 문서 생성/수정/삭제, 멤버 초대 등 워크스페이스 이벤트 기록
 CREATE TYPE activity_action AS ENUM (
     'doc_created', 'doc_updated', 'doc_deleted', 'doc_restored',
     'member_invited', 'member_joined', 'member_removed',
+    'join_request_submitted', 'join_request_approved', 'join_request_rejected',
     'comment_created', 'comment_resolved'
 );
 
@@ -399,14 +524,13 @@ CREATE TABLE activity_logs (
     actor_id      UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     doc_id        UUID            REFERENCES documents(id) ON DELETE SET NULL,
     action        activity_action NOT NULL,
-    meta          JSONB           DEFAULT '{}',   -- { title, snippet, role, ... }
+    meta          JSONB           DEFAULT '{}',
     created_at    TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_activity_ws        ON activity_logs(workspace_id, created_at DESC);
-CREATE INDEX idx_activity_actor     ON activity_logs(actor_id);
+CREATE INDEX idx_activity_ws    ON activity_logs(workspace_id, created_at DESC);
+CREATE INDEX idx_activity_actor ON activity_logs(actor_id);
 
--- 알림: 특정 사용자에게 전달되는 읽음/안읽음 항목
 CREATE TABLE notifications (
     id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -426,12 +550,17 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 |------|-----------|
 | 워크스페이스 Owner 최소 1명 | 애플리케이션 레이어 검증 |
 | 문서 Prev/Next 순환 참조 방지 | 저장 전 그래프 순환 탐지 (DFS) — DOCUMENT_RELATIONS 단일 소스 |
-| Prev/Next 관계 단일 저장 | DOCUMENT_RELATIONS만 사용, DOCUMENTS 테이블에 중복 컬럼 없음 (C1 해결) |
-| 카테고리 중첩 삭제 시 문서 보호 | `ON DELETE SET NULL` → 문서는 Root로 이동 |
+| Prev/Next 관계 단일 저장 | DOCUMENT_RELATIONS만 사용, DOCUMENTS 테이블에 중복 컬럼 없음 |
+| 카테고리 중첩 삭제 시 문서 보호 | `ON DELETE SET NULL` → 문서 category_id NULL (루트로 이동) |
+| 카테고리 이동 순환 방지 | 자기 자신의 자손으로 이동 시 400 + CIRCULAR_CATEGORY — 앱 레이어 |
+| Closure Table 정합성 | 카테고리 생성·이동·삭제 시 트랜잭션으로 closure 행 동기화 |
 | 버전 최대 보관 (Phase별) | Phase 1: 20개 / Phase 2+: 100개 — 앱 레이어 또는 트리거 정리 |
 | Soft Delete 후 slug 재사용 | 삭제 시 slug에 timestamp 접미사 추가 |
 | Root 워크스페이스 삭제 방지 | `is_root = TRUE` 워크스페이스 DELETE API 403 반환 |
 | 연관 문서 최대 20개 | 애플리케이션 레이어 검증, `rel_type='related'` COUNT > 20 → 400 반환 |
+| 가입 신청 중복 방지 | `UNIQUE (workspace_id, requester_id)` 제약 → 409 반환 |
+| 가입 신청 가능 조건 | `is_public = TRUE` 이고 미멤버인 경우만 허용 — 앱 레이어 검증 |
+| 공개 워크스페이스 검색 | `is_public` 인덱스 활용 — `GET /workspaces?public=true&q=keyword` |
 
 ---
 
@@ -442,12 +571,15 @@ migrations/
 ├── 0001_initial_users.sql
 ├── 0002_workspaces_members.sql        ← is_root 컬럼 포함
 ├── 0003_categories.sql
-├── 0004_documents.sql                 ← prev/next 컬럼 제거
-├── 0005_versions_relations.sql        ← relation_type 확장
-├── 0006_link_previews.sql
-├── 0007_comments.sql
-├── 0008_search_indexes.sql            ← pg_trgm + simple FTS
-└── 0009_activity_notifications.sql    ← Phase 3 사전 준비
+├── 0004_documents.sql
+├── 0005_versions_relations.sql
+├── 0006_invitations.sql
+├── 0007_join_requests.sql             ← v1.1.0 신규 ✨
+├── 0008_link_previews.sql
+├── 0009_comments.sql
+├── 0010_search_indexes.sql            ← pg_trgm + simple FTS
+├── 0011_activity_notifications.sql    ← Phase 3 사전 준비
+└── 0012_category_closure.sql          ← v1.2.0 신규 ✨ Closure Table
 ```
 
 - **도구:** Drizzle ORM `drizzle-kit`

@@ -1,0 +1,3376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarkFlow — Knowledge Management System · Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+============================================================ */
+:root {
+  --bg:        #F8F7F4;
+  --surface:   #FFFFFF;
+  --surface-2: #F1F0EC;
+  --surface-3: #E8E7E1;
+  --border:    #E2E0D8;
+  --border-2:  #CBC9C0;
+  --text:      #1A1916;
+  --text-2:    #57564F;
+  --text-3:    #9A9890;
+  --accent:    #1A56DB;
+  --accent-2:  #EEF3FF;
+  --accent-dk: #1343B0;
+  --teal:      #0D9488;
+  --teal-lt:   #F0FDFA;
+  --green:     #16A34A;
+  --green-lt:  #F0FDF4;
+  --amber:     #D97706;
+  --amber-lt:  #FFFBEB;
+  --red:       #DC2626;
+  --red-lt:    #FFF1F2;
+  --purple:    #7C3AED;
+  --purple-lt: #F5F3FF;
+
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow:    0 4px 12px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  --shadow-xl: 0 24px 64px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.08);
+
+  --font:  'DM Sans', sans-serif;
+  --font-h:'Sora', sans-serif;
+  --font-m:'JetBrains Mono', monospace;
+
+  --sidebar-w: 260px;
+  --toolbar-h: 48px;
+  --header-h:  56px;
+}
+
+/* ============================================================
+   RESET & BASE
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: var(--font); font-size: 14px; }
+::selection { background: var(--accent-2); color: var(--accent-dk); }
+
+/* ============================================================
+   SCREENS SYSTEM
+============================================================ */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+.screen.full { display: none; }
+.screen.full.active { display: block; min-height: 100vh; }
+
+/* ============================================================
+   COMPONENTS — BUTTONS
+============================================================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 500; line-height: 1;
+  transition: all .15s ease; white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 1px 3px rgba(26,86,219,.3);
+}
+.btn-primary:hover { background: var(--accent-dk); box-shadow: 0 2px 8px rgba(26,86,219,.4); }
+.btn-secondary {
+  background: var(--surface); color: var(--text-2);
+  border: 1.5px solid var(--border-2);
+}
+.btn-secondary:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+.btn-ghost { color: var(--text-2); padding: 8px 14px; }
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-sm { padding: 6px 13px; font-size: 12.5px; }
+.btn-lg { padding: 12px 24px; font-size: 15px; border-radius: var(--radius); }
+.btn-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-3); transition: all .15s;
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--text-2); }
+.btn-icon.active { background: var(--accent-2); color: var(--accent); }
+
+/* ============================================================
+   COMPONENTS — FORMS
+============================================================ */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.form-input {
+  padding: 10px 13px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text);
+  font-size: 14px; transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+}
+.form-input::placeholder { color: var(--text-3); }
+.form-input.error { border-color: var(--red); }
+.form-hint { font-size: 12px; color: var(--text-3); }
+.form-error { font-size: 12px; color: var(--red); }
+textarea.form-input { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+/* ============================================================
+   COMPONENTS — BADGES & TAGS
+============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 100px;
+  font-size: 11.5px; font-weight: 500; white-space: nowrap;
+}
+.badge-blue   { background: var(--accent-2); color: var(--accent-dk); }
+.badge-green  { background: var(--green-lt); color: var(--green); }
+.badge-amber  { background: var(--amber-lt); color: var(--amber); }
+.badge-red    { background: var(--red-lt); color: var(--red); }
+.badge-purple { background: var(--purple-lt); color: var(--purple); }
+.badge-gray   { background: var(--surface-2); color: var(--text-2); }
+.badge-teal   { background: var(--teal-lt); color: var(--teal); }
+
+.tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 100px;
+  background: var(--surface-2); color: var(--text-2);
+  font-size: 12px; border: 1px solid var(--border);
+  cursor: pointer; transition: all .12s;
+}
+.tag:hover { background: var(--accent-2); color: var(--accent); border-color: transparent; }
+.tag-add {
+  border-style: dashed; color: var(--text-3); border-color: var(--border-2);
+}
+
+/* ============================================================
+   COMPONENTS — CARDS
+============================================================ */
+.card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  border: 1px solid var(--border); padding: 24px;
+}
+.card-sm { padding: 16px; border-radius: var(--radius); }
+.card:hover { box-shadow: var(--shadow); }
+
+/* ============================================================
+   COMPONENTS — MODAL
+============================================================ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.35); z-index: 1000;
+  align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(2px);
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl); width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto;
+  animation: modal-in .18s ease;
+}
+.modal-lg { max-width: 800px; }
+.modal-xl { max-width: 1000px; }
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(.96) translateY(6px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 0;
+}
+.modal-title { font-family: var(--font-h); font-size: 17px; font-weight: 600; }
+.modal-body { padding: 20px 24px 24px; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 24px; border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   COMPONENTS — DIVIDER & MISC
+============================================================ */
+.divider {
+  height: 1px; background: var(--border);
+  margin: 16px 0;
+}
+.divider-text {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-3); font-size: 12px;
+}
+.divider-text::before, .divider-text::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ============================================================
+   NOTIFICATION TOAST
+============================================================ */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--text); color: #fff;
+  padding: 12px 18px; border-radius: var(--radius);
+  font-size: 13.5px; z-index: 9999;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateY(8px);
+  transition: all .2s ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success { background: var(--green); }
+.toast-error { background: var(--red); }
+
+/* ============================================================
+   NAV BAR (landing)
+============================================================ */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 62px;
+  background: rgba(248,247,244,.9); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo {
+  font-family: var(--font-h); font-size: 20px; font-weight: 700;
+  color: var(--text); display: flex; align-items: center; gap: 8px;
+}
+.nav-logo .logo-mark {
+  width: 28px; height: 28px; background: var(--accent);
+  border-radius: 7px; display: flex; align-items: center; justify-content: center;
+}
+.nav-logo .logo-mark svg { width: 16px; height: 16px; color: #fff; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-link {
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  font-size: 14px; color: var(--text-2); font-weight: 500;
+  transition: all .15s;
+}
+.nav-link:hover { background: var(--surface-2); color: var(--text); }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ============================================================
+   LANDING HERO
+============================================================ */
+.hero {
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 32px 70px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent-2); color: var(--accent-dk);
+  padding: 6px 14px; border-radius: 100px;
+  font-size: 12.5px; font-weight: 600;
+  margin-bottom: 24px; letter-spacing: .03em;
+}
+.hero h1 {
+  font-family: var(--font-h); font-size: clamp(38px, 5vw, 58px);
+  font-weight: 700; line-height: 1.12; letter-spacing: -.025em;
+  color: var(--text); max-width: 720px; margin-bottom: 20px;
+}
+.hero h1 em {
+  font-style: normal; color: var(--accent);
+}
+.hero p {
+  font-size: 18px; color: var(--text-2); max-width: 540px;
+  line-height: 1.7; margin-bottom: 36px;
+}
+.hero-actions { display: flex; align-items: center; gap: 14px; margin-bottom: 60px; }
+.hero-preview {
+  width: 100%; max-width: 980px;
+  background: var(--surface); border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+.preview-toolbar {
+  height: 44px; background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 8px;
+}
+.preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+.preview-body { display: flex; height: 420px; }
+.preview-sidebar { width: 220px; border-right: 1px solid var(--border); padding: 16px; }
+.preview-editor { flex: 1; padding: 20px; font-family: var(--font-m); font-size: 13px; color: var(--text-2); line-height: 1.8; }
+.preview-view { flex: 1; padding: 20px; border-left: 1px solid var(--border); }
+
+/* ============================================================
+   FEATURES SECTION
+============================================================ */
+.features {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 32px;
+}
+.features-inner { max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-size: 12px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-family: var(--font-h); font-size: 36px; font-weight: 700;
+  letter-spacing: -.02em; color: var(--text);
+  margin-bottom: 48px; max-width: 480px; line-height: 1.2;
+}
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.feature-card {
+  padding: 24px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); background: var(--bg);
+  transition: all .2s;
+}
+.feature-card:hover { background: var(--surface); box-shadow: var(--shadow); transform: translateY(-2px); }
+.feature-icon {
+  width: 42px; height: 42px; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px; font-size: 18px;
+}
+.feature-icon.blue   { background: var(--accent-2); }
+.feature-icon.teal   { background: var(--teal-lt); }
+.feature-icon.purple { background: var(--purple-lt); }
+.feature-icon.green  { background: var(--green-lt); }
+.feature-icon.amber  { background: var(--amber-lt); }
+.feature-icon.red    { background: var(--red-lt); }
+.feature-title { font-family: var(--font-h); font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.feature-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.65; }
+
+/* ============================================================
+   PRICING SECTION
+============================================================ */
+.pricing { padding: 80px 32px; max-width: 1100px; margin: 0 auto; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.plan-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-xl); padding: 28px; position: relative;
+}
+.plan-card.featured {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.plan-card.featured::before {
+  content: 'Most Popular'; position: absolute; top: -11px; left: 24px;
+  background: var(--accent); color: #fff;
+  padding: 3px 12px; border-radius: 100px; font-size: 11px; font-weight: 600;
+}
+.plan-name { font-family: var(--font-h); font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+.plan-price {
+  font-family: var(--font-h); font-size: 36px; font-weight: 700; color: var(--text);
+  line-height: 1; margin-bottom: 4px;
+}
+.plan-price sup { font-size: 18px; vertical-align: top; margin-top: 6px; }
+.plan-price sub { font-size: 14px; color: var(--text-2); font-weight: 400; }
+.plan-features { list-style: none; margin: 20px 0 24px; }
+.plan-features li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-2); padding: 5px 0; }
+.plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+/* ============================================================
+   FOOTER
+============================================================ */
+.footer {
+  background: var(--text); color: rgba(255,255,255,.7);
+  padding: 48px 32px;
+}
+.footer-inner { max-width: 1100px; margin: 0 auto; }
+.footer-top { display: flex; justify-content: space-between; margin-bottom: 40px; }
+.footer-brand { font-family: var(--font-h); font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+.footer-links h4 { color: rgba(255,255,255,.9); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.footer-links ul { list-style: none; }
+.footer-links li { margin-bottom: 8px; font-size: 13px; }
+.footer-links a { color: rgba(255,255,255,.6); }
+.footer-links a:hover { color: #fff; }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 24px; font-size: 12.5px; }
+
+/* ============================================================
+   AUTH SCREEN
+============================================================ */
+.auth-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); padding: 20px;
+}
+.auth-card {
+  background: var(--surface); border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 440px; padding: 40px;
+}
+.auth-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-h); font-size: 22px; font-weight: 700;
+  margin-bottom: 28px;
+}
+.auth-tabs {
+  display: flex; gap: 0; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 3px;
+  margin-bottom: 28px; background: var(--surface-2);
+}
+.auth-tab {
+  flex: 1; padding: 8px; text-align: center; font-size: 14px;
+  font-weight: 500; color: var(--text-3); border-radius: 5px;
+  cursor: pointer; transition: all .15s;
+}
+.auth-tab.active {
+  background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+.auth-form-panel { display: none; }
+.auth-form-panel.active { display: flex; flex-direction: column; gap: 16px; }
+.social-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 10px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+  color: var(--text-2); background: var(--surface); cursor: pointer;
+  transition: all .15s;
+}
+.social-btn:hover { background: var(--surface-2); border-color: var(--border-2); color: var(--text); }
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: var(--header-h) 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+.app-header {
+  grid-column: 1 / -1;
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px 0 0;
+  gap: 12px; z-index: 50;
+}
+.app-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+}
+.app-content { overflow-y: auto; background: var(--bg); position: relative; }
+
+/* Sidebar */
+.sidebar-ws {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.ws-name {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 14px; cursor: pointer; padding: 6px 8px;
+  border-radius: var(--radius-sm); flex: 1; min-width: 0;
+}
+.ws-name:hover { background: var(--surface-2); }
+.ws-avatar {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; color: #fff; font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.ws-label { font-size: 13.5px; truncate: ellipsis; overflow: hidden; white-space: nowrap; }
+.sidebar-search {
+  margin: 10px 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--surface-2);
+  border-radius: var(--radius-sm); border: 1.5px solid var(--border);
+  font-size: 13px; color: var(--text-3); cursor: pointer;
+  transition: all .15s;
+}
+.sidebar-search:hover { border-color: var(--border-2); background: var(--bg); color: var(--text-2); }
+.sidebar-search kbd {
+  margin-left: auto; font-size: 11px; background: var(--surface-3);
+  padding: 1px 6px; border-radius: 4px; color: var(--text-3);
+  font-family: var(--font);
+}
+.sidebar-section { padding: 6px 12px; }
+.sidebar-section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-3);
+  padding: 10px 4px 4px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: var(--radius-sm);
+  font-size: 13.5px; color: var(--text-2); cursor: pointer;
+  transition: all .12s; position: relative;
+}
+.sidebar-item:hover { background: var(--surface-2); color: var(--text); }
+.sidebar-item.active { background: var(--accent-2); color: var(--accent); font-weight: 500; }
+.sidebar-item .item-icon { width: 18px; flex-shrink: 0; opacity: .65; font-size: 15px; text-align: center; }
+.sidebar-item.active .item-icon { opacity: 1; }
+.sidebar-item .item-count {
+  margin-left: auto; font-size: 11px; background: var(--surface-3);
+  padding: 1px 7px; border-radius: 100px; color: var(--text-3);
+}
+.sidebar-item.active .item-count { background: rgba(26,86,219,.15); color: var(--accent-dk); }
+.sidebar-indent { padding-left: 28px; }
+.sidebar-footer {
+  margin-top: auto; border-top: 1px solid var(--border);
+  padding: 12px 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 600; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text-3); }
+
+/* App header */
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--text-2); }
+.breadcrumb-sep { color: var(--text-3); }
+.breadcrumb-cur { color: var(--text); font-weight: 500; }
+.save-status { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 5px; }
+.save-status.saved { color: var(--green); }
+.save-status.saving { color: var(--amber); }
+
+/* ============================================================
+   DOCUMENT LIST
+============================================================ */
+.doclist-header {
+  padding: 28px 32px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.doclist-title { font-family: var(--font-h); font-size: 22px; font-weight: 700; }
+.doclist-toolbar {
+  padding: 0 32px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.doclist-search {
+  flex: 1; max-width: 360px; display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 12px;
+}
+.doclist-search input { border: none; background: transparent; outline: none; flex: 1; font-size: 13.5px; }
+.doclist-search svg { color: var(--text-3); flex-shrink: 0; }
+.view-toggle { display: flex; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); }
+.view-toggle button { padding: 7px 11px; color: var(--text-3); font-size: 14px; transition: all .12s; }
+.view-toggle button.active { background: var(--surface-2); color: var(--text); }
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 0 32px 32px; }
+.doc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  cursor: pointer; transition: all .2s;
+}
+.doc-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--border-2); }
+.doc-card-icon { font-size: 28px; margin-bottom: 12px; }
+.doc-card-title { font-family: var(--font-h); font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+.doc-card-excerpt { font-size: 12.5px; color: var(--text-3); line-height: 1.55; margin-bottom: 12px; }
+.doc-card-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-3); }
+.doc-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.doc-list-view { padding: 0 32px 32px; }
+.doc-list-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 16px; background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--border); margin-bottom: 8px;
+  cursor: pointer; transition: all .15s;
+}
+.doc-list-item:hover { box-shadow: var(--shadow-sm); border-color: var(--border-2); }
+.doc-list-icon { font-size: 20px; flex-shrink: 0; }
+.doc-list-info { flex: 1; min-width: 0; }
+.doc-list-title { font-weight: 500; font-size: 14px; margin-bottom: 3px; }
+.doc-list-meta { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 12px; }
+
+/* ============================================================
+   EDITOR
+============================================================ */
+.editor-shell {
+  display: grid;
+  grid-template-rows: var(--toolbar-h) 1fr;
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+}
+.editor-toolbar {
+  height: var(--toolbar-h); background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 12px; gap: 2px;
+  overflow-x: auto; overflow-y: hidden;
+}
+.toolbar-group { display: flex; align-items: center; gap: 1px; }
+.toolbar-sep { width: 1px; height: 22px; background: var(--border); margin: 0 5px; }
+.tb-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 13px; cursor: pointer;
+  transition: all .12s; font-weight: 600; font-family: var(--font);
+}
+.tb-btn:hover { background: var(--surface-2); color: var(--text-2); }
+.tb-btn.active { background: var(--accent-2); color: var(--accent); }
+.tb-btn-text { font-size: 12px; width: auto; padding: 0 10px; font-weight: 600; }
+.editor-body { display: flex; overflow: hidden; }
+.editor-pane {
+  flex: 1; display: flex; flex-direction: column;
+  border-right: 1px solid var(--border); overflow: hidden;
+}
+.editor-pane-header {
+  padding: 8px 16px; border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; color: var(--text-3);
+  letter-spacing: .07em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.editor-textarea {
+  flex: 1; border: none; outline: none; resize: none;
+  padding: 24px 28px; font-family: var(--font-m); font-size: 13.5px;
+  line-height: 1.9; color: var(--text-2); background: var(--surface);
+  overflow-y: auto;
+}
+.editor-textarea::placeholder { color: var(--text-3); }
+.preview-pane { flex: 1; overflow-y: auto; background: var(--surface); }
+.preview-content {
+  padding: 32px 48px; max-width: 740px; margin: 0 auto;
+  font-size: 15px; line-height: 1.8; color: var(--text);
+}
+.preview-content h1 { font-family: var(--font-h); font-size: 30px; font-weight: 700; margin-bottom: 16px; letter-spacing: -.02em; }
+.preview-content h2 { font-family: var(--font-h); font-size: 22px; font-weight: 600; margin: 28px 0 12px; }
+.preview-content h3 { font-family: var(--font-h); font-size: 18px; font-weight: 600; margin: 22px 0 10px; }
+.preview-content p { margin-bottom: 16px; }
+.preview-content code {
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 1px 6px; border-radius: 4px;
+  font-family: var(--font-m); font-size: 12.5px; color: var(--red);
+}
+.preview-content pre {
+  background: var(--text); color: #e2e8f0;
+  border-radius: var(--radius); padding: 16px 20px; margin: 16px 0;
+  overflow-x: auto;
+}
+.preview-content pre code { background: none; border: none; color: inherit; font-size: 13px; }
+.preview-content blockquote {
+  border-left: 3px solid var(--accent); margin: 16px 0;
+  padding: 12px 20px; background: var(--accent-2);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.preview-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.preview-content th { background: var(--surface-2); font-weight: 600; }
+.preview-content th, .preview-content td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+.preview-content ul, .preview-content ol { padding-left: 24px; margin-bottom: 16px; }
+.preview-content li { margin-bottom: 5px; }
+.preview-content a { color: var(--accent); }
+.preview-content strong { font-weight: 600; }
+
+/* Meta Panel */
+.meta-panel {
+  width: 300px; border-left: 1px solid var(--border);
+  background: var(--surface); overflow-y: auto;
+  flex-shrink: 0;
+}
+.meta-panel.hidden { display: none; }
+.meta-panel-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.meta-section { padding: 16px; border-bottom: 1px solid var(--border); }
+.meta-section-title {
+  font-size: 11px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 12px;
+}
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.link-doc-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: var(--bg); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 6px; font-size: 13px;
+}
+.link-doc-item .doc-title { flex: 1; font-weight: 500; font-size: 13px; }
+.version-item {
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; font-size: 13px;
+}
+.version-item:last-child { border-bottom: none; }
+
+/* ============================================================
+   SETTINGS PAGE
+============================================================ */
+.settings-shell { display: flex; height: calc(100vh - var(--header-h)); overflow: hidden; }
+.settings-nav { width: 220px; border-right: 1px solid var(--border); padding: 24px 12px; background: var(--surface); }
+.settings-nav-title { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); padding: 4px 8px; margin-bottom: 6px; }
+.settings-nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: var(--radius-sm);
+  font-size: 13.5px; color: var(--text-2); cursor: pointer; transition: all .12s;
+}
+.settings-nav-item:hover { background: var(--surface-2); color: var(--text); }
+.settings-nav-item.active { background: var(--accent-2); color: var(--accent); font-weight: 500; }
+.settings-content { flex: 1; overflow-y: auto; padding: 36px 40px; }
+.settings-page { display: none; }
+.settings-page.active { display: block; }
+.settings-page-title { font-family: var(--font-h); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.settings-page-desc { font-size: 14px; color: var(--text-2); margin-bottom: 32px; }
+.settings-section { margin-bottom: 36px; }
+.settings-section-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.member-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.member-row:last-child { border-bottom: none; }
+.member-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.member-info { flex: 1; }
+.member-name { font-weight: 500; font-size: 14px; }
+.member-email { font-size: 12px; color: var(--text-3); }
+.role-badge-select {
+  padding: 5px 10px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); font-size: 12.5px;
+  background: var(--surface); color: var(--text-2);
+}
+.embed-code-block {
+  background: var(--text); color: #e2e8f0; border-radius: var(--radius);
+  padding: 16px 20px; font-family: var(--font-m); font-size: 12.5px;
+  line-height: 1.7; margin-bottom: 12px; overflow-x: auto;
+}
+.embed-code-block span.kw { color: #93c5fd; }
+.embed-code-block span.str { color: #86efac; }
+.embed-code-block span.cm { color: #6b7280; }
+.token-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; background: var(--surface-2); border-radius: var(--radius);
+  border: 1px solid var(--border); margin-bottom: 10px;
+}
+.token-row .token-label { flex: 1; font-size: 13.5px; font-weight: 500; }
+.token-row .token-key { font-family: var(--font-m); font-size: 12px; color: var(--text-3); }
+
+/* ============================================================
+   SEARCH MODAL
+============================================================ */
+.search-modal { max-width: 640px; padding: 0; overflow: hidden; }
+.search-input-wrap {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.search-input-wrap svg { color: var(--text-3); flex-shrink: 0; }
+.search-input {
+  flex: 1; border: none; outline: none; font-size: 16px;
+  color: var(--text); background: transparent;
+}
+.search-results { padding: 8px; max-height: 420px; overflow-y: auto; }
+.search-result-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius);
+  cursor: pointer; transition: background .1s;
+}
+.search-result-item:hover { background: var(--surface-2); }
+.search-result-item.selected { background: var(--accent-2); }
+.search-result-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.search-result-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.search-result-excerpt { font-size: 12.5px; color: var(--text-3); line-height: 1.5; }
+.search-result-path { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.search-highlight { background: rgba(255,220,0,.4); border-radius: 2px; font-weight: 500; }
+.search-empty {
+  text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 14px;
+}
+.search-footer {
+  padding: 10px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 16px; font-size: 12px; color: var(--text-3);
+}
+.search-footer kbd { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+/* ============================================================
+   WORKSPACE SELECTOR
+============================================================ */
+.ws-selector {
+  min-height: 100vh; background: var(--bg); padding: 60px 20px 80px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.ws-selector-header { margin-bottom: 32px; width: 100%; max-width: 680px; }
+.ws-selector-title { font-family: var(--font-h); font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+/* list layout */
+.ws-list { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: 680px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; }
+.ws-list-item {
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; position: relative;
+}
+.ws-list-item:last-child { border-bottom: none; }
+.ws-list-item:hover { background: var(--surface-2); }
+.ws-list-item.ws-new:hover { background: var(--accent-2); }
+.ws-list-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; font-weight: 700; flex-shrink: 0; }
+.ws-list-info { flex: 1; min-width: 0; }
+.ws-list-name { font-family: var(--font-h); font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.ws-list-meta { font-size: 12.5px; color: var(--text-3); }
+.ws-list-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ws-list-chevron { color: var(--text-3); font-size: 18px; }
+/* join request panel */
+.ws-join-panel {
+  width: 100%; max-width: 680px; margin-top: 24px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden;
+}
+.ws-join-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer;
+  background: var(--surface);
+}
+.ws-join-header:hover { background: var(--surface-2); }
+.ws-join-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.ws-join-body { padding: 20px; }
+.ws-join-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 13px; margin-bottom: 14px;
+}
+.ws-join-search input { border: none; background: transparent; outline: none; flex: 1; font-size: 13.5px; }
+.ws-join-result {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
+  background: var(--bg); transition: border-color .15s;
+}
+.ws-join-result:hover { border-color: var(--border-2); }
+/* old card styles kept for compatibility */
+.ws-card { display: none; }
+.ws-card-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+.ws-card-name { font-family: var(--font-h); font-size: 16px; font-weight: 600; }
+.ws-card-meta { font-size: 12.5px; color: var(--text-3); }
+
+/* ============================================================
+   PROGRESS / LOADING
+============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ============================================================
+   RESPONSIVE (basic)
+============================================================ */
+@media (max-width: 768px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .app-shell { grid-template-columns: 1fr; }
+  .app-sidebar { display: none; }
+}
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.ml-auto { margin-left: auto; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.text-sm { font-size: 13px; }
+.text-xs { font-size: 12px; }
+.text-muted { color: var(--text-3); }
+.text-secondary { color: var(--text-2); }
+.font-h { font-family: var(--font-h); }
+.font-mono { font-family: var(--font-m); }
+.w-full { width: 100%; }
+.truncate { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pointer { cursor: pointer; }
+.hidden { display: none !important; }
+
+/* Tabs (generic) */
+.tabs-bar {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+}
+.tab-btn {
+  padding: 10px 18px; font-size: 14px; font-weight: 500;
+  color: var(--text-3); border-bottom: 2px solid transparent;
+  cursor: pointer; transition: all .15s; margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text-2); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* CSS editor in settings */
+.css-editor {
+  background: var(--text); color: #e2e8f0;
+  border-radius: var(--radius); padding: 20px;
+  font-family: var(--font-m); font-size: 13px; line-height: 1.7;
+  min-height: 200px; resize: none; width: 100%; border: none; outline: none;
+}
+
+/* Collab avatars */
+.collab-avatars { display: flex; }
+.collab-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--surface);
+  margin-left: -8px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.collab-avatar:first-child { margin-left: 0; }
+
+/* Import/Export steps */
+.import-step {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 16px; background: var(--surface-2); border-radius: var(--radius);
+  margin-bottom: 12px; border: 1.5px solid transparent; cursor: pointer; transition: all .15s;
+}
+.import-step:hover { border-color: var(--border-2); background: var(--surface); }
+.import-step.selected { border-color: var(--accent); background: var(--accent-2); }
+.import-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface); border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.import-step.selected .import-step-num { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--border-2); border-radius: var(--radius-lg);
+  padding: 40px; text-align: center; color: var(--text-3);
+  cursor: pointer; transition: all .15s;
+}
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-2); color: var(--accent); }
+
+/* Inline comment bubble */
+.comment-bubble {
+  position: absolute; right: 16px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--amber-lt); border: 1px solid var(--amber);
+  border-radius: var(--radius); padding: 8px 12px;
+  font-size: 12.5px; max-width: 220px; cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.comment-bubble::before {
+  content: ''; position: absolute; left: -7px; top: 50%;
+  transform: translateY(-50%); width: 12px; height: 12px;
+  background: var(--amber-lt); border-left: 1px solid var(--amber);
+  border-bottom: 1px solid var(--amber); transform: translateY(-50%) rotate(45deg);
+}
+
+/* link nav (prev/next) */
+.doc-nav { display: flex; gap: 16px; padding: 24px 0; border-top: 1px solid var(--border); margin-top: 24px; }
+.doc-nav-item {
+  flex: 1; padding: 16px; background: var(--surface-2); border-radius: var(--radius-lg);
+  border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+}
+.doc-nav-item:hover { border-color: var(--accent); background: var(--accent-2); }
+.doc-nav-label { font-size: 11px; color: var(--text-3); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 6px; }
+.doc-nav-title { font-size: 14px; font-weight: 600; color: var(--text); }
+
+/* Graph view (simple) */
+.graph-node { cursor: pointer; transition: all .15s; }
+.graph-node circle { fill: var(--surface); stroke: var(--border); stroke-width: 2; transition: all .2s; }
+.graph-node:hover circle { fill: var(--accent-2); stroke: var(--accent); }
+.graph-node text { fill: var(--text-2); font-size: 11px; font-family: var(--font); }
+.graph-link { stroke: var(--border); stroke-width: 1.5; fill: none; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOAST
+============================================================ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     SCREEN 1: LANDING PAGE
+============================================================ -->
+<div class="screen full active" id="screen-landing">
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h2l2 6 2-8 2 8 2-6h2"/><path d="M2 4h12" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      MarkFlow
+    </div>
+    <div class="nav-links">
+      <a class="nav-link" href="#">Features</a>
+      <a class="nav-link" href="#">Docs</a>
+      <a class="nav-link" href="#">Pricing</a>
+      <a class="nav-link" href="#">Blog</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost" onclick="showScreen('auth')">Sign in</button>
+      <button class="btn btn-primary" onclick="showScreen('auth')">Get started free</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span>✦</span> AI 시대의 마크다운 워크플로우
+    </div>
+    <h1>Write in <em>Markdown</em>.<br>Think in context.</h1>
+    <p>팀의 지식을 마크다운으로 작성하고, 태그로 연결하고, 어디에서나 임베드하세요. MarkFlow는 마크다운 중심의 팀 지식 관리 플랫폼입니다.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="showScreen('auth')">
+        ✦ &nbsp;Start for free
+      </button>
+      <button class="btn btn-secondary btn-lg" onclick="showScreen('workspaces')">
+        View demo →
+      </button>
+    </div>
+
+    <!-- Preview mockup -->
+    <div class="hero-preview">
+      <div class="preview-toolbar">
+        <div class="preview-dot" style="background:#FF5F57"></div>
+        <div class="preview-dot" style="background:#FEBC2E"></div>
+        <div class="preview-dot" style="background:#28C840"></div>
+        <div style="flex:1; background:var(--surface-3); height:24px; border-radius:4px; margin-left:12px;"></div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-sidebar">
+          <div style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px;">My Notes</div>
+          <div class="sidebar-item active" style="font-size:12.5px;padding:6px 8px;"><span class="item-icon">📄</span> Getting Started</div>
+          <div class="sidebar-item sidebar-indent" style="font-size:12.5px;padding:5px 8px;"><span class="item-icon">📄</span> Architecture</div>
+          <div class="sidebar-item sidebar-indent" style="font-size:12.5px;padding:5px 8px;"><span class="item-icon">📄</span> API Reference</div>
+          <div class="sidebar-item" style="font-size:12.5px;padding:6px 8px;"><span class="item-icon">📁</span> Design System</div>
+          <div class="sidebar-item" style="font-size:12.5px;padding:6px 8px;"><span class="item-icon">📁</span> Meetings</div>
+        </div>
+        <div class="preview-editor" style="background:var(--bg);">
+<span style="color:#7C3AED"># Getting Started with MarkFlow</span>
+
+<span style="color:#0D9488">## Overview</span>
+
+MarkFlow is a <span style="color:#1A56DB">**markdown-first**</span> knowledge
+management platform for teams.
+
+<span style="color:#0D9488">## Key Features</span>
+
+- <span style="color:#D97706">[[Dual Editor]]</span> with live preview
+- Real-time collaboration
+- CSS theme per workspace
+- Embed anywhere with NPM/iframe
+        </div>
+        <div class="preview-view">
+          <div style="padding:20px;max-width:100%;">
+            <div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-bottom:12px;color:var(--text);">Getting Started with MarkFlow</div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text);">Overview</div>
+            <p style="font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:12px;">MarkFlow is a <strong>markdown-first</strong> knowledge management platform for teams.</p>
+            <div style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text);">Key Features</div>
+            <ul style="font-size:13px;color:var(--text-2);line-height:2;padding-left:18px;">
+              <li>Dual Editor with live preview</li>
+              <li>Real-time collaboration</li>
+              <li>CSS theme per workspace</li>
+              <li>Embed anywhere</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="features-inner">
+      <div class="section-label">Core Features</div>
+      <div class="section-title">마크다운을 팀의 언어로</div>
+      <div class="features-grid">
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon blue">✏️</div>
+          <div class="feature-title">Dual-Pane Editor</div>
+          <div class="feature-desc">CodeMirror 6 기반의 소스 편집과 실시간 렌더링 프리뷰. CommonMark + GFM + KaTeX 지원. 스크롤 동기화.</div>
+        </div>
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon teal">🔗</div>
+          <div class="feature-title">Document Linking</div>
+          <div class="feature-desc">문서 간 연관 관계, Prev/Next 네비게이션, 위키링크([[문서명]]) 구문으로 지식 그래프 구성.</div>
+        </div>
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon purple">👥</div>
+          <div class="feature-title">Real-time Collab</div>
+          <div class="feature-desc">Yjs CRDT 기반 최대 30인 동시 편집. 원격 커서, 인라인 댓글, 스레드형 토론 지원.</div>
+        </div>
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon green">🎨</div>
+          <div class="feature-title">CSS Theme System</div>
+          <div class="feature-desc">워크스페이스 단위 CSS 커스터마이징. 5가지 프리셋 + CodeMirror 기반 직접 편집. CSS 변수 오버라이드.</div>
+        </div>
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon amber">📦</div>
+          <div class="feature-title">Embed Anywhere</div>
+          <div class="feature-desc">NPM 패키지(@markflow/editor) · iframe + Guest Token · REST API 세 가지 방식으로 어떤 프로젝트에도 통합.</div>
+        </div>
+        <div class="feature-card" onclick="showScreen('workspaces')">
+          <div class="feature-icon red">📥</div>
+          <div class="feature-title">Import / Export</div>
+          <div class="feature-desc">.md · .zip · HTML · PDF 완전 지원. 폴더 구조 보존 ZIP 내보내기. Puppeteer 기반 서버사이드 PDF.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div class="pricing">
+    <div class="section-label" style="text-align:center">Pricing</div>
+    <div class="section-title" style="text-align:center;margin:0 auto 40px">합리적인 팀 요금제</div>
+    <div class="pricing-grid">
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price"><sup>$</sup>0</div>
+        <p style="font-size:12.5px;color:var(--text-3);margin-top:6px">개인 사용자 / 소규모 팀</p>
+        <ul class="plan-features">
+          <li>Root 워크스페이스 1개</li>
+          <li>팀원 최대 5명</li>
+          <li>저장공간 1GB</li>
+          <li>버전 히스토리 20개</li>
+          <li>NPM 패키지 임베드</li>
+        </ul>
+        <button class="btn btn-secondary w-full" onclick="showScreen('auth')">시작하기</button>
+      </div>
+      <div class="plan-card featured">
+        <div class="plan-name">Team</div>
+        <div class="plan-price"><sup>$</sup>12<sub>/멤버/월</sub></div>
+        <p style="font-size:12.5px;color:var(--text-3);margin-top:6px">성장하는 팀에 최적</p>
+        <ul class="plan-features">
+          <li>워크스페이스 무제한</li>
+          <li>팀원 무제한</li>
+          <li>저장공간 50GB</li>
+          <li>버전 히스토리 100개 + diff</li>
+          <li>실시간 공동편집 (Yjs)</li>
+          <li>CSS 테마 커스터마이징</li>
+          <li>Guest Token + iframe 임베드</li>
+        </ul>
+        <button class="btn btn-primary w-full" onclick="showScreen('auth')">팀 플랜 시작</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price" style="font-size:28px">문의</div>
+        <p style="font-size:12.5px;color:var(--text-3);margin-top:6px">대규모 조직 / 보안 요건</p>
+        <ul class="plan-features">
+          <li>모든 Team 기능 포함</li>
+          <li>SSO / SAML</li>
+          <li>저장공간 무제한</li>
+          <li>커스텀 도메인 공개 페이지</li>
+          <li>AI 글쓰기 보조 (Claude API)</li>
+          <li>SLA 보장 · 전담 지원</li>
+        </ul>
+        <button class="btn btn-secondary w-full">영업팀 문의</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand">MarkFlow</div>
+          <p style="font-size:13px;max-width:260px;line-height:1.7;">마크다운이 곧 AI 시대의 표준 문서 형식입니다. MarkFlow는 그 중심에 있습니다.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Product</h4>
+          <ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Changelog</a></li></ul>
+        </div>
+        <div class="footer-links">
+          <h4>Developer</h4>
+          <ul><li><a href="#">Docs</a></li><li><a href="#">API Reference</a></li><li><a href="#">NPM Package</a></li></ul>
+        </div>
+        <div class="footer-links">
+          <h4>Company</h4>
+          <ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Privacy</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>© 2026 MarkFlow. All rights reserved.</span>
+        <span style="font-family:var(--font-h);font-size:13px;color:rgba(255,255,255,.4);">The markdown layer for every team and product</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ============================================================
+     SCREEN 2: AUTH (Login / Register)
+============================================================ -->
+<div class="screen full" id="screen-auth">
+  <div class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="logo-mark" style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><polyline points="2,12 5,6 8,14 11,2 14,8"/></svg>
+        </div>
+        MarkFlow
+      </div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">로그인</div>
+        <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">회원가입</div>
+      </div>
+
+      <!-- Login -->
+      <div class="auth-form-panel active" id="panel-login">
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input class="form-input" type="email" placeholder="you@example.com" value="codevillain@markflow.io">
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호 <a href="#" style="font-size:12px;float:right;color:var(--accent)" onclick="showScreen('verify')">비밀번호 찾기</a></label>
+          <input class="form-input" type="password" value="••••••••">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);">
+          <input type="checkbox" id="remember"> <label for="remember">30일간 로그인 유지</label>
+        </div>
+        <button class="btn btn-primary w-full" style="padding:12px" onclick="showScreen('workspaces')">로그인</button>
+        <div class="divider-text">또는</div>
+        <button class="social-btn" onclick="showScreen('workspaces')">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google로 계속하기
+        </button>
+        <button class="social-btn" onclick="showScreen('workspaces')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.21 11.4.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 013-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58C20.57 21.82 24 17.31 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub로 계속하기
+        </button>
+      </div>
+
+      <!-- Register -->
+      <div class="auth-form-panel" id="panel-register">
+        <div class="form-group">
+          <label class="form-label">이름</label>
+          <input class="form-input" type="text" placeholder="홍길동">
+        </div>
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input class="form-input" type="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input class="form-input" type="password" placeholder="8자 이상, 영문+숫자+특수문자">
+          <span class="form-hint">bcrypt 해시 처리 · HTTPS 암호화 전송</span>
+        </div>
+        <button class="btn btn-primary w-full" style="padding:12px" onclick="showScreen('verify')">
+          무료로 시작하기 →
+        </button>
+        <p style="font-size:12px;color:var(--text-3);text-align:center;">가입 시 <a href="#" style="color:var(--accent)">이용약관</a>과 <a href="#" style="color:var(--accent)">개인정보처리방침</a>에 동의합니다.</p>
+      </div>
+
+    </div>
+    <button class="btn btn-ghost mt-4" onclick="showScreen('landing')" style="color:var(--text-3);">← 랜딩 페이지로</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 3: EMAIL VERIFICATION
+============================================================ -->
+<div class="screen full" id="screen-verify">
+  <div class="auth-screen">
+    <div class="auth-card" style="text-align:center;padding:48px 40px;">
+      <div style="font-size:48px;margin-bottom:20px;">📬</div>
+      <div style="font-family:var(--font-h);font-size:22px;font-weight:700;margin-bottom:10px;">이메일을 확인하세요</div>
+      <p style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:28px;">
+        <strong>you@example.com</strong>으로 인증 링크를 발송했습니다.<br>
+        링크는 <strong>24시간</strong> 동안 유효합니다.
+      </p>
+      <button class="btn btn-primary w-full" style="padding:12px;margin-bottom:12px;" onclick="showScreen('workspaces')">
+        인증 완료 (데모 진행) →
+      </button>
+      <button class="btn btn-ghost w-full" style="color:var(--text-3);font-size:13px;">이메일 재발송</button>
+      <div class="divider" style="margin:20px 0;"></div>
+      <div style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:var(--radius);padding:12px 16px;text-align:left;font-size:13px;color:var(--text-2);">
+        <strong style="color:var(--teal);">✓ 인증 완료 시 자동 생성:</strong><br>
+        "My Notes" Root 워크스페이스가 자동으로 생성됩니다.
+      </div>
+    </div>
+    <button class="btn btn-ghost mt-4" onclick="showScreen('auth')" style="color:var(--text-3);">← 로그인으로 돌아가기</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 4: WORKSPACE SELECTOR
+============================================================ -->
+<div class="screen full" id="screen-workspaces">
+  <nav class="nav">
+    <div class="nav-logo">
+      <div class="logo-mark" style="width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><polyline points="2,12 5,6 8,14 11,2 14,8"/></svg>
+      </div>
+      MarkFlow
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="user-avatar">C</div>
+      <span style="font-size:14px;font-weight:500;">codevillain</span>
+    </div>
+  </nav>
+  <div class="ws-selector">
+    <div class="ws-selector-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="ws-selector-title">워크스페이스</div>
+        <button class="btn btn-primary btn-sm" onclick="showModal('modal-create-ws')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          새 워크스페이스
+        </button>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-2);">참여 중인 워크스페이스를 선택하거나, 새로운 곳에 가입을 신청하세요.</p>
+    </div>
+
+    <!-- Workspace List -->
+    <div class="ws-list">
+      <!-- Root (personal) -->
+      <div class="ws-list-item" onclick="showScreen('app')">
+        <div class="ws-list-icon" style="background:var(--text);">📝</div>
+        <div class="ws-list-info">
+          <div class="ws-list-name">My Notes</div>
+          <div class="ws-list-meta">Root 워크스페이스 · 23개 문서 · 나만 사용</div>
+        </div>
+        <div class="ws-list-actions">
+          <span class="badge badge-green">개인</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <!-- Team 1 -->
+      <div class="ws-list-item" onclick="showScreen('app')">
+        <div class="ws-list-icon" style="background:var(--teal);">🚀</div>
+        <div class="ws-list-info">
+          <div class="ws-list-name">MarkFlow Dev</div>
+          <div class="ws-list-meta">팀 워크스페이스 · 4명 · 87개 문서 · 최근 활동 2시간 전</div>
+        </div>
+        <div class="ws-list-actions">
+          <span class="badge badge-teal">Admin</span>
+          <span class="badge badge-blue">Team</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <!-- Team 2 -->
+      <div class="ws-list-item" onclick="showScreen('app')">
+        <div class="ws-list-icon" style="background:var(--purple);">🎨</div>
+        <div class="ws-list-info">
+          <div class="ws-list-name">Design System</div>
+          <div class="ws-list-meta">팀 워크스페이스 · 2명 · 34개 문서 · 최근 활동 어제</div>
+        </div>
+        <div class="ws-list-actions">
+          <span class="badge badge-purple">Editor</span>
+          <span class="badge badge-blue">Team</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <!-- Pending join request -->
+      <div class="ws-list-item" style="opacity:.75;cursor:default;">
+        <div class="ws-list-icon" style="background:var(--amber);font-size:14px;">⏳</div>
+        <div class="ws-list-info">
+          <div class="ws-list-name">Product Team</div>
+          <div class="ws-list-meta">가입 신청 대기 중 · 3일 전 신청</div>
+        </div>
+        <div class="ws-list-actions">
+          <span class="badge badge-amber">승인 대기</span>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);font-size:12px;" onclick="event.stopPropagation();showToast('가입 신청이 취소되었습니다');">취소</button>
+        </div>
+      </div>
+      <!-- New workspace row -->
+      <div class="ws-list-item ws-new" onclick="showModal('modal-create-ws')" style="border-bottom:none;">
+        <div class="ws-list-icon" style="background:var(--surface-3);border:1.5px dashed var(--border-2);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="ws-list-info">
+          <div class="ws-list-name" style="color:var(--text-3);">새 워크스페이스 만들기</div>
+          <div class="ws-list-meta">팀이나 프로젝트를 위한 새 공간 생성</div>
+        </div>
+        <div class="ws-list-actions">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Join Request Panel (collapsible) -->
+    <div class="ws-join-panel">
+      <div class="ws-join-header" onclick="toggleJoinPanel()">
+        <div class="ws-join-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          공개 워크스페이스에 가입 신청
+        </div>
+        <svg id="join-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="join-panel-body" class="ws-join-body" style="display:none;">
+        <div class="ws-join-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input placeholder="워크스페이스 이름 또는 슬러그 검색..." oninput="searchPublicWS(this.value)">
+        </div>
+        <div id="public-ws-list">
+          <div class="ws-join-result">
+            <div class="ws-list-icon" style="background:#e11d48;width:36px;height:36px;font-size:15px;flex-shrink:0;">🏢</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:14px;">Acme Corp Docs</div>
+              <div style="font-size:12.5px;color:var(--text-3);">acme-corp · 12명 · 공개 읽기 허용</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showModal('modal-join-request');document.getElementById('join-ws-target').textContent='Acme Corp Docs'">가입 신청</button>
+          </div>
+          <div class="ws-join-result">
+            <div class="ws-list-icon" style="background:#0891b2;width:36px;height:36px;font-size:15px;flex-shrink:0;">📚</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:14px;">Open Source KMS</div>
+              <div style="font-size:12.5px;color:var(--text-3);">oss-kms · 38명 · 공개 읽기 허용</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showModal('modal-join-request');document.getElementById('join-ws-target').textContent='Open Source KMS'">가입 신청</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost mt-4" onclick="showScreen('landing')" style="color:var(--text-3);">← 랜딩으로</button>
+  </div>
+</div>
+</body></html>
+
+<!-- ============================================================
+     SCREEN 5: MAIN APP (Document List)
+============================================================ -->
+<div class="screen full" id="screen-app">
+  <div class="app-shell">
+    <!-- App Header -->
+    <header class="app-header">
+      <div style="width:var(--sidebar-w);display:flex;align-items:center;padding:0 14px;gap:8px;border-right:1px solid var(--border);height:100%;flex-shrink:0;">
+        <div class="logo-mark" style="width:26px;height:26px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="2,12 5,6 8,14 11,2 14,8"/></svg>
+        </div>
+        <span style="font-family:var(--font-h);font-size:15px;font-weight:700;">MarkFlow</span>
+      </div>
+      <div class="breadcrumb" style="flex:1;padding:0 16px;">
+        <span onclick="showScreen('workspaces')" class="pointer" style="color:var(--text-3);font-size:13px;">MarkFlow Dev</span>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-cur" id="header-breadcrumb">문서 목록</span>
+      </div>
+      <div class="flex items-center gap-2" style="padding-right:8px;">
+        <div class="save-status saved" id="save-status" style="display:none;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          저장됨
+        </div>
+        <div class="collab-avatars" id="collab-area" style="display:none;">
+          <div class="collab-avatar" style="background:#667eea;" title="codevillain">C</div>
+          <div class="collab-avatar" style="background:#f97316;" title="jaykim">J</div>
+          <div class="collab-avatar" style="background:#10b981;" title="minapark">M</div>
+        </div>
+        <button class="btn-icon" onclick="showModal('modal-search')" title="검색 (Ctrl+/)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="btn-icon" onclick="showAppPage('settings')" title="설정">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="user-avatar" style="width:30px;height:30px;font-size:12px;cursor:pointer;">C</div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="app-sidebar">
+      <div class="sidebar-ws">
+        <div class="ws-name" onclick="showScreen('workspaces')">
+          <div class="ws-avatar">M</div>
+          <span class="ws-label">MarkFlow Dev</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);margin-left:auto;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <button class="btn-icon btn-sm" title="새 문서" onclick="showAppPage('editor')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <div class="sidebar-search" onclick="showModal('modal-search')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        검색...
+        <kbd>⌘/</kbd>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">
+          문서
+          <button class="btn-icon" style="width:20px;height:20px;font-size:12px;" onclick="showAppPage('editor')">＋</button>
+        </div>
+
+        <!-- Category tree -->
+        <div class="sidebar-item active" onclick="showAppPage('doclist')" id="nav-all">
+          <span class="item-icon">🗂</span> 전체 문서
+          <span class="item-count">87</span>
+        </div>
+        <div class="sidebar-item" onclick="toggleFolder(this)">
+          <span class="item-icon">📁</span> 001 Requirements
+          <span class="item-count" style="margin-left:auto;">12</span>
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> 기능 요구사항
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> 비기능 요구사항
+        </div>
+        <div class="sidebar-item" onclick="toggleFolder(this)">
+          <span class="item-icon">📁</span> 002 Architecture
+          <span class="item-count" style="margin-left:auto;">8</span>
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> System Overview
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> DB Schema
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> API Design
+        </div>
+        <div class="sidebar-item" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> Getting Started
+        </div>
+        <div class="sidebar-item" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> Roadmap 2026
+          <span class="badge badge-blue" style="font-size:10px;padding:1px 6px;margin-left:auto;">New</span>
+        </div>
+        <div class="sidebar-item" onclick="toggleFolder(this)">
+          <span class="item-icon">📁</span> Design System
+          <span class="item-count" style="margin-left:auto;">15</span>
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> Color Tokens
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> Typography
+        </div>
+        <div class="sidebar-item sidebar-indent folder-children" style="display:none;" onclick="showAppPage('editor')">
+          <span class="item-icon">📄</span> Components
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="border-top:1px solid var(--border);padding-top:8px;">
+        <div class="sidebar-section-label">워크스페이스</div>
+        <div class="sidebar-item" onclick="showAppPage('settings')">
+          <span class="item-icon">⚙️</span> 설정
+        </div>
+        <div class="sidebar-item" onclick="showModal('modal-invite')">
+          <span class="item-icon">👥</span> 멤버 초대
+        </div>
+        <div class="sidebar-item" onclick="showModal('modal-importexport')">
+          <span class="item-icon">📦</span> 가져오기/내보내기
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar">C</div>
+        <div class="user-info">
+          <div class="user-name">codevillain</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-icon" onclick="showScreen('workspaces')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- App Content Area -->
+    <main class="app-content" id="app-content">
+
+      <!-- PAGE: Document List -->
+      <div id="page-doclist">
+        <div class="doclist-header">
+          <div>
+            <div class="doclist-title">전체 문서</div>
+            <p style="font-size:13px;color:var(--text-3);">87개 문서 · 최근 수정 순</p>
+          </div>
+          <button class="btn btn-primary" onclick="showAppPage('editor')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            새 문서
+          </button>
+        </div>
+        <div class="doclist-toolbar">
+          <div class="doclist-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input placeholder="문서 제목, 내용 검색...">
+          </div>
+          <select class="form-input" style="width:140px;padding:8px 10px;">
+            <option>최근 수정 순</option>
+            <option>이름 순</option>
+            <option>생성일 순</option>
+          </select>
+          <div class="view-toggle" id="view-toggle">
+            <button class="active" onclick="switchDocView('grid', this)" title="그리드">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </button>
+            <button onclick="switchDocView('list', this)" title="리스트">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showModal('modal-importexport')">
+            📥 가져오기
+          </button>
+        </div>
+
+        <!-- Grid View -->
+        <div class="doc-grid" id="doc-grid-view">
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">📋</div>
+            <div class="doc-card-title">001 — 기능 요구사항 (Functional Requirements)</div>
+            <div class="doc-card-tags">
+              <span class="tag">requirements</span>
+              <span class="tag">p0</span>
+            </div>
+            <div class="doc-card-excerpt">MarkFlow는 두 개의 레이어로 구성된다. 에디터 패키지(@markflow/editor)와 KMS SaaS...</div>
+            <div class="doc-card-meta">
+              <span>2시간 전</span>
+              <span>·</span>
+              <span>codevillain</span>
+            </div>
+          </div>
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">🏗</div>
+            <div class="doc-card-title">007 — 시스템 아키텍처 & 확장성</div>
+            <div class="doc-card-tags">
+              <span class="tag">architecture</span>
+              <span class="tag">backend</span>
+            </div>
+            <div class="doc-card-excerpt">Fastify + PostgreSQL + Redis + Cloudflare R2. 단계별 확장 전략과 모니터링 체계...</div>
+            <div class="doc-card-meta"><span>어제</span><span>·</span><span>jaykim</span></div>
+          </div>
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">🗺</div>
+            <div class="doc-card-title">008 — 개발 로드맵 (2026)</div>
+            <div class="doc-card-tags">
+              <span class="tag">roadmap</span>
+              <span class="badge badge-blue" style="font-size:10px;">New</span>
+            </div>
+            <div class="doc-card-excerpt">Phase 0 (완료) → Phase 1 (프로토타입) → Phase 2 (MVP) → Phase 3 (정식 출시)...</div>
+            <div class="doc-card-meta"><span>3일 전</span><span>·</span><span>codevillain</span></div>
+          </div>
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">🧩</div>
+            <div class="doc-card-title">002 — 컴포넌트 설계</div>
+            <div class="doc-card-tags">
+              <span class="tag">react</span>
+              <span class="tag">codemirror</span>
+            </div>
+            <div class="doc-card-excerpt">MarkdownEditor 루트 컴포넌트, Toolbar, EditorPane, PreviewPane 컴포넌트 트리...</div>
+            <div class="doc-card-meta"><span>4일 전</span><span>·</span><span>minapark</span></div>
+          </div>
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">🔌</div>
+            <div class="doc-card-title">005 — API 명세 (REST API Spec)</div>
+            <div class="doc-card-tags">
+              <span class="tag">api</span>
+              <span class="tag">backend</span>
+            </div>
+            <div class="doc-card-excerpt">Authentication, Workspace, Documents, Categories, Search, Embed Token API...</div>
+            <div class="doc-card-meta"><span>5일 전</span><span>·</span><span>jaykim</span></div>
+          </div>
+          <div class="doc-card" onclick="showAppPage('editor')">
+            <div class="doc-card-icon">🧪</div>
+            <div class="doc-card-title">006 — 테스트 명세</div>
+            <div class="doc-card-tags">
+              <span class="tag">testing</span>
+              <span class="tag">e2e</span>
+            </div>
+            <div class="doc-card-excerpt">유닛 테스트, 통합 테스트, E2E 시나리오. Vitest + Playwright 기반...</div>
+            <div class="doc-card-meta"><span>1주 전</span><span>·</span><span>minapark</span></div>
+          </div>
+        </div>
+
+        <!-- List View (hidden by default) -->
+        <div class="doc-list-view" id="doc-list-view" style="display:none;">
+          <div class="doc-list-item" onclick="showAppPage('editor')">
+            <div class="doc-list-icon">📋</div>
+            <div class="doc-list-info">
+              <div class="doc-list-title">001 — 기능 요구사항 (Functional Requirements)</div>
+              <div class="doc-list-meta"><span>requirements</span><span>p0</span><span>·</span><span>2시간 전 · codevillain</span></div>
+            </div>
+            <div class="badge badge-gray">버전 12</div>
+          </div>
+          <div class="doc-list-item" onclick="showAppPage('editor')">
+            <div class="doc-list-icon">🏗</div>
+            <div class="doc-list-info">
+              <div class="doc-list-title">007 — 시스템 아키텍처 & 확장성</div>
+              <div class="doc-list-meta"><span>architecture</span><span>backend</span><span>·</span><span>어제 · jaykim</span></div>
+            </div>
+            <div class="badge badge-gray">버전 7</div>
+          </div>
+          <div class="doc-list-item" onclick="showAppPage('editor')">
+            <div class="doc-list-icon">🗺</div>
+            <div class="doc-list-info">
+              <div class="doc-list-title">008 — 개발 로드맵 (2026)</div>
+              <div class="doc-list-meta"><span>roadmap</span><span>·</span><span>3일 전 · codevillain</span></div>
+            </div>
+            <div class="badge badge-blue">New</div>
+          </div>
+          <div class="doc-list-item" onclick="showAppPage('editor')">
+            <div class="doc-list-icon">🧩</div>
+            <div class="doc-list-info">
+              <div class="doc-list-title">002 — 컴포넌트 설계</div>
+              <div class="doc-list-meta"><span>react</span><span>codemirror</span><span>·</span><span>4일 전 · minapark</span></div>
+            </div>
+            <div class="badge badge-gray">버전 5</div>
+          </div>
+          <div class="doc-list-item" onclick="showAppPage('editor')">
+            <div class="doc-list-icon">🔌</div>
+            <div class="doc-list-info">
+              <div class="doc-list-title">005 — API 명세 (REST API Spec)</div>
+              <div class="doc-list-meta"><span>api</span><span>backend</span><span>·</span><span>5일 전 · jaykim</span></div>
+            </div>
+            <div class="badge badge-gray">버전 9</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Editor -->
+      <div id="page-editor" style="display:none;">
+        <div class="editor-shell">
+          <!-- Toolbar -->
+          <div class="editor-toolbar">
+            <div class="toolbar-group">
+              <button class="tb-btn tb-btn-text" onclick="insertMD('# ')">H1</button>
+              <button class="tb-btn tb-btn-text" onclick="insertMD('## ')">H2</button>
+              <button class="tb-btn tb-btn-text" onclick="insertMD('### ')">H3</button>
+            </div>
+            <div class="toolbar-sep"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn" title="굵게 (Ctrl+B)" onclick="insertMD('**', '**')"><strong>B</strong></button>
+              <button class="tb-btn" title="기울임 (Ctrl+I)" onclick="insertMD('*', '*')"><em>I</em></button>
+              <button class="tb-btn" title="취소선" onclick="insertMD('~~', '~~')"><s>S</s></button>
+              <button class="tb-btn" title="인라인 코드 (Ctrl+`)" onclick="insertMD('`', '`')" style="font-family:var(--font-m);">&lt;/&gt;</button>
+            </div>
+            <div class="toolbar-sep"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn" title="순서 없는 목록" onclick="insertMD('- ')">≡</button>
+              <button class="tb-btn" title="순서 있는 목록" onclick="insertMD('1. ')">①</button>
+              <button class="tb-btn" title="할 일 목록" onclick="insertMD('- [ ] ')">☐</button>
+            </div>
+            <div class="toolbar-sep"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn" title="인용구" onclick="insertMD('> ')">❞</button>
+              <button class="tb-btn" title="코드 블록" onclick="insertMD('```\n', '\n```')">{ }</button>
+              <button class="tb-btn" title="링크 (Ctrl+K)" onclick="insertMD('[', '](url)')">🔗</button>
+              <button class="tb-btn" title="이미지" onclick="insertMD('![alt](', ')')">🖼</button>
+              <button class="tb-btn" title="표" onclick="insertTable()">⊞</button>
+              <button class="tb-btn" title="수평선" onclick="insertMD('\n---\n')">━</button>
+            </div>
+            <div class="toolbar-sep"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn" title="수식 인라인 (KaTeX)" onclick="insertMD('$', '$')">∑</button>
+              <button class="tb-btn" title="수식 블록" onclick="insertMD('$$\n', '\n$$')">∫</button>
+            </div>
+            <div class="toolbar-sep" style="margin-left:auto;"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn active" id="btn-split" title="분할 화면" onclick="setLayout('split', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              </button>
+              <button class="tb-btn" id="btn-editor" title="에디터만" onclick="setLayout('editor', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="14" height="16" rx="2"/></svg>
+              </button>
+              <button class="tb-btn" id="btn-preview" title="미리보기만" onclick="setLayout('preview', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="4" width="14" height="16" rx="2"/></svg>
+              </button>
+            </div>
+            <div class="toolbar-sep"></div>
+            <div class="toolbar-group">
+              <button class="tb-btn" id="btn-meta" title="메타 패널 토글" onclick="toggleMeta()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="4" x2="17" y2="20"/><rect x="3" y="8" width="10" height="8" rx="1"/></svg>
+              </button>
+              <button class="tb-btn" title="Export" onclick="showModal('modal-importexport')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Editor Body -->
+          <div class="editor-body" id="editor-body">
+            <!-- Source Pane -->
+            <div class="editor-pane" id="editor-pane">
+              <div class="editor-pane-header">
+                <span>Markdown Source</span>
+                <span id="editor-status" style="font-weight:400;color:var(--text-3);">줄 1, 열 1</span>
+              </div>
+              <textarea class="editor-textarea" id="md-textarea" oninput="updatePreview()" onkeyup="updateCursor(event)" placeholder="마크다운을 작성하세요...
+# Heading 1
+## Heading 2
+**Bold**, *italic*, ~~strikethrough~~
+- Unordered list item
+1. Ordered list item
+- [ ] Task list item
+> Blockquote
+\`inline code\`
+[Link text](https://example.com)
+| Col1 | Col2 |
+|------|------|
+| A    | B    |"># 001 — 기능 요구사항 (Functional Requirements)
+
+> **버전:** 1.0.0  
+> **최종 수정:** 2026-03-26  
+> **상태 범례:** ✅ 구현 완료 · 🚧 진행 중 · 📋 계획됨
+
+---
+
+## 1. 제품 구성
+
+MarkFlow는 두 개의 레이어로 구성된다:
+
+| 레이어 | 패키지 | 설명 |
+|--------|--------|------|
+| **Editor** | `@markflow/editor` | 독립 Markdown 에디터 컴포넌트 |
+| **KMS** | `apps/` | 팀 지식 관리 SaaS |
+
+## Part A. Markdown 에디터
+
+### A1. Dual View 편집 `P0` ✅
+
+좌측 **Source 편집** + 우측 **실시간 Preview**
+
+- [x] 편집 내용이 미리보기에 즉시 반영
+- [x] 편집창 ↔ 미리보기 스크롤 동기화
+- [x] 레이아웃 3종 전환
+- [x] 라이트/다크 테마 전환
+
+### A2. 수식 지원 (KaTeX)
+
+인라인 수식: $E = mc^2$
+
+블록 수식:
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+
+### A3. 코드 구문 강조
+
+```typescript
+interface MarkdownEditorProps {
+  value?: string
+  onChange?: (value: string) => void
+  layout?: 'split' | 'editor' | 'preview'
+  theme?: 'light' | 'dark'
+}
+```</textarea>
+            </div>
+
+            <!-- Preview Pane -->
+            <div class="preview-pane" id="preview-pane">
+              <div class="editor-pane-header">
+                <span>Live Preview</span>
+                <div class="flex items-center gap-2">
+                  <span style="font-size:11px;color:var(--text-3);" id="word-count">Word count: 156</span>
+                </div>
+              </div>
+              <div class="preview-content" id="preview-output">
+                <h1>001 — 기능 요구사항 (Functional Requirements)</h1>
+                <blockquote><p><strong>버전:</strong> 1.0.0<br><strong>최종 수정:</strong> 2026-03-26</p></blockquote>
+                <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                <h2>1. 제품 구성</h2>
+                <p>MarkFlow는 두 개의 레이어로 구성된다:</p>
+                <table>
+                  <thead><tr><th>레이어</th><th>패키지</th><th>설명</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>Editor</strong></td><td><code>@markflow/editor</code></td><td>독립 Markdown 에디터 컴포넌트</td></tr>
+                    <tr><td><strong>KMS</strong></td><td><code>apps/</code></td><td>팀 지식 관리 SaaS</td></tr>
+                  </tbody>
+                </table>
+                <h2>Part A. Markdown 에디터</h2>
+                <h3>A1. Dual View 편집 P0 ✅</h3>
+                <p>좌측 <strong>Source 편집</strong> + 우측 <strong>실시간 Preview</strong></p>
+                <ul>
+                  <li>✅ 편집 내용이 미리보기에 즉시 반영</li>
+                  <li>✅ 편집창 ↔ 미리보기 스크롤 동기화</li>
+                  <li>✅ 레이아웃 3종 전환</li>
+                  <li>✅ 라이트/다크 테마 전환</li>
+                </ul>
+                <h3>A2. 수식 지원 (KaTeX)</h3>
+                <p>인라인 수식: <code>E = mc²</code></p>
+                <h3>A3. 코드 구문 강조</h3>
+                <pre><code>interface MarkdownEditorProps {
+  value?: string
+  onChange?: (value: string) => void
+  layout?: 'split' | 'editor' | 'preview'
+  theme?: 'light' | 'dark'
+}</code></pre>
+                <!-- Prev/Next nav -->
+                <div class="doc-nav">
+                  <div class="doc-nav-item" onclick="showModal('modal-links')">
+                    <div class="doc-nav-label">← 이전 문서</div>
+                    <div class="doc-nav-title">000 — 프로젝트 개요</div>
+                  </div>
+                  <div class="doc-nav-item" style="text-align:right;" onclick="showModal('modal-links')">
+                    <div class="doc-nav-label">다음 문서 →</div>
+                    <div class="doc-nav-title">002 — 컴포넌트 설계</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Meta Panel -->
+            <div class="meta-panel" id="meta-panel">
+              <div class="meta-panel-header">
+                <span style="font-size:14px;font-weight:600;">문서 속성</span>
+                <button class="btn-icon" onclick="toggleMeta()">✕</button>
+              </div>
+
+              <!-- Tags -->
+              <div class="meta-section">
+                <div class="meta-section-title">태그</div>
+                <div class="tag-list">
+                  <span class="tag">requirements <span style="opacity:.5">✕</span></span>
+                  <span class="tag">p0 <span style="opacity:.5">✕</span></span>
+                  <span class="tag">editor <span style="opacity:.5">✕</span></span>
+                  <span class="tag tag-add" onclick="showToast('태그 입력 모드')">+ 태그 추가</span>
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div class="meta-section">
+                <div class="meta-section-title">카테고리</div>
+                <select class="form-input" style="font-size:13px;padding:8px 10px;">
+                  <option>/ (루트)</option>
+                  <option selected>001 Requirements</option>
+                  <option>002 Architecture</option>
+                  <option>Design System</option>
+                </select>
+              </div>
+
+              <!-- Document Links -->
+              <div class="meta-section">
+                <div class="meta-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                  문서 링크
+                  <button class="btn btn-sm btn-secondary" onclick="showModal('modal-links')" style="font-size:11px;padding:3px 8px;">관리</button>
+                </div>
+                <div style="font-size:12px;color:var(--text-3);margin-bottom:8px;">← 이전</div>
+                <div class="link-doc-item">
+                  <span>📄</span>
+                  <span class="doc-title">000 — 프로젝트 개요</span>
+                  <button class="btn-icon" style="width:20px;height:20px;font-size:11px;">✕</button>
+                </div>
+                <div style="font-size:12px;color:var(--text-3);margin:8px 0;">다음 →</div>
+                <div class="link-doc-item">
+                  <span>📄</span>
+                  <span class="doc-title">002 — 컴포넌트 설계</span>
+                  <button class="btn-icon" style="width:20px;height:20px;font-size:11px;">✕</button>
+                </div>
+                <div style="font-size:12px;color:var(--text-3);margin:8px 0;">연관 문서</div>
+                <div class="link-doc-item">
+                  <span>📄</span>
+                  <span class="doc-title">007 — 아키텍처</span>
+                  <button class="btn-icon" style="width:20px;height:20px;font-size:11px;">✕</button>
+                </div>
+                <div class="link-doc-item">
+                  <span>📄</span>
+                  <span class="doc-title">008 — 로드맵</span>
+                  <button class="btn-icon" style="width:20px;height:20px;font-size:11px;">✕</button>
+                </div>
+                <button class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:6px;color:var(--accent);" onclick="showModal('modal-links')">+ 연관 문서 추가</button>
+              </div>
+
+              <!-- Document Structure Diagram -->
+              <div class="meta-section">
+                <div class="meta-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                  문서 연결 구조
+                  <button class="btn btn-sm btn-secondary" onclick="showModal('modal-doc-map')" style="font-size:11px;padding:3px 8px;">전체 보기</button>
+                </div>
+                <!-- Inline mini diagram -->
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 10px;cursor:pointer;" onclick="showModal('modal-doc-map')">
+                  <svg viewBox="0 0 260 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+                    <!-- Lines -->
+                    <line x1="30" y1="55" x2="78" y2="35" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="0"/>
+                    <line x1="30" y1="55" x2="78" y2="75" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <line x1="108" y1="35" x2="148" y2="55" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <line x1="178" y1="55" x2="218" y2="35" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="3 2"/>
+                    <line x1="178" y1="55" x2="218" y2="75" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="3 2"/>
+                    <!-- Arrow heads -->
+                    <polygon points="215,33 225,35 215,37" fill="#CBD5E1"/>
+                    <polygon points="215,73 225,75 215,77" fill="#CBD5E1"/>
+                    <!-- Root node -->
+                    <rect x="8" y="43" width="44" height="24" rx="5" fill="#F1F0EC" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <text x="30" y="59" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#57564F" font-weight="600">root</text>
+                    <!-- Category 1 -->
+                    <rect x="68" y="23" width="50" height="24" rx="5" fill="#EEF3FF" stroke="#93C5FD" stroke-width="1.5"/>
+                    <text x="93" y="39" text-anchor="middle" font-size="8.5" font-family="DM Sans,sans-serif" fill="#1343B0" font-weight="600">상위 카테고리 1</text>
+                    <!-- Category 2 -->
+                    <rect x="68" y="63" width="50" height="24" rx="5" fill="#F1F0EC" stroke="#CBD5E1" stroke-width="1.5"/>
+                    <text x="93" y="79" text-anchor="middle" font-size="8.5" font-family="DM Sans,sans-serif" fill="#57564F">상위 카테고리 2</text>
+                    <!-- Current doc (highlighted) -->
+                    <rect x="138" y="43" width="50" height="24" rx="5" fill="#1A56DB" stroke="#1343B0" stroke-width="2"/>
+                    <text x="163" y="59" text-anchor="middle" font-size="8.5" font-family="DM Sans,sans-serif" fill="#fff" font-weight="700">현재 문서</text>
+                    <!-- Prev doc -->
+                    <rect x="206" y="23" width="48" height="22" rx="4" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
+                    <text x="230" y="38" text-anchor="middle" font-size="8" font-family="DM Sans,sans-serif" fill="#16A34A">이전 문서</text>
+                    <!-- Next doc -->
+                    <rect x="206" y="63" width="48" height="22" rx="4" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
+                    <text x="230" y="78" text-anchor="middle" font-size="8" font-family="DM Sans,sans-serif" fill="#16A34A">다음 문서</text>
+                    <!-- Labels -->
+                    <text x="54" y="26" font-size="7" fill="#9A9890" font-family="DM Sans,sans-serif">parent</text>
+                    <text x="54" y="84" font-size="7" fill="#9A9890" font-family="DM Sans,sans-serif">parent</text>
+                    <text x="193" y="26" font-size="7" fill="#9A9890" font-family="DM Sans,sans-serif">prev</text>
+                    <text x="193" y="84" font-size="7" fill="#9A9890" font-family="DM Sans,sans-serif">next</text>
+                  </svg>
+                </div>
+                <p style="font-size:11.5px;color:var(--text-3);margin-top:7px;text-align:center;">클릭하면 전체 다이어그램을 확인합니다</p>
+              </div>
+                <div class="meta-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                  버전 히스토리
+                  <button class="btn btn-sm btn-secondary" onclick="showModal('modal-versions')" style="font-size:11px;padding:3px 8px;">전체 보기</button>
+                </div>
+                <div class="version-item">
+                  <div>
+                    <div style="font-weight:500;font-size:13px;">v12 (현재)</div>
+                    <div class="text-xs text-muted">2시간 전 · codevillain</div>
+                  </div>
+                  <span class="badge badge-blue">현재</span>
+                </div>
+                <div class="version-item">
+                  <div>
+                    <div style="font-weight:500;font-size:13px;">v11</div>
+                    <div class="text-xs text-muted">어제 · jaykim</div>
+                  </div>
+                  <button class="btn btn-sm btn-secondary" onclick="showModal('modal-versions')" style="font-size:11px;">복원</button>
+                </div>
+                <div class="version-item">
+                  <div>
+                    <div style="font-weight:500;font-size:13px;">v10</div>
+                    <div class="text-xs text-muted">3일 전 · codevillain</div>
+                  </div>
+                  <button class="btn btn-sm btn-secondary" onclick="showModal('modal-versions')" style="font-size:11px;">복원</button>
+                </div>
+              </div>
+
+              <!-- Collaborators -->
+              <div class="meta-section">
+                <div class="meta-section-title">실시간 편집 중</div>
+                <div class="flex items-center gap-3">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <div class="collab-avatar" style="background:#667eea;width:28px;height:28px;font-size:11px;border:2px solid var(--surface);">C</div>
+                    <div class="collab-avatar" style="background:#f97316;width:28px;height:28px;font-size:11px;border:2px solid var(--surface);margin-left:-8px;">J</div>
+                  </div>
+                  <span class="text-xs text-muted">2명 편집 중</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Settings -->
+      <div id="page-settings" style="display:none;">
+        <div class="settings-shell">
+          <div class="settings-nav">
+            <div class="settings-nav-title">워크스페이스</div>
+            <div class="settings-nav-item active" onclick="showSettingsPage('general', this)">⚙️ 일반</div>
+            <div class="settings-nav-item" onclick="showSettingsPage('members', this)">👥 멤버 관리</div>
+            <div class="settings-nav-item" onclick="showSettingsPage('theme', this)">🎨 CSS 테마</div>
+            <div class="settings-nav-item" onclick="showSettingsPage('embed', this)">🔌 임베드 연동</div>
+            <div class="settings-nav-title" style="margin-top:20px;">계정</div>
+            <div class="settings-nav-item" onclick="showSettingsPage('profile', this)">👤 프로필</div>
+            <div class="settings-nav-item" onclick="showSettingsPage('profile', this)">🔒 보안</div>
+          </div>
+          <div class="settings-content">
+
+            <!-- General -->
+            <div class="settings-page active" id="sp-general">
+              <div class="settings-page-title">일반 설정</div>
+              <div class="settings-page-desc">워크스페이스 기본 정보를 관리합니다.</div>
+              <div class="settings-section">
+                <div class="settings-section-title">워크스페이스 정보</div>
+                <div style="display:grid;gap:16px;max-width:480px;">
+                  <div class="form-group">
+                    <label class="form-label">워크스페이스 이름</label>
+                    <input class="form-input" value="MarkFlow Dev">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Slug (URL)</label>
+                    <input class="form-input" value="markflow-dev">
+                    <span class="form-hint">app.markflow.io/markflow-dev</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">설명</label>
+                    <textarea class="form-input" rows="2">MarkFlow 개발팀 문서 워크스페이스</textarea>
+                  </div>
+                  <div>
+                    <button class="btn btn-primary" onclick="showToast('저장되었습니다', 'success')">저장</button>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-section">
+                <div class="settings-section-title">공개 설정</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;max-width:480px;padding:14px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);">
+                  <div>
+                    <div style="font-weight:500;font-size:14px;">공개 읽기 허용</div>
+                    <div class="text-sm text-muted">로그인 없이 문서를 읽을 수 있습니다</div>
+                  </div>
+                  <div style="width:42px;height:24px;background:var(--border-2);border-radius:12px;position:relative;cursor:pointer;" onclick="toggleSwitch(this)">
+                    <div style="width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-section" style="border-top:1px solid var(--border);padding-top:24px;margin-top:32px;">
+                <div class="settings-section-title" style="color:var(--red);">위험 구역</div>
+                <div style="background:var(--red-lt);border:1px solid var(--red);border-radius:var(--radius);padding:16px;max-width:480px;">
+                  <p style="font-size:13.5px;margin-bottom:14px;color:var(--text-2);">워크스페이스를 삭제하면 모든 문서와 데이터가 영구적으로 삭제됩니다. <strong>Root 워크스페이스는 삭제할 수 없습니다.</strong></p>
+                  <button class="btn btn-danger btn-sm" onclick="showToast('이 작업은 취소할 수 없습니다. 워크스페이스 이름을 입력하여 확인하세요.', 'error')">워크스페이스 삭제</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Members -->
+            <div class="settings-page" id="sp-members">
+              <div class="settings-page-title">멤버 관리</div>
+              <div class="settings-page-desc">워크스페이스 멤버와 역할을 관리합니다.</div>
+
+              <!-- Sub-tabs -->
+              <div class="tabs-bar" style="margin-bottom:24px;">
+                <div class="tab-btn active" onclick="switchMemberTab('active', this)">멤버 목록</div>
+                <div class="tab-btn" onclick="switchMemberTab('requests', this)">
+                  가입 신청
+                  <span class="badge badge-red" style="margin-left:6px;font-size:10px;padding:1px 6px;">2</span>
+                </div>
+                <div class="tab-btn" onclick="switchMemberTab('invites', this)">초대 현황</div>
+                <div class="tab-btn" onclick="switchMemberTab('export', this)">내보내기</div>
+              </div>
+
+              <!-- TAB: Active Members -->
+              <div class="tab-panel active" id="mtab-active">
+                <div class="settings-section">
+                  <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                    멤버 목록 (3명)
+                    <div class="flex gap-2">
+                      <input class="form-input" placeholder="이름·이메일 검색" style="width:200px;padding:7px 11px;font-size:13px;">
+                      <button class="btn btn-primary btn-sm" onclick="showModal('modal-invite')">+ 초대</button>
+                    </div>
+                  </div>
+                  <div class="member-row">
+                    <div class="member-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2);">C</div>
+                    <div class="member-info">
+                      <div class="member-name">codevillain <span class="badge badge-purple" style="margin-left:6px;">나</span></div>
+                      <div class="member-email">codevillain@markflow.io · 가입일 2026-03-10</div>
+                    </div>
+                    <select class="role-badge-select"><option selected>Owner</option></select>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--text-3);" disabled>—</button>
+                  </div>
+                  <div class="member-row">
+                    <div class="member-avatar" style="background:linear-gradient(135deg,#f97316,#ea580c);">J</div>
+                    <div class="member-info">
+                      <div class="member-name">jaykim</div>
+                      <div class="member-email">jaykim@example.com · 가입일 2026-03-12</div>
+                    </div>
+                    <select class="role-badge-select" onchange="showToast('역할이 변경되었습니다', 'success')">
+                      <option>Owner</option><option>Admin</option><option selected>Editor</option><option>Viewer</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="showToast('jaykim님이 제거되었습니다')">제거</button>
+                  </div>
+                  <div class="member-row">
+                    <div class="member-avatar" style="background:linear-gradient(135deg,#10b981,#059669);">M</div>
+                    <div class="member-info">
+                      <div class="member-name">minapark</div>
+                      <div class="member-email">mina@example.com · 가입일 2026-03-15</div>
+                    </div>
+                    <select class="role-badge-select" onchange="showToast('역할이 변경되었습니다', 'success')">
+                      <option>Owner</option><option selected>Admin</option><option>Editor</option><option>Viewer</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="showToast('minapark님이 제거되었습니다')">제거</button>
+                  </div>
+                </div>
+                <div class="settings-section" style="background:var(--surface-2);border-radius:var(--radius-lg);padding:20px;border:1px solid var(--border);">
+                  <div class="settings-section-title">역할 권한 매트릭스</div>
+                  <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                    <thead><tr>
+                      <th style="text-align:left;padding:8px 12px;background:var(--surface);border:1px solid var(--border);">역할</th>
+                      <th style="padding:8px;border:1px solid var(--border);">문서 읽기</th>
+                      <th style="padding:8px;border:1px solid var(--border);">문서 작성</th>
+                      <th style="padding:8px;border:1px solid var(--border);">멤버 초대</th>
+                      <th style="padding:8px;border:1px solid var(--border);">설정 변경</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td style="padding:8px 12px;border:1px solid var(--border);font-weight:500;">Owner</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td></tr>
+                      <tr><td style="padding:8px 12px;border:1px solid var(--border);font-weight:500;">Admin</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td></tr>
+                      <tr><td style="padding:8px 12px;border:1px solid var(--border);font-weight:500;">Editor</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--red);">✗</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--red);">✗</td></tr>
+                      <tr><td style="padding:8px 12px;border:1px solid var(--border);font-weight:500;">Viewer</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--green);">✓</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--red);">✗</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--red);">✗</td><td style="text-align:center;padding:8px;border:1px solid var(--border);color:var(--red);">✗</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- TAB: Join Requests -->
+              <div class="tab-panel" id="mtab-requests" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                  <p style="font-size:13.5px;color:var(--text-2);">가입 신청자를 검토하고 승인하거나 거절하세요.</p>
+                  <div class="flex gap-2">
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('전체 거절 처리되었습니다')">전체 거절</button>
+                    <button class="btn btn-primary btn-sm" onclick="showToast('전체 승인 처리되었습니다', 'success')">전체 승인</button>
+                  </div>
+                </div>
+                <!-- Request item 1 -->
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:10px;">
+                  <div style="display:flex;align-items:flex-start;gap:13px;">
+                    <div class="member-avatar" style="background:linear-gradient(135deg,#06b6d4,#0891b2);width:40px;height:40px;font-size:16px;">S</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                        <span style="font-weight:600;font-size:14px;">sungminlee</span>
+                        <span class="badge badge-amber">신청 대기</span>
+                        <span style="font-size:12px;color:var(--text-3);margin-left:auto;">1일 전 신청</span>
+                      </div>
+                      <div style="font-size:12.5px;color:var(--text-3);margin-bottom:8px;">sungmin@company.com</div>
+                      <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text-2);border-left:3px solid var(--border-2);">
+                        "팀 프로젝트 문서 작업을 위해 가입 신청합니다. 백엔드 개발자입니다."
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+                    <label style="font-size:13px;font-weight:500;">승인 시 역할:</label>
+                    <select class="role-badge-select" style="flex:none;">
+                      <option>Admin</option><option selected>Editor</option><option>Viewer</option>
+                    </select>
+                    <div style="margin-left:auto;display:flex;gap:8px;">
+                      <button class="btn btn-secondary btn-sm" onclick="rejectRequest(this)">거절</button>
+                      <button class="btn btn-primary btn-sm" onclick="approveRequest(this)">✓ 승인</button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Request item 2 -->
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:10px;">
+                  <div style="display:flex;align-items:flex-start;gap:13px;">
+                    <div class="member-avatar" style="background:linear-gradient(135deg,#f43f5e,#e11d48);width:40px;height:40px;font-size:16px;">H</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                        <span style="font-weight:600;font-size:14px;">hyunjiseo</span>
+                        <span class="badge badge-amber">신청 대기</span>
+                        <span style="font-size:12px;color:var(--text-3);margin-left:auto;">3일 전 신청</span>
+                      </div>
+                      <div style="font-size:12.5px;color:var(--text-3);margin-bottom:8px;">hyunji@design.io</div>
+                      <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text-2);border-left:3px solid var(--border-2);">
+                        "디자인 시스템 문서 기여를 위해 가입합니다."
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+                    <label style="font-size:13px;font-weight:500;">승인 시 역할:</label>
+                    <select class="role-badge-select" style="flex:none;">
+                      <option>Admin</option><option>Editor</option><option selected>Viewer</option>
+                    </select>
+                    <div style="margin-left:auto;display:flex;gap:8px;">
+                      <button class="btn btn-secondary btn-sm" onclick="rejectRequest(this)">거절</button>
+                      <button class="btn btn-primary btn-sm" onclick="approveRequest(this)">✓ 승인</button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Already processed -->
+                <div style="background:var(--green-lt);border:1px solid var(--green);border-radius:var(--radius-lg);padding:14px 20px;display:flex;align-items:center;gap:12px;opacity:.7;">
+                  <div class="member-avatar" style="background:var(--green);width:36px;height:36px;font-size:14px;">K</div>
+                  <div style="flex:1;">
+                    <div style="font-size:14px;font-weight:500;">kangwoopark <span class="badge badge-green" style="margin-left:6px;">승인됨</span></div>
+                    <div style="font-size:12.5px;color:var(--text-3);">2일 전 · Editor 권한으로 승인</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB: Invites -->
+              <div class="tab-panel" id="mtab-invites" style="display:none;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                  <p style="font-size:13.5px;color:var(--text-2);">발송된 초대 링크를 관리합니다. 초대는 72시간 후 자동 만료됩니다.</p>
+                  <button class="btn btn-primary btn-sm" onclick="showModal('modal-invite')">+ 새 초대</button>
+                </div>
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+                  <div class="member-row" style="padding:14px 18px;">
+                    <div class="member-avatar" style="background:var(--surface-3);color:var(--text-3);font-size:14px;">?</div>
+                    <div class="member-info">
+                      <div class="member-name">invited@company.com</div>
+                      <div class="member-email">Viewer 권한 · 48시간 전 발송 · <strong style="color:var(--amber);">24시간 후 만료</strong></div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('재발송되었습니다', 'success')">재발송</button>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--red);">취소</button>
+                  </div>
+                  <div class="member-row" style="padding:14px 18px;border-bottom:none;">
+                    <div class="member-avatar" style="background:var(--surface-3);color:var(--text-3);font-size:14px;">?</div>
+                    <div class="member-info">
+                      <div class="member-name">dev@startup.io</div>
+                      <div class="member-email">Editor 권한 · 12시간 전 발송</div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('재발송되었습니다', 'success')">재발송</button>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--red);">취소</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB: Export -->
+              <div class="tab-panel" id="mtab-export" style="display:none;">
+                <p style="font-size:13.5px;color:var(--text-2);margin-bottom:24px;">멤버 목록, 권한 현황, 활동 내역을 내보냅니다.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:560px;">
+                  <div class="feature-card pointer" onclick="showToast('members.csv 다운로드 시작...', 'success')">
+                    <div class="feature-icon green" style="font-size:18px;">📊</div>
+                    <div class="feature-title">멤버 목록 CSV</div>
+                    <div class="feature-desc text-sm">이름, 이메일, 역할, 가입일 포함</div>
+                  </div>
+                  <div class="feature-card pointer" onclick="showToast('permissions.csv 다운로드 시작...', 'success')">
+                    <div class="feature-icon blue" style="font-size:18px;">🔒</div>
+                    <div class="feature-title">권한 현황 CSV</div>
+                    <div class="feature-desc text-sm">멤버별 역할 및 권한 범위</div>
+                  </div>
+                  <div class="feature-card pointer" onclick="showToast('activity-log.csv 다운로드 시작...', 'success')">
+                    <div class="feature-icon amber" style="font-size:18px;">📋</div>
+                    <div class="feature-title">활동 내역 CSV</div>
+                    <div class="feature-desc text-sm">문서 수정, 로그인, 권한 변경 이력</div>
+                  </div>
+                  <div class="feature-card pointer" onclick="showToast('workspace-report.pdf 생성 중...', 'success')">
+                    <div class="feature-icon purple" style="font-size:18px;">📑</div>
+                    <div class="feature-title">전체 보고서 PDF</div>
+                    <div class="feature-desc text-sm">멤버 + 권한 + 활동 종합 리포트</div>
+                  </div>
+                </div>
+                <div style="margin-top:20px;max-width:560px;">
+                  <div class="form-group">
+                    <label class="form-label">기간 필터</label>
+                    <div style="display:flex;gap:8px;">
+                      <input class="form-input" type="date" value="2026-01-01" style="flex:1;">
+                      <span style="display:flex;align-items:center;color:var(--text-3);">~</span>
+                      <input class="form-input" type="date" value="2026-03-26" style="flex:1;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            </div>
+
+            <!-- CSS Theme -->
+            <div class="settings-page" id="sp-theme">
+              <div class="settings-page-title">CSS 테마 시스템</div>
+              <div class="settings-page-desc">워크스페이스 단위로 문서 프리뷰 CSS를 커스터마이징합니다. Admin 이상만 편집 가능합니다.</div>
+              <div class="settings-section">
+                <div class="settings-section-title">프리셋 선택</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+                  <button class="btn btn-secondary active" style="background:var(--accent-2);border-color:var(--accent);color:var(--accent);" onclick="loadPreset('default')">Default</button>
+                  <button class="btn btn-secondary" onclick="loadPreset('github')">GitHub</button>
+                  <button class="btn btn-secondary" onclick="loadPreset('notion')">Notion</button>
+                  <button class="btn btn-secondary" onclick="loadPreset('dark')">Dark</button>
+                  <button class="btn btn-secondary" onclick="loadPreset('academic')">Academic</button>
+                </div>
+              </div>
+              <div class="settings-section">
+                <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+                  CSS 편집기
+                  <div class="flex gap-2">
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('CSS 유효성 검사 통과 ✓', 'success')">검증</button>
+                    <button class="btn btn-primary btn-sm" onclick="showToast('워크스페이스에 적용되었습니다', 'success')">저장 & 적용</button>
+                  </div>
+                </div>
+                <textarea class="css-editor" id="css-editor" rows="14">.mf-preview-content {
+  --mf-font-body:        'Pretendard', 'DM Sans', sans-serif;
+  --mf-font-code:        'JetBrains Mono', monospace;
+  --mf-color-heading:    #1a1916;
+  --mf-color-body:       #374151;
+  --mf-color-link:       #1A56DB;
+  --mf-color-code-bg:    #f3f4f6;
+  --mf-color-blockquote: #6b7280;
+  --mf-line-height:      1.75;
+  --mf-max-width:        720px;
+  --mf-heading-font:     'Sora', var(--mf-font-body);
+}
+
+/* 제목 스타일 커스터마이징 */
+.mf-preview-content h1 {
+  border-bottom: 2px solid var(--mf-color-heading);
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+}</textarea>
+                <div style="background:var(--amber-lt);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:10px 14px;font-size:12.5px;margin-top:12px;color:var(--text-2);">
+                  ⚠️ <strong>Phase 1:</strong> CSS 변수(<code>--mf-*</code>) 오버라이드만 허용합니다. Phase 2+에서 전체 CSS 편집이 가능해집니다.
+                </div>
+              </div>
+            </div>
+
+            <!-- Embed -->
+            <div class="settings-page" id="sp-embed">
+              <div class="settings-page-title">임베드 연동</div>
+              <div class="settings-page-desc">세 가지 방식으로 외부 프로젝트에 MarkFlow 에디터를 통합할 수 있습니다.</div>
+              <div class="tabs-bar">
+                <div class="tab-btn active" onclick="switchEmbedTab('npm', this)">① NPM 패키지</div>
+                <div class="tab-btn" onclick="switchEmbedTab('iframe', this)">② iframe Embed</div>
+                <div class="tab-btn" onclick="switchEmbedTab('api', this)">③ REST API</div>
+              </div>
+
+              <div class="tab-panel active" id="embed-npm">
+                <div style="background:var(--green-lt);border:1px solid var(--green);border-radius:var(--radius);padding:12px 16px;font-size:13px;margin-bottom:20px;color:var(--text-2);">
+                  ✅ KMS 백엔드 없이 에디터만 독립 동작. React/Next.js 앱에 직접 설치하세요.
+                </div>
+                <div class="embed-code-block">
+<span class="cm"># 설치</span>
+<span class="kw">npm</span> install <span class="str">@markflow/editor</span>
+                </div>
+                <div class="embed-code-block">
+<span class="cm">// 사용 예시 (React)</span>
+<span class="kw">import</span> { MarkdownEditor } <span class="kw">from</span> <span class="str">'@markflow/editor'</span>
+<span class="kw">import</span> <span class="str">'@markflow/editor/styles'</span>
+
+<span class="kw">export default function</span> MyApp() {
+  <span class="kw">const</span> [value, setValue] = useState(<span class="str">''</span>)
+  <span class="kw">return</span> (
+    &lt;MarkdownEditor
+      value={value}
+      onChange={setValue}
+      layout=<span class="str">"split"</span>
+      theme=<span class="str">"light"</span>
+      onSave={<span class="kw">async</span> (v) =&gt; <span class="kw">await</span> myDB.save(v)}
+      onImageUpload={uploadToMyR2}
+    /&gt;
+  )
+}
+                </div>
+                <p style="font-size:13px;color:var(--text-2);">KMS 연결 없이도 동작합니다. <code>localStorage</code> 저장 폴백이 내장되어 있습니다.</p>
+              </div>
+
+              <div class="tab-panel" id="embed-iframe" style="display:none;">
+                <div style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:var(--radius);padding:12px 16px;font-size:13px;margin-bottom:20px;color:var(--text-2);">
+                  ✅ 어떤 환경에서도 동작. Guest Token으로 권한 범위를 제한합니다.
+                </div>
+                <div class="settings-section-title">Guest Token 발급</div>
+                <div style="display:grid;gap:14px;max-width:480px;margin-bottom:20px;">
+                  <div class="form-group">
+                    <label class="form-label">토큰 라벨</label>
+                    <input class="form-input" placeholder="예: 외부 블로그 임베드">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">권한 범위</label>
+                    <select class="form-input">
+                      <option>읽기 전용 (read)</option>
+                      <option selected>읽기 + 쓰기 (read-write)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">만료일</label>
+                    <input class="form-input" type="date" value="2026-12-31">
+                  </div>
+                  <button class="btn btn-primary" style="width:fit-content;" onclick="showToast('토큰이 생성되었습니다!', 'success')">+ 토큰 발급</button>
+                </div>
+                <div class="settings-section-title">발급된 토큰</div>
+                <div class="token-row">
+                  <div>
+                    <div class="token-label">외부 블로그 임베드</div>
+                    <div class="token-key">mf_gt_a1b2c3d4...••••</div>
+                  </div>
+                  <span class="badge badge-green">read-write</span>
+                  <span class="badge badge-gray">D-182</span>
+                  <button class="btn btn-secondary btn-sm" onclick="showToast('클립보드에 복사됨 ✓', 'success')">복사</button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--red);">폐기</button>
+                </div>
+                <div class="embed-code-block" style="margin-top:16px;">
+<span class="cm">&lt;!-- iframe 임베드 --&gt;</span>
+&lt;<span class="kw">iframe</span>
+  src=<span class="str">"https://app.markflow.io/embed/doc/DOC_ID
+       ?token=mf_gt_a1b2c3d4...
+       &amp;readOnly=false
+       &amp;theme=light
+       &amp;hideToolbar=false"</span>
+  width=<span class="str">"100%"</span>
+  height=<span class="str">"600"</span>
+  frameborder=<span class="str">"0"</span>
+/&gt;
+
+<span class="cm">// postMessage 수신</span>
+<span class="kw">window</span>.addEventListener(<span class="str">'message'</span>, (e) =&gt; {
+  <span class="kw">if</span> (e.data?.type === <span class="str">'mf:content-changed'</span>)
+    console.log(e.data.content)
+})
+                </div>
+              </div>
+
+              <div class="tab-panel" id="embed-api" style="display:none;">
+                <div style="background:var(--purple-lt);border:1px solid var(--purple);border-radius:var(--radius);padding:12px 16px;font-size:13px;margin-bottom:20px;color:var(--text-2);">
+                  ✅ 헤드리스 CMS 방식. 직접 API를 호출하여 문서를 읽고 씁니다.
+                </div>
+                <div class="embed-code-block">
+<span class="cm">// 문서 읽기</span>
+<span class="kw">const</span> res = <span class="kw">await</span> fetch(
+  <span class="str">'https://api.markflow.io/v1/documents/DOC_ID'</span>,
+  { headers: { <span class="str">'Authorization'</span>: <span class="str">'Bearer mf_gt_...'</span> } }
+)
+<span class="kw">const</span> { content, title } = <span class="kw">await</span> res.json()
+
+<span class="cm">// 문서 저장</span>
+<span class="kw">await</span> fetch(
+  <span class="str">'https://api.markflow.io/v1/documents/DOC_ID'</span>,
+  {
+    method: <span class="str">'PATCH'</span>,
+    headers: {
+      <span class="str">'Authorization'</span>: <span class="str">'Bearer mf_gt_...'</span>,
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>
+    },
+    body: JSON.stringify({ content: newMarkdown })
+  }
+)
+                </div>
+              </div>
+            </div>
+
+            <!-- Profile -->
+            <div class="settings-page" id="sp-profile">
+              <div class="settings-page-title">프로필 설정</div>
+              <div class="settings-page-desc">계정 정보와 아바타를 관리합니다.</div>
+              <div style="display:flex;align-items:flex-start;gap:24px;margin-bottom:28px;">
+                <div class="user-avatar" style="width:70px;height:70px;font-size:26px;cursor:pointer;" title="클릭하여 변경">C</div>
+                <div>
+                  <button class="btn btn-secondary btn-sm">아바타 변경</button>
+                  <p class="text-xs text-muted" style="margin-top:6px;">JPG/PNG, 최대 2MB</p>
+                </div>
+              </div>
+              <div style="display:grid;gap:16px;max-width:480px;">
+                <div class="form-group">
+                  <label class="form-label">이름</label>
+                  <input class="form-input" value="codevillain">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">이메일</label>
+                  <input class="form-input" value="codevillain@markflow.io" type="email">
+                </div>
+                <button class="btn btn-primary" style="width:fit-content;" onclick="showToast('프로필이 저장되었습니다', 'success')">저장</button>
+              </div>
+            </div>
+
+          </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+
+<!-- Search Modal -->
+<div class="modal-overlay" id="modal-search" onclick="closeModalOutside(event, 'modal-search')">
+  <div class="modal search-modal" onclick="event.stopPropagation()">
+    <div class="search-input-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="search-input" placeholder="문서 검색..." oninput="handleSearch(this.value)" autofocus>
+      <kbd style="font-size:12px;background:var(--surface-2);padding:2px 8px;border-radius:4px;color:var(--text-3);">Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results">
+      <div style="padding:8px 14px 4px;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.07em;text-transform:uppercase;">최근 문서</div>
+      <div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">📋</div>
+        <div>
+          <div class="search-result-title">001 — 기능 요구사항</div>
+          <div class="search-result-path">MarkFlow Dev / 001 Requirements</div>
+        </div>
+      </div>
+      <div class="search-result-item selected" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">🗺</div>
+        <div>
+          <div class="search-result-title">008 — 개발 로드맵 (2026)</div>
+          <div class="search-result-path">MarkFlow Dev / (루트)</div>
+        </div>
+      </div>
+      <div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">🏗</div>
+        <div>
+          <div class="search-result-title">007 — 시스템 아키텍처</div>
+          <div class="search-result-path">MarkFlow Dev / 002 Architecture</div>
+        </div>
+      </div>
+      <div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">🧩</div>
+        <div>
+          <div class="search-result-title">002 — 컴포넌트 설계</div>
+          <div class="search-result-path">MarkFlow Dev / 002 Architecture</div>
+        </div>
+      </div>
+    </div>
+    <div class="search-footer">
+      <span><kbd>↑↓</kbd> 탐색</span>
+      <span><kbd>Enter</kbd> 열기</span>
+      <span><kbd>Esc</kbd> 닫기</span>
+    </div>
+  </div>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="modal-overlay" id="modal-importexport" onclick="closeModalOutside(event, 'modal-importexport')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">가져오기 / 내보내기</div>
+      <button class="btn-icon" onclick="closeModal('modal-importexport')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs-bar" style="margin-bottom:20px;">
+        <div class="tab-btn active" onclick="switchTab('import-export', 'import', this)">📥 가져오기</div>
+        <div class="tab-btn" onclick="switchTab('import-export', 'export', this)">📤 내보내기</div>
+      </div>
+      <div class="tab-panel active" id="ie-import">
+        <div class="import-step selected" onclick="selectImportType(this, 'md')">
+          <div class="import-step-num">1</div>
+          <div>
+            <div style="font-weight:500;font-size:14px;">Markdown 파일 (.md)</div>
+            <div class="text-sm text-muted">단일 .md 파일을 현재 워크스페이스에 가져옵니다</div>
+          </div>
+        </div>
+        <div class="import-step" onclick="selectImportType(this, 'zip')">
+          <div class="import-step-num">2</div>
+          <div>
+            <div style="font-weight:500;font-size:14px;">ZIP 아카이브 (.zip)</div>
+            <div class="text-sm text-muted">폴더 구조가 보존된 ZIP 파일을 일괄 가져옵니다</div>
+          </div>
+        </div>
+        <div class="import-step" onclick="selectImportType(this, 'html')">
+          <div class="import-step-num">3</div>
+          <div>
+            <div style="font-weight:500;font-size:14px;">HTML 파일 (.html) <span class="badge badge-amber" style="margin-left:6px;">P1</span></div>
+            <div class="text-sm text-muted">Turndown으로 HTML → Markdown 자동 변환</div>
+          </div>
+        </div>
+        <div class="import-step" onclick="selectImportType(this, 'pdf')">
+          <div class="import-step-num">4</div>
+          <div>
+            <div style="font-weight:500;font-size:14px;">PDF 파일 (.pdf) <span class="badge badge-gray" style="margin-left:6px;">P2 베스트에포트</span></div>
+            <div class="text-sm text-muted">pdfjs-dist로 텍스트 추출 후 Markdown 변환 (이미지/표 제한적)</div>
+          </div>
+        </div>
+        <div class="drop-zone" style="margin-top:16px;">
+          <div style="font-size:24px;margin-bottom:10px;">📂</div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:6px;">파일을 여기에 드래그하거나</div>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('파일 선택 다이얼로그 (실제 구현 시)', 'success')">파일 선택</button>
+          <div class="text-xs text-muted" style="margin-top:10px;">지원 형식: .md, .zip, .html, .pdf · 최대 50MB</div>
+        </div>
+      </div>
+      <div class="tab-panel" id="ie-export" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="feature-card pointer" onclick="showToast('현재 문서를 .md로 내보내는 중...', 'success')">
+            <div class="feature-icon blue" style="font-size:20px;">📄</div>
+            <div class="feature-title">Markdown (.md)</div>
+            <div class="feature-desc text-sm">현재 문서를 .md 파일로 다운로드</div>
+          </div>
+          <div class="feature-card pointer" onclick="showToast('ZIP 패키지 생성 중...', 'success')">
+            <div class="feature-icon green" style="font-size:20px;">📦</div>
+            <div class="feature-title">ZIP 아카이브</div>
+            <div class="feature-desc text-sm">카테고리/폴더 구조 보존하여 일괄 내보내기</div>
+          </div>
+          <div class="feature-card pointer" onclick="showToast('HTML 파일 생성 중... (인라인 CSS 포함)', 'success')">
+            <div class="feature-icon amber" style="font-size:20px;">🌐</div>
+            <div class="feature-title">HTML <span class="badge badge-amber" style="font-size:10px;">P1</span></div>
+            <div class="feature-desc text-sm">렌더링된 HTML + 워크스페이스 CSS 인라인 포함</div>
+          </div>
+          <div class="feature-card pointer" onclick="showToast('Puppeteer PDF 생성 중... (서버사이드)', 'success')">
+            <div class="feature-icon red" style="font-size:20px;">📑</div>
+            <div class="feature-title">PDF <span class="badge badge-amber" style="font-size:10px;">P1</span></div>
+            <div class="feature-desc text-sm">Puppeteer 서버사이드 생성. 워크스페이스 CSS 테마 반영</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:14px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:500;margin-bottom:8px;">내보내기 범위 선택</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="radio" name="export-scope" checked> 현재 문서만</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="radio" name="export-scope"> 현재 카테고리</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="radio" name="export-scope"> 전체 워크스페이스</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-importexport')">취소</button>
+      <button class="btn btn-primary" onclick="showToast('처리 중...', 'success');closeModal('modal-importexport')">실행</button>
+    </div>
+  </div>
+</div>
+
+<!-- Version History Modal -->
+<div class="modal-overlay" id="modal-versions" onclick="closeModalOutside(event, 'modal-versions')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">버전 히스토리</div>
+      <button class="btn-icon" onclick="closeModal('modal-versions')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">001 — 기능 요구사항 · 총 12개 버전</p>
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;height:380px;">
+        <div style="border:1px solid var(--border);border-radius:var(--radius);overflow-y:auto;">
+          <div style="padding:6px;background:var(--surface);">
+            <div class="version-list-item" style="padding:10px 12px;border-radius:var(--radius-sm);background:var(--accent-2);cursor:pointer;margin-bottom:4px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div style="font-weight:600;font-size:13px;color:var(--accent);">v12 (현재)</div>
+                <span class="badge badge-blue">현재</span>
+              </div>
+              <div class="text-xs text-muted">2시간 전 · codevillain</div>
+            </div>
+            <div class="version-list-item" onclick="selectVersion(this)" style="padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px;">
+              <div style="font-weight:500;font-size:13px;">v11</div>
+              <div class="text-xs text-muted">어제 · jaykim</div>
+            </div>
+            <div class="version-list-item" onclick="selectVersion(this)" style="padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px;">
+              <div style="font-weight:500;font-size:13px;">v10</div>
+              <div class="text-xs text-muted">3일 전 · codevillain</div>
+            </div>
+            <div class="version-list-item" onclick="selectVersion(this)" style="padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px;">
+              <div style="font-weight:500;font-size:13px;">v9</div>
+              <div class="text-xs text-muted">5일 전 · minapark</div>
+            </div>
+            <div class="version-list-item" onclick="selectVersion(this)" style="padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:4px;">
+              <div style="font-weight:500;font-size:13px;">v8</div>
+              <div class="text-xs text-muted">1주 전 · codevillain</div>
+            </div>
+            <div class="version-list-item" onclick="selectVersion(this)" style="padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;">
+              <div style="font-weight:500;font-size:13px;">v1 (초안)</div>
+              <div class="text-xs text-muted">3월 10일 · codevillain</div>
+            </div>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:16px;overflow-y:auto;background:var(--bg);">
+          <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em;">v12 내용 미리보기</div>
+          <div style="font-family:var(--font-m);font-size:12px;line-height:1.8;color:var(--text-2);">
+            <span style="color:var(--green);">+ ## Part B. KMS SaaS</span><br>
+            <span style="color:var(--green);">+ ### B12. Embed 연동 P1</span><br>
+            <span style="color:var(--green);">+ 3가지 연동 방식 지원...</span><br>
+            <span style="color:var(--text-3);"> ### B11. Root 워크스페이스</span><br>
+            <span style="color:var(--text-3);"> 회원가입 완료 시 자동 생성</span><br>
+            <span style="color:var(--red);">- ~~기존 내용~~</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-versions')">닫기</button>
+      <button class="btn btn-secondary" onclick="showToast('v11 미리보기 열기...')">미리보기</button>
+      <button class="btn btn-primary" onclick="showToast('v11로 복원되었습니다', 'success');closeModal('modal-versions')">이 버전으로 복원</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Links Modal -->
+<div class="modal-overlay" id="modal-links" onclick="closeModalOutside(event, 'modal-links')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">문서 링크 관리</div>
+      <button class="btn-icon" onclick="closeModal('modal-links')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">← 이전 문서 (Prev)</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" placeholder="문서 검색..." value="000 — 프로젝트 개요" style="flex:1;">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('문서 검색 팝업')">검색</button>
+        </div>
+        <span class="form-hint">순환 참조 자동 감지 (DFS)</span>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">다음 문서 (Next) →</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" placeholder="문서 검색..." value="002 — 컴포넌트 설계" style="flex:1;">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('문서 검색 팝업')">검색</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">연관 문서 (최대 20개)</label>
+        <div style="background:var(--surface-2);border-radius:var(--radius);padding:10px;border:1px solid var(--border);margin-bottom:8px;">
+          <div class="link-doc-item" style="margin-bottom:6px;">
+            <span>📄</span><span style="flex:1;font-size:13px;">007 — 시스템 아키텍처</span>
+            <button onclick="showToast('연관 문서 제거')" style="color:var(--red);font-size:12px;cursor:pointer;background:none;border:none;">✕</button>
+          </div>
+          <div class="link-doc-item">
+            <span>📄</span><span style="flex:1;font-size:13px;">008 — 개발 로드맵</span>
+            <button onclick="showToast('연관 문서 제거')" style="color:var(--red);font-size:12px;cursor:pointer;background:none;border:none;">✕</button>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('문서 검색하여 추가')">+ 연관 문서 추가</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-links')">취소</button>
+      <button class="btn btn-primary" onclick="showToast('링크 저장 완료', 'success');closeModal('modal-links')">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="modal-overlay" id="modal-invite" onclick="closeModalOutside(event, 'modal-invite')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">멤버 초대</div>
+      <button class="btn-icon" onclick="closeModal('modal-invite')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:var(--text-2);margin-bottom:20px;">이메일로 초대 링크를 발송합니다. 초대는 <strong>72시간</strong> 동안 유효합니다.</p>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">이메일 주소</label>
+        <input class="form-input" type="email" placeholder="colleague@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">역할</label>
+        <select class="form-input">
+          <option>Owner</option>
+          <option>Admin</option>
+          <option selected>Editor</option>
+          <option>Viewer</option>
+        </select>
+        <span class="form-hint">Editor: 문서 읽기·작성 가능. 멤버 초대 및 설정 변경 불가.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-invite')">취소</button>
+      <button class="btn btn-primary" onclick="showToast('초대 이메일을 발송했습니다! 📨', 'success');closeModal('modal-invite')">초대 발송</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Workspace Modal -->
+<div class="modal-overlay" id="modal-create-ws" onclick="closeModalOutside(event, 'modal-create-ws')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">새 워크스페이스 생성</div>
+      <button class="btn-icon" onclick="closeModal('modal-create-ws')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">워크스페이스 이름</label>
+        <input class="form-input" placeholder="예: Product Team" oninput="updateSlug(this)">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Slug (URL)</label>
+        <div style="display:flex;align-items:center;gap:0;">
+          <span style="padding:10px 12px;background:var(--surface-2);border:1.5px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);font-size:12.5px;color:var(--text-3);">app.markflow.io/</span>
+          <input class="form-input" id="ws-slug" placeholder="product-team" style="border-radius:0 var(--radius-sm) var(--radius-sm) 0;flex:1;">
+        </div>
+      </div>
+      <div style="background:var(--teal-lt);border:1px solid var(--teal);border-radius:var(--radius-sm);padding:10px 14px;font-size:12.5px;color:var(--text-2);">
+        ✓ Free 플랜: 최대 1개 워크스페이스 (Root 포함). Team 플랜으로 업그레이드하면 무제한으로 생성 가능합니다.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-create-ws')">취소</button>
+      <button class="btn btn-primary" onclick="showToast('워크스페이스가 생성되었습니다!', 'success');closeModal('modal-create-ws');showScreen('app')">생성</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Structure Map Modal -->
+<div class="modal-overlay" id="modal-doc-map" onclick="closeModalOutside(event, 'modal-doc-map')">
+  <div class="modal modal-xl" onclick="event.stopPropagation()" style="max-height:92vh;">
+    <div class="modal-header">
+      <div class="modal-title">문서 연결 구조 다이어그램</div>
+      <div class="flex items-center gap-2">
+        <span style="font-size:12.5px;color:var(--text-3);">001 — 기능 요구사항</span>
+        <button class="btn-icon" onclick="closeModal('modal-doc-map')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding:16px 24px 20px;">
+      <!-- Legend -->
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:18px;padding:12px 16px;background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);">
+          <div style="width:16px;height:16px;background:#1A56DB;border-radius:3px;"></div> 현재 문서
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);">
+          <div style="width:16px;height:16px;background:#EEF3FF;border:1.5px solid #93C5FD;border-radius:3px;"></div> 상위 카테고리
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);">
+          <div style="width:16px;height:16px;background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:3px;"></div> 이전 / 다음
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);">
+          <div style="width:16px;height:16px;background:#F5F3FF;border:1.5px solid #C4B5FD;border-radius:3px;"></div> 연관 문서
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);">
+          <div style="width:16px;height:16px;background:#F1F0EC;border:1.5px solid #CBD5E1;border-radius:3px;"></div> Root / 일반
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="zoomDiagram(.85)">−</button>
+          <button class="btn btn-secondary btn-sm" onclick="zoomDiagram(1)">1:1</button>
+          <button class="btn btn-secondary btn-sm" onclick="zoomDiagram(1.15)">+</button>
+        </div>
+      </div>
+      <!-- Main Diagram -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:auto;padding:24px;" id="diagram-wrap">
+        <svg id="doc-diagram" viewBox="0 0 820 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:700px;height:auto;display:block;">
+          <!-- Edges -->
+          <line x1="90" y1="200" x2="218" y2="120" stroke="#CBD5E1" stroke-width="2"/>
+          <line x1="90" y1="200" x2="218" y2="280" stroke="#CBD5E1" stroke-width="2"/>
+          <line x1="316" y1="120" x2="404" y2="200" stroke="#93C5FD" stroke-width="2"/>
+          <line x1="316" y1="280" x2="404" y2="200" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5 3" opacity=".5"/>
+          <line x1="536" y1="200" x2="580" y2="120" stroke="#86EFAC" stroke-width="2"/>
+          <line x1="536" y1="200" x2="686" y2="200" stroke="#86EFAC" stroke-width="2"/>
+          <line x1="536" y1="200" x2="680" y2="120" stroke="#C4B5FD" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <line x1="536" y1="200" x2="680" y2="280" stroke="#C4B5FD" stroke-width="1.5" stroke-dasharray="5 3"/>
+          <line x1="267" y1="120" x2="267" y2="50" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="3 2" opacity=".5"/>
+          <!-- Arrow heads -->
+          <polygon points="577,118 587,120 577,122" fill="#86EFAC"/>
+          <polygon points="683,118 693,120 683,122" fill="#C4B5FD"/>
+          <polygon points="683,198 693,200 683,202" fill="#86EFAC"/>
+          <polygon points="677,278 687,280 677,282" fill="#C4B5FD"/>
+          <!-- Root node -->
+          <g class="graph-node" onclick="showToast('Root 워크스페이스')">
+            <rect x="20" y="175" width="90" height="50" rx="8" fill="#F1F0EC" stroke="#CBD5E1" stroke-width="2"/>
+            <text x="65" y="196" text-anchor="middle" font-size="11" font-family="Sora,DM Sans,sans-serif" fill="#57564F" font-weight="700">root</text>
+            <text x="65" y="213" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#9A9890">MarkFlow Dev</text>
+          </g>
+          <!-- Cat 1 -->
+          <g class="graph-node" onclick="showToast('001 Requirements 카테고리')">
+            <rect x="218" y="95" width="98" height="50" rx="8" fill="#EEF3FF" stroke="#93C5FD" stroke-width="2"/>
+            <text x="267" y="115" text-anchor="middle" font-size="10" font-family="Sora,DM Sans,sans-serif" fill="#1343B0" font-weight="700">상위 카테고리 1</text>
+            <text x="267" y="132" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#1A56DB">001 Requirements</text>
+          </g>
+          <rect x="243" y="28" width="48" height="22" rx="5" fill="#F1F0EC" stroke="#CBD5E1" stroke-width="1.5" opacity=".7"/>
+          <text x="267" y="43" text-anchor="middle" font-size="8.5" font-family="DM Sans,sans-serif" fill="#9A9890">000 — 개요</text>
+          <!-- Cat 2 -->
+          <g class="graph-node" onclick="showToast('002 Architecture 카테고리')">
+            <rect x="218" y="255" width="98" height="50" rx="8" fill="#F1F0EC" stroke="#CBD5E1" stroke-width="1.5"/>
+            <text x="267" y="275" text-anchor="middle" font-size="10" font-family="Sora,DM Sans,sans-serif" fill="#57564F" font-weight="600">상위 카테고리 2</text>
+            <text x="267" y="292" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#9A9890">002 Architecture</text>
+          </g>
+          <!-- Current doc -->
+          <g class="graph-node">
+            <rect x="404" y="165" width="134" height="70" rx="10" fill="#1A56DB" stroke="#1343B0" stroke-width="2.5"/>
+            <rect x="400" y="161" width="142" height="78" rx="13" fill="none" stroke="#93C5FD" stroke-width="1.5" opacity=".5">
+              <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite"/>
+            </rect>
+            <text x="471" y="190" text-anchor="middle" font-size="11" font-family="Sora,DM Sans,sans-serif" fill="#fff" font-weight="700">현재 문서</text>
+            <text x="471" y="207" text-anchor="middle" font-size="9.5" font-family="DM Sans,sans-serif" fill="rgba(255,255,255,.85)">001 — 기능 요구사항</text>
+            <text x="471" y="222" text-anchor="middle" font-size="8.5" font-family="DM Sans,sans-serif" fill="rgba(255,255,255,.55)">v12 · 2시간 전 수정</text>
+          </g>
+          <!-- Prev -->
+          <g class="graph-node" onclick="showToast('이전 문서 열기: 000 — 프로젝트 개요')">
+            <rect x="580" y="95" width="130" height="50" rx="8" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2"/>
+            <text x="645" y="114" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#16A34A" font-weight="600">← 이전 문서 (prev)</text>
+            <text x="645" y="130" text-anchor="middle" font-size="9.5" font-family="Sora,DM Sans,sans-serif" fill="#15803D" font-weight="600">000 — 프로젝트 개요</text>
+          </g>
+          <!-- Next -->
+          <g class="graph-node" onclick="showToast('다음 문서 열기: 002 — 컴포넌트 설계')">
+            <rect x="686" y="175" width="126" height="50" rx="8" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2"/>
+            <text x="749" y="194" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#16A34A" font-weight="600">다음 문서 (next) →</text>
+            <text x="749" y="210" text-anchor="middle" font-size="9.5" font-family="Sora,DM Sans,sans-serif" fill="#15803D" font-weight="600">002 — 컴포넌트 설계</text>
+          </g>
+          <!-- Related 1 -->
+          <g class="graph-node" onclick="showToast('연관 문서 열기: 007 — 시스템 아키텍처')">
+            <rect x="680" y="95" width="130" height="48" rx="8" fill="#F5F3FF" stroke="#C4B5FD" stroke-width="1.5"/>
+            <text x="745" y="114" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#7C3AED">연관 문서 (related)</text>
+            <text x="745" y="130" text-anchor="middle" font-size="9.5" font-family="Sora,DM Sans,sans-serif" fill="#6D28D9" font-weight="600">007 — 아키텍처</text>
+          </g>
+          <!-- Related 2 -->
+          <g class="graph-node" onclick="showToast('연관 문서 열기: 008 — 로드맵')">
+            <rect x="680" y="260" width="130" height="48" rx="8" fill="#F5F3FF" stroke="#C4B5FD" stroke-width="1.5"/>
+            <text x="745" y="279" text-anchor="middle" font-size="9" font-family="DM Sans,sans-serif" fill="#7C3AED">연관 문서 (related)</text>
+            <text x="745" y="295" text-anchor="middle" font-size="9.5" font-family="Sora,DM Sans,sans-serif" fill="#6D28D9" font-weight="600">008 — 로드맵</text>
+          </g>
+          <!-- Bottom axis -->
+          <line x1="40" y1="360" x2="790" y2="360" stroke="#E2E0D8" stroke-width="1"/>
+          <polygon points="787,356 795,360 787,364" fill="#E2E0D8"/>
+          <text x="60" y="374" font-size="9" fill="#CBD5E1" font-family="DM Sans,sans-serif">root</text>
+          <text x="240" y="374" font-size="9" fill="#CBD5E1" font-family="DM Sans,sans-serif">카테고리</text>
+          <text x="440" y="374" font-size="9" fill="#CBD5E1" font-family="DM Sans,sans-serif">현재 문서</text>
+          <text x="630" y="374" font-size="9" fill="#CBD5E1" font-family="DM Sans,sans-serif">연결 문서들</text>
+        </svg>
+      </div>
+      <!-- Summary row -->
+      <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;background:var(--surface-2);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">상위 카테고리</div>
+          <div style="font-size:13.5px;font-weight:500;">001 Requirements</div>
+          <div style="font-size:11.5px;color:var(--text-3);">root → 001 Requirements</div>
+        </div>
+        <div style="flex:1;min-width:160px;background:var(--surface-2);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">이전 / 다음 문서</div>
+          <div style="font-size:13px;">← 000 — 프로젝트 개요</div>
+          <div style="font-size:13px;margin-top:3px;">→ 002 — 컴포넌트 설계</div>
+        </div>
+        <div style="flex:1;min-width:160px;background:var(--surface-2);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">연관 문서 (2개)</div>
+          <div style="font-size:13px;">007 — 시스템 아키텍처</div>
+          <div style="font-size:13px;margin-top:3px;">008 — 개발 로드맵</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-doc-map')">닫기</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-doc-map');showModal('modal-links')">링크 편집</button>
+    </div>
+  </div>
+</div>
+
+<!-- Join Request Modal -->
+<div class="modal-overlay" id="modal-join-request" onclick="closeModalOutside(event, 'modal-join-request')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">워크스페이스 가입 신청</div>
+      <button class="btn-icon" onclick="closeModal('modal-join-request')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface-2);border-radius:var(--radius-lg);margin-bottom:20px;border:1px solid var(--border);">
+        <div style="width:40px;height:40px;background:#0891b2;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📚</div>
+        <div>
+          <div style="font-weight:600;font-size:15px;" id="join-ws-target">Open Source KMS</div>
+          <div style="font-size:12.5px;color:var(--text-3);">공개 워크스페이스 · 38명 · oss-kms</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">신청 메시지 (선택)</label>
+        <textarea class="form-input" placeholder="가입 목적이나 자기소개를 작성하면 승인율이 높아집니다." rows="3"></textarea>
+        <span class="form-hint">워크스페이스 관리자에게 전달됩니다.</span>
+      </div>
+      <div style="background:var(--amber-lt);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:10px 14px;font-size:12.5px;color:var(--text-2);">
+        ⏳ 신청 후 Admin/Owner가 검토합니다. 승인 시 이메일로 알림을 받습니다.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-join-request')">취소</button>
+      <button class="btn btn-primary" onclick="showToast('가입 신청이 전송되었습니다 📨', 'success');closeModal('modal-join-request')">가입 신청 전송</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+// ── Screen / Navigation ──────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+  document.getElementById('screen-' + id).classList.add('active')
+  if (id === 'app') {
+    showAppPage('doclist')
+    document.getElementById('save-status').style.display = 'none'
+    document.getElementById('collab-area').style.display = 'none'
+  }
+}
+
+function showAppPage(page) {
+  document.querySelectorAll('#app-content > div').forEach(p => p.style.display = 'none')
+  const el = document.getElementById('page-' + page)
+  if (el) el.style.display = page === 'settings' ? '' : ''
+
+  // breadcrumb
+  const labels = { doclist: '문서 목록', editor: '001 — 기능 요구사항', settings: '워크스페이스 설정' }
+  document.getElementById('header-breadcrumb').textContent = labels[page] || page
+
+  // sidebar item highlight
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
+  if (page === 'doclist') document.getElementById('nav-all').classList.add('active')
+
+  if (page === 'editor') {
+    el.style.display = 'block'
+    document.getElementById('save-status').style.display = 'flex'
+    document.getElementById('collab-area').style.display = 'flex'
+    document.getElementById('save-status').className = 'save-status saving'
+    document.getElementById('save-status').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg> 저장 중...'
+    setTimeout(() => {
+      const ss = document.getElementById('save-status')
+      ss.className = 'save-status saved'
+      ss.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 저장됨'
+    }, 1200)
+  } else {
+    document.getElementById('save-status').style.display = 'none'
+    document.getElementById('collab-area').style.display = 'none'
+  }
+}
+
+// ── Auth tabs ─────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'))
+  document.querySelectorAll('.auth-form-panel').forEach(p => p.classList.remove('active'))
+  document.getElementById('tab-' + tab).classList.add('active')
+  document.getElementById('panel-' + tab).classList.add('active')
+}
+
+// ── Modals ────────────────────────────────────────────────────
+function showModal(id) {
+  document.getElementById(id).classList.add('active')
+  const inp = document.querySelector('#' + id + ' input, #' + id + ' .search-input')
+  setTimeout(() => { if(inp) inp.focus() }, 50)
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active')
+}
+function closeModalOutside(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id)
+}
+
+// ── Editor ───────────────────────────────────────────────────
+function updatePreview() {
+  // Simple preview update simulation
+  const ta = document.getElementById('md-textarea')
+  const words = ta.value.split(/\s+/).filter(w => w.length > 0).length
+  document.getElementById('word-count').textContent = 'Word count: ' + words
+  // trigger autosave indicator
+  const ss = document.getElementById('save-status')
+  ss.className = 'save-status saving'
+  ss.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 저장 중...'
+  clearTimeout(window._saveTimer)
+  window._saveTimer = setTimeout(() => {
+    ss.className = 'save-status saved'
+    ss.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 저장됨'
+  }, 1000)
+}
+
+function updateCursor(e) {
+  const ta = document.getElementById('md-textarea')
+  const text = ta.value.substring(0, ta.selectionStart)
+  const lines = text.split('\n')
+  document.getElementById('editor-status').textContent = `줄 ${lines.length}, 열 ${lines[lines.length-1].length + 1}`
+}
+
+function insertMD(prefix, suffix) {
+  const ta = document.getElementById('md-textarea')
+  const start = ta.selectionStart, end = ta.selectionEnd
+  const selected = ta.value.substring(start, end)
+  const before = ta.value.substring(0, start)
+  const after = ta.value.substring(end)
+  if (suffix) {
+    ta.value = before + prefix + (selected || 'text') + suffix + after
+  } else {
+    ta.value = before + prefix + selected + after
+  }
+  ta.focus()
+  updatePreview()
+  showToast('서식 적용됨')
+}
+
+function insertTable() {
+  const table = '\n| 제목1 | 제목2 | 제목3 |\n|-------|-------|-------|\n| A     | B     | C     |\n| D     | E     | F     |\n'
+  const ta = document.getElementById('md-textarea')
+  const pos = ta.selectionStart
+  ta.value = ta.value.substring(0, pos) + table + ta.value.substring(pos)
+  ta.focus()
+  showToast('표 삽입됨')
+}
+
+// ── Layout ───────────────────────────────────────────────────
+function setLayout(mode, btn) {
+  document.querySelectorAll('#editor-body .tb-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  const ep = document.getElementById('editor-pane')
+  const pp = document.getElementById('preview-pane')
+  if (mode === 'split') { ep.style.display = ''; pp.style.display = ''; }
+  if (mode === 'editor') { ep.style.display = ''; pp.style.display = 'none'; ep.style.flex = '1'; }
+  if (mode === 'preview') { ep.style.display = 'none'; pp.style.display = ''; pp.style.flex = '1'; }
+}
+
+function toggleMeta() {
+  const mp = document.getElementById('meta-panel')
+  mp.classList.toggle('hidden')
+}
+
+// ── Settings ─────────────────────────────────────────────────
+function showSettingsPage(page, el) {
+  document.querySelectorAll('.settings-page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'))
+  document.getElementById('sp-' + page).classList.add('active')
+  if (el) el.classList.add('active')
+}
+
+function loadPreset(name) {
+  const presets = {
+    default: `.mf-preview-content {\n  --mf-font-body: 'DM Sans', sans-serif;\n  --mf-color-heading: #1a1916;\n  --mf-line-height: 1.75;\n  --mf-max-width: 720px;\n}`,
+    github: `.mf-preview-content {\n  --mf-font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n  --mf-color-heading: #24292e;\n  --mf-color-link: #0366d6;\n  --mf-max-width: 800px;\n}`,
+    notion: `.mf-preview-content {\n  --mf-font-body: ui-sans-serif, 'Segoe UI', sans-serif;\n  --mf-color-heading: #37352f;\n  --mf-color-body: #37352f;\n  --mf-line-height: 1.9;\n  --mf-max-width: 700px;\n}`,
+    dark: `.mf-preview-content {\n  --mf-color-heading: #f1f0ec;\n  --mf-color-body: #b5b3aa;\n  --mf-color-code-bg: #1a1917;\n  background: #1a1917;\n}`,
+    academic: `.mf-preview-content {\n  --mf-font-body: 'Georgia', serif;\n  --mf-color-heading: #1a1a1a;\n  --mf-line-height: 1.85;\n  --mf-max-width: 680px;\n}`
+  }
+  document.getElementById('css-editor').value = presets[name] || presets.default
+  showToast(name + ' 프리셋이 로드되었습니다')
+}
+
+function switchEmbedTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => { if (b.onclick && b.onclick.toString().includes('switchEmbedTab')) b.classList.remove('active') })
+  if (el) el.classList.add('active')
+  document.querySelectorAll('#sp-embed .tab-panel').forEach(p => p.style.display = 'none')
+  document.getElementById('embed-' + tab).style.display = 'block'
+}
+
+// ── Import/Export tabs ────────────────────────────────────────
+function switchTab(group, id, el) {
+  const modal = el.closest('.modal')
+  modal.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  el.classList.add('active')
+  modal.querySelectorAll('.tab-panel').forEach(p => { p.style.display = 'none' })
+  const pid = group === 'import-export' ? 'ie-' + id : id
+  const target = modal.querySelector('#' + pid)
+  if (target) target.style.display = 'block'
+}
+
+function selectImportType(el, type) {
+  document.querySelectorAll('.import-step').forEach(s => s.classList.remove('selected'))
+  el.classList.add('selected')
+  const nums = el.querySelectorAll('.import-step-num')
+  // visual feedback handled by CSS
+}
+
+// ── Sidebar folder toggle ─────────────────────────────────────
+function toggleFolder(el) {
+  const siblings = []
+  let next = el.nextElementSibling
+  while (next && next.classList.contains('folder-children')) {
+    siblings.push(next)
+    next = next.nextElementSibling
+  }
+  if (siblings.length === 0) return
+  const isOpen = siblings[0].style.display !== 'none'
+  siblings.forEach(s => s.style.display = isOpen ? 'none' : '')
+  const icon = el.querySelector('.item-icon')
+  if (icon) icon.textContent = isOpen ? '📁' : '📂'
+}
+
+// ── Doc view toggle ───────────────────────────────────────────
+function switchDocView(view, btn) {
+  document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  document.getElementById('doc-grid-view').style.display = view === 'grid' ? '' : 'none'
+  document.getElementById('doc-list-view').style.display = view === 'list' ? '' : 'none'
+}
+
+// ── Search simulation ─────────────────────────────────────────
+function handleSearch(q) {
+  const results = document.getElementById('search-results')
+  if (!q) {
+    results.innerHTML = `
+      <div style="padding:8px 14px 4px;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.07em;text-transform:uppercase;">최근 문서</div>
+      <div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">📋</div>
+        <div><div class="search-result-title">001 — 기능 요구사항</div><div class="search-result-path">MarkFlow Dev / 001 Requirements</div></div>
+      </div>
+      <div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+        <div class="search-result-icon">🗺</div>
+        <div><div class="search-result-title">008 — 개발 로드맵</div><div class="search-result-path">MarkFlow Dev / (루트)</div></div>
+      </div>`
+    return
+  }
+  const docs = [
+    { icon:'📋', title:'001 — 기능 요구사항', path:'001 Requirements', excerpt:'MarkFlow 에디터 패키지와 KMS SaaS 기능 요구사항' },
+    { icon:'🏗', title:'007 — 시스템 아키텍처', path:'002 Architecture', excerpt:'Fastify, PostgreSQL, Redis, Cloudflare R2 스택' },
+    { icon:'🗺', title:'008 — 개발 로드맵', path:'(루트)', excerpt:'Phase 0 → Phase 1 → Phase 2 → Phase 3 출시 계획' },
+    { icon:'🧩', title:'002 — 컴포넌트 설계', path:'002 Architecture', excerpt:'React 컴포넌트 트리, CodeMirror 6 에디터 구성' },
+    { icon:'🔌', title:'005 — API 명세', path:'(루트)', excerpt:'REST API 엔드포인트, 인증, 워크스페이스 API' },
+    { icon:'🧪', title:'006 — 테스트 명세', path:'(루트)', excerpt:'Vitest, Playwright E2E 테스트 시나리오' },
+  ]
+  const filtered = docs.filter(d => d.title.toLowerCase().includes(q.toLowerCase()) || d.excerpt.toLowerCase().includes(q.toLowerCase()))
+  if (!filtered.length) {
+    results.innerHTML = `<div class="search-empty">🔍<br>«${q}» 검색 결과가 없습니다</div>`
+    return
+  }
+  const hl = (t) => t.replace(new RegExp('(' + q + ')', 'gi'), '<span class="search-highlight">$1</span>')
+  results.innerHTML = `<div style="padding:8px 14px 4px;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.07em;text-transform:uppercase;">${filtered.length}개 결과</div>` +
+    filtered.map(d => `<div class="search-result-item" onclick="closeModal('modal-search');showAppPage('editor');">
+      <div class="search-result-icon">${d.icon}</div>
+      <div>
+        <div class="search-result-title">${hl(d.title)}</div>
+        <div class="search-result-excerpt">${hl(d.excerpt)}</div>
+        <div class="search-result-path">MarkFlow Dev / ${d.path}</div>
+      </div>
+    </div>`).join('')
+}
+
+// ── Toggle switch ─────────────────────────────────────────────
+function toggleSwitch(el) {
+  const thumb = el.querySelector('div')
+  const isOn = thumb.style.left !== '3px' && thumb.style.left !== ''
+  thumb.style.left = isOn ? '3px' : '21px'
+  el.style.background = isOn ? 'var(--border-2)' : 'var(--accent)'
+}
+
+// ── Slug auto-gen ─────────────────────────────────────────────
+function updateSlug(inp) {
+  document.getElementById('ws-slug').value = inp.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+// ── Version select ────────────────────────────────────────────
+function selectVersion(el) {
+  document.querySelectorAll('.version-list-item').forEach(i => {
+    i.style.background = ''
+    i.style.color = ''
+  })
+  el.style.background = 'var(--accent-2)'
+  el.style.color = 'var(--accent)'
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'toast show' + (type ? ' toast-' + type : '')
+  clearTimeout(window._toastTimer)
+  window._toastTimer = setTimeout(() => { t.className = 'toast' }, 2600)
+}
+
+// ── Member settings sub-tabs ──────────────────────────────────
+function switchMemberTab(tab, el) {
+  const page = document.getElementById('sp-members')
+  page.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  page.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none')
+  if (el) el.classList.add('active')
+  const panel = document.getElementById('mtab-' + tab)
+  if (panel) panel.style.display = 'block'
+}
+
+// ── Join panel toggle ─────────────────────────────────────────
+function toggleJoinPanel() {
+  const body = document.getElementById('join-panel-body')
+  const chevron = document.getElementById('join-chevron')
+  const isOpen = body.style.display !== 'none'
+  body.style.display = isOpen ? 'none' : 'block'
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)'
+}
+
+// ── Public WS search ─────────────────────────────────────────
+function searchPublicWS(q) {
+  const list = document.getElementById('public-ws-list')
+  if (!q) {
+    list.innerHTML = `
+      <div class="ws-join-result">
+        <div class="ws-list-icon" style="background:#e11d48;width:36px;height:36px;font-size:15px;flex-shrink:0;">🏢</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">Acme Corp Docs</div><div style="font-size:12.5px;color:var(--text-3);">acme-corp · 12명 · 공개 읽기</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('modal-join-request');document.getElementById('join-ws-target').textContent='Acme Corp Docs'">가입 신청</button>
+      </div>
+      <div class="ws-join-result">
+        <div class="ws-list-icon" style="background:#0891b2;width:36px;height:36px;font-size:15px;flex-shrink:0;">📚</div>
+        <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">Open Source KMS</div><div style="font-size:12.5px;color:var(--text-3);">oss-kms · 38명</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('modal-join-request');document.getElementById('join-ws-target').textContent='Open Source KMS'">가입 신청</button>
+      </div>`
+    return
+  }
+  const wss = [
+    { icon:'🏢', name:'Acme Corp Docs', slug:'acme-corp', members:12, color:'#e11d48' },
+    { icon:'📚', name:'Open Source KMS', slug:'oss-kms', members:38, color:'#0891b2' },
+    { icon:'🎓', name:'DevStudy Group', slug:'devstudy', members:7, color:'#7C3AED' },
+    { icon:'🌐', name:'Community Docs', slug:'community-docs', members:55, color:'#16A34A' },
+  ]
+  const filtered = wss.filter(w => w.name.toLowerCase().includes(q.toLowerCase()) || w.slug.includes(q.toLowerCase()))
+  if (!filtered.length) { list.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-3);font-size:13.5px;">검색 결과가 없습니다</p>'; return }
+  list.innerHTML = filtered.map(w => `
+    <div class="ws-join-result">
+      <div class="ws-list-icon" style="background:${w.color};width:36px;height:36px;font-size:15px;flex-shrink:0;">${w.icon}</div>
+      <div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">${w.name}</div><div style="font-size:12.5px;color:var(--text-3);">${w.slug} · ${w.members}명</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="showModal('modal-join-request');document.getElementById('join-ws-target').textContent='${w.name}'">가입 신청</button>
+    </div>`).join('')
+}
+
+// ── Approve / Reject join request ────────────────────────────
+function approveRequest(btn) {
+  const row = btn.closest('[style*="background:var(--surface)"]') || btn.closest('div[style*="border:1px"]')
+  if (row) {
+    row.style.background = 'var(--green-lt)'
+    row.style.border = '1px solid var(--green)'
+    row.style.borderRadius = 'var(--radius-lg)'
+    row.querySelectorAll('button').forEach(b => b.remove())
+    const select = row.querySelector('select')
+    const role = select ? select.value : 'Editor'
+    if (select) select.remove()
+    const nameEl = row.querySelector('[style*="font-weight:600"]')
+    if (nameEl) nameEl.insertAdjacentHTML('afterend', `<span class="badge badge-green" style="margin-left:8px;">승인됨 · ${role}</span>`)
+    showToast('멤버로 승인되었습니다 ✓', 'success')
+  }
+}
+function rejectRequest(btn) {
+  const row = btn.closest('[style*="background:var(--surface)"]') || btn.closest('div[style*="border:1px"]')
+  if (row) { row.style.opacity = '.4'; row.style.pointerEvents = 'none'; showToast('가입 신청이 거절되었습니다') }
+}
+
+// ── Diagram zoom ──────────────────────────────────────────────
+let diagramScale = 1
+function zoomDiagram(factor) {
+  if (factor === 1) diagramScale = 1
+  else diagramScale = Math.max(0.5, Math.min(2, diagramScale * factor))
+  const svg = document.getElementById('doc-diagram')
+  if (svg) svg.style.transform = `scale(${diagramScale})`
+}
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+    e.preventDefault()
+    showModal('modal-search')
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'))
+  }
+})
+</script>
+</body>
+</html>
