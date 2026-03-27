@@ -1,54 +1,131 @@
-# MarkFlow Editor
+# MarkFlow KMS
 
-모노레포 구조의 독립형 Markdown 에디터 프로젝트.
+마크다운 기반 팀 지식 관리 플랫폼 (Knowledge Management System).
 
 ## 구조
 
 ```
-markflow-editor/
+markflow/
 ├── packages/
-│   └── editor/          @markflow/editor — 독립 에디터 컴포넌트
-└── apps/
-    └── demo/            Next.js 데모 애플리케이션
+│   ├── editor/          @markflow/editor — 독립 에디터 컴포넌트
+│   └── db/              @markflow/db — Drizzle ORM 스키마 + 마이그레이션
+├── apps/
+│   ├── web/             @markflow/web — Next.js 프론트엔드
+│   ├── api/             @markflow/api — Fastify 백엔드 API
+│   └── demo/            에디터 데모 앱
+└── docs/                설계 문서, 프로토타입, ERD
 ```
 
-## 개발 환경 설정
+## 로컬 실행
+
+### 사전 준비
+
+- Node.js 20+
+- pnpm 10+ (`npm install -g pnpm`)
+- PostgreSQL 16+
+
+### 1. PostgreSQL 설정 (최초 1회)
 
 ```bash
-# pnpm 필요 (없으면: npm install -g pnpm)
+psql -h localhost -p 5432 -U postgres
+```
+
+```sql
+CREATE USER markflow WITH PASSWORD 'markflow';
+CREATE DATABASE markflow OWNER markflow;
+GRANT ALL PRIVILEGES ON DATABASE markflow TO markflow;
+\q
+```
+
+### 2. 환경 변수
+
+루트의 `.env.local` 파일에 설정되어 있습니다. 본인 환경에 맞게 수정하세요:
+
+```env
+DATABASE_URL=postgresql://markflow:markflow@localhost:5432/markflow
+JWT_SECRET=dev-jwt-secret-change-in-production
+JWT_REFRESH_SECRET=dev-jwt-refresh-secret-change-in-production
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001,http://localhost:3002
+HOST=0.0.0.0
+PORT=4000
+```
+
+### 3. 설치 및 실행
+
+```bash
 pnpm install
+pnpm --filter @markflow/editor build   # 에디터 빌드 (최초 1회)
+cd packages/db && pnpm drizzle-kit push && cd ../..  # DB 마이그레이션 (최초 1회)
+pnpm dev                                # API + Web 동시 실행
+```
 
-# 에디터 패키지 빌드
-pnpm --filter @markflow/editor build
+http://localhost:3002 에서 접속.
 
-# 데모 앱 실행
-pnpm --filter @markflow/demo dev
+### 4. 계정 생성
+
+1. http://localhost:3002/register 에서 회원가입
+2. 이메일 인증 우회:
+   ```bash
+   psql -h localhost -p 5432 -U markflow -d markflow \
+     -c "UPDATE users SET email_verified = true;"
+   ```
+3. http://localhost:3002/login 에서 로그인
+
+## 프로덕션 환경 변수
+
+서버 배포 시 호스팅 플랫폼의 환경 변수 설정에서 아래 값을 지정합니다:
+
+| 변수 | 설명 | 생성 방법 |
+|------|------|----------|
+| `DATABASE_URL` | PostgreSQL 연결 URL | DB 호스팅 서비스에서 제공 (Supabase, Neon, RDS 등) |
+| `JWT_SECRET` | Access Token 서명 키 | `openssl rand -hex 32` |
+| `JWT_REFRESH_SECRET` | Refresh Token 서명 키 | `openssl rand -hex 32` (JWT_SECRET과 다른 값) |
+| `CORS_ORIGIN` | 프론트엔드 도메인 (쉼표 구분) | 예: `https://markflow.vercel.app` |
+| `HOST` | API 바인드 주소 | `0.0.0.0` |
+| `PORT` | API 포트 | 호스팅 플랫폼 기본값 또는 `4000` |
+
+> `pnpm start`(프로덕션)는 `.env.local`을 읽지 않고 시스템 환경 변수만 사용합니다.
+
+## 명령어
+
+```bash
+pnpm dev                             # 전체 실행 (API + Web)
+pnpm build                           # 전체 빌드
+pnpm test                            # 전체 테스트
+pnpm --filter @markflow/api dev      # 백엔드만
+pnpm --filter @markflow/web dev      # 프론트엔드만
+pnpm --filter @markflow/editor build # 에디터 패키지 빌드
+pnpm --filter @markflow/web test:e2e # E2E 테스트
 ```
 
 ## 패키지
 
 ### @markflow/editor
 
-독립형 React Markdown 에디터 컴포넌트. 자세한 내용은 [packages/editor/README.md](./packages/editor/README.md) 참고.
+독립형 React Markdown 에디터 컴포넌트. 어떤 React 18+ 프로젝트에든 이식 가능.
 
-**주요 기술:**
 - CodeMirror 6 (소스 편집기)
 - remark + rehype (마크다운 파싱/렌더링)
-- KaTeX (수식)
-- Lucide React (아이콘)
-- CSS Modules + CSS Variables (스타일링)
+- KaTeX (수식), rehype-highlight (코드 하이라이팅)
+- rehype-sanitize (XSS 방어)
 
-### @markflow/demo
+### @markflow/db
 
-에디터 컴포넌트를 시연하는 Next.js 앱.
+Drizzle ORM 기반 DB 스키마. 13개 테이블. ERD: [docs/ERD.svg](./docs/ERD.svg)
+
+### @markflow/web
+
+Next.js 16 프론트엔드. Zustand (상태), React Query (서버 상태), Tailwind CSS 4.
+
+### @markflow/api
+
+Fastify 5 백엔드 API. JWT 인증, RBAC (소유자/관리자/편집자/뷰어), 문서 CRUD + 버전 관리.
 
 ## 문서
 
-설계 문서는 [`docs/`](./docs/) 디렉토리 참고:
-
 | 문서 | 설명 |
 |------|------|
-| [00-overview](./docs/00-overview.md) | 시스템 개요 |
-| [01-feature-definition](./docs/01-feature-definition.md) | 기능 정의 |
-| [05-component-spec](./docs/05-component-spec.md) | 컴포넌트 설계 |
-| [07-roadmap](./docs/07-roadmap.md) | 개발 로드맵 |
+| [GETTING-STARTED.md](./docs/GETTING-STARTED.md) | 상세 시작 가이드 |
+| [ERD.svg](./docs/ERD.svg) | 데이터베이스 ER 다이어그램 |
+| [PROJECT-STRUCTURE.md](./docs/PROJECT-STRUCTURE.md) | 프로젝트 구조 상세 |
+| [markflow-prototype.html](./docs/markflow-prototype.html) | UI 프로토타입 |
