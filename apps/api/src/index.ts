@@ -1,7 +1,6 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
-import Redis from 'ioredis';
 import { createDb } from '@markflow/db';
 import { logger } from './utils/logger.js';
 import { AppError } from './utils/errors.js';
@@ -51,13 +50,6 @@ export async function buildApp() {
   }
   const db = createDb(databaseUrl);
 
-  // --- Redis ---
-  const redisUrl = process.env.REDIS_URL;
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is not set');
-  }
-  const redis = new Redis(redisUrl);
-
   // --- Error handler ---
   app.setErrorHandler((rawError, _request, reply) => {
     if (rawError instanceof AppError) {
@@ -92,7 +84,7 @@ export async function buildApp() {
   app.get('/health', async () => ({ status: 'ok' }));
 
   // --- Routes ---
-  await app.register(authRoutes, { prefix: '/api/v1/auth', db, redis });
+  await app.register(authRoutes, { prefix: '/api/v1/auth', db });
   await app.register(usersRoutes, { prefix: '/api/v1/users', db });
   await app.register(workspacesRoutes, { prefix: '/api/v1', db });
   await app.register(invitationsRoutes, { prefix: '/api/v1', db });
@@ -113,8 +105,6 @@ export async function buildApp() {
   app.addHook('onClose', async () => {
     clearInterval(cleanupIntervalHandle);
     logger.info('Cleanup job interval cleared');
-    await redis.quit();
-    logger.info('Redis connection closed');
   });
 
   return app;

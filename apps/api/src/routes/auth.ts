@@ -1,14 +1,11 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type Redis from 'ioredis';
 import type { Db } from '@markflow/db';
 import { createAuthService } from '../services/auth-service.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { createRateLimiter } from '../middleware/rate-limit.js';
 import { badRequest } from '../utils/errors.js';
 
 interface AuthRoutesOptions {
   db: Db;
-  redis: Redis;
 }
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
@@ -24,7 +21,6 @@ function getRefreshTokenCookieOptions() {
 
 export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) {
   const authService = createAuthService(opts.db);
-  const loginRateLimiter = createRateLimiter(opts.redis);
 
   // POST /api/v1/auth/register
   app.post<{ Body: { email: string; password: string; name: string } }>(
@@ -60,8 +56,6 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
   app.post(
     '/login',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      await loginRateLimiter(request, reply);
-
       const body = request.body as { email: string; password: string; rememberMe?: boolean };
       const { email, password, rememberMe } = body;
 

@@ -4,7 +4,7 @@
 
 - **Node.js** 20+
 - **pnpm** 10+
-- **Docker** (PostgreSQL, Redis)
+- **Docker** (PostgreSQL)
 
 ## 1. 설치 및 실행
 
@@ -12,7 +12,7 @@
 # 의존성 설치
 pnpm install
 
-# Docker 서비스 시작 (PostgreSQL + Redis)
+# Docker 서비스 시작 (PostgreSQL)
 docker compose up -d
 
 # 에디터 패키지 빌드 (최초 1회, 에디터 코드 변경 시)
@@ -38,7 +38,6 @@ pnpm dev
 | 프론트엔드 | http://localhost:3002 | 3002 |
 | 백엔드 API | http://localhost:4000/api/v1 | 4000 |
 | PostgreSQL | localhost:5433 | 5433 (호스트) → 5432 (컨테이너) |
-| Redis | localhost:6379 | 6379 |
 
 ## 3. 계정 생성 및 로그인
 
@@ -96,7 +95,6 @@ http://localhost:3002/login 에서 가입한 이메일/비밀번호로 로그인
 
 ```env
 DATABASE_URL=postgresql://markflow:markflow@localhost:5433/markflow
-REDIS_URL=redis://localhost:6379
 JWT_SECRET=<자동생성>
 JWT_REFRESH_SECRET=<자동생성>
 CORS_ORIGIN=http://localhost:3002
