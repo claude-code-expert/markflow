@@ -21,7 +21,7 @@ export default function WorkspaceHomePage() {
 
     // slug가 falsy이면 워크스페이스 목록으로 (FR-002)
     if (!workspaceSlug) {
-      router.replace('/');
+      router.replace('/workspaces');
       return;
     }
 
@@ -29,7 +29,7 @@ export default function WorkspaceHomePage() {
     const found = workspaces.find((ws) => ws.slug === workspaceSlug);
     if (workspaces.length > 0 && !found) {
       // 유효하지 않은 slug → 워크스페이스 목록으로
-      router.replace('/');
+      router.replace('/workspaces');
       return;
     }
 

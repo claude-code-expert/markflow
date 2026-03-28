@@ -416,7 +416,7 @@ export default function WorkspaceSettingsPage() {
         body: { confirmName: deleteConfirmName },
       });
       await fetchWorkspaces();
-      router.push('/');
+      router.push('/workspaces');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

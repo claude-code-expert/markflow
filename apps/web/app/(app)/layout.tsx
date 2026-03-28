@@ -1,16 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/auth-store';
 import { Sidebar } from '../../components/sidebar';
 import { AppHeader } from '../../components/app-header';
+import { SearchModal } from '../../components/search-modal';
 import { useSidebarStore } from '../../stores/sidebar-store';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, fetchUser } = useAuthStore();
   const isSidebarOpen = useSidebarStore((s) => s.isSidebarOpen);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const handleSearchToggle = useCallback(() => {
+    setIsSearchOpen((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     void fetchUser();
@@ -51,11 +68,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         transition: 'grid-template-columns 0.2s ease',
       }}
     >
-      <AppHeader />
-      <Sidebar />
+      <AppHeader onSearchClick={handleSearchToggle} />
+      <Sidebar onSearchClick={handleSearchToggle} />
       <main className="overflow-y-auto" style={{ background: 'var(--bg)' }}>
         {children}
       </main>
+      <SearchModal open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
   );
 }

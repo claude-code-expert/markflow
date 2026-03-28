@@ -12,6 +12,7 @@ interface Tag {
 
 interface TagInputProps {
   workspaceSlug: string;
+  workspaceId?: string;
   documentId: string;
   initialTags: Array<{ id: string; name: string }>;
   disabled?: boolean;
@@ -21,10 +22,13 @@ const MAX_TAGS = 30;
 
 export function TagInput({
   workspaceSlug,
+  workspaceId,
   documentId,
   initialTags,
   disabled = false,
 }: TagInputProps) {
+  // API uses workspace ID, not slug
+  const wsKey = workspaceId ?? workspaceSlug;
   const [tags, setTags] = useState<Array<{ id: string; name: string }>>(initialTags);
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -42,7 +46,7 @@ export function TagInput({
     queryKey: ['workspace-tags', workspaceSlug],
     queryFn: () =>
       apiFetch<{ tags: Tag[] }>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/tags`,
+        `/workspaces/${encodeURIComponent(wsKey)}/tags`,
       ),
   });
 
@@ -71,7 +75,7 @@ export function TagInput({
       setSaving(true);
       try {
         const result = await apiFetch<{ tags: Array<{ id: string; name: string }> }>(
-          `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${documentId}/tags`,
+          `/workspaces/${encodeURIComponent(wsKey)}/documents/${documentId}/tags`,
           {
             method: 'PUT',
             body: { tags: newTags.map((t) => t.name) },

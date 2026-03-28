@@ -10,6 +10,10 @@ import { useEditorStore } from '../../../../../stores/editor-store';
 import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
 import type { DocumentResponse } from '../../../../../lib/types';
+import Link from 'next/link';
+import { DocumentMetaPanel } from '../../../../../components/document-meta-panel';
+import { VersionHistoryPanel } from '../../../../../components/version-history-panel';
+import { VersionHistoryModal } from '../../../../../components/version-history-modal';
 
 export default function DocEditorPage() {
   const { workspaceSlug, docId } = useParams<{ workspaceSlug: string; docId: string }>();
@@ -26,6 +30,9 @@ export default function DocEditorPage() {
   } = useEditorStore();
 
   const [error, setError] = useState('');
+  const [showMetaPanel, setShowMetaPanel] = useState(true);
+  const [showVersionPanel, setShowVersionPanel] = useState(false);
+  const [showVersionModal, setShowVersionModal] = useState(false);
   const isMountedRef = useRef(true);
   const wsIdRef = useRef(wsId);
   wsIdRef.current = wsId;
@@ -38,6 +45,18 @@ export default function DocEditorPage() {
         `/workspaces/${wsId}/documents/${docId}`,
       );
       return res.document;
+    },
+    enabled: !!wsId,
+  });
+
+  // Fetch relations for Prev/Next navigation
+  const relationsQuery = useQuery({
+    queryKey: ['relations', wsId, docId],
+    queryFn: async () => {
+      const res = await apiFetch<{ prev: { id: string; title: string } | null; next: { id: string; title: string } | null }>(
+        `/workspaces/${wsId}/documents/${docId}/relations`,
+      );
+      return res;
     },
     enabled: !!wsId,
   });
@@ -259,6 +278,27 @@ export default function DocEditorPage() {
               hour: '2-digit', minute: '2-digit',
             })}
           </span>
+          <span style={{ marginLeft: 'auto' }} />
+          <button
+            onClick={() => setShowVersionModal(!showVersionModal)}
+            style={{
+              padding: '2px 8px', background: showVersionModal ? 'var(--accent-2)' : 'var(--surface-2)',
+              color: showVersionModal ? 'var(--accent)' : 'var(--text-3)',
+              borderRadius: '100px', fontSize: '11px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            버전 기록
+          </button>
+          <button
+            onClick={() => setShowMetaPanel(!showMetaPanel)}
+            style={{
+              padding: '2px 8px', background: showMetaPanel ? 'var(--accent-2)' : 'var(--surface-2)',
+              color: showMetaPanel ? 'var(--accent)' : 'var(--text-3)',
+              borderRadius: '100px', fontSize: '11px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            문서 속성
+          </button>
           {isReadOnly && (
             <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px' }}>
               읽기 전용
@@ -267,16 +307,99 @@ export default function DocEditorPage() {
         </div>
       </div>
 
-      {/* Editor */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <MarkdownEditor
-          value={content}
-          onChange={setContent}
-          height="100%"
-          layout="split"
-          readOnly={isReadOnly}
+      {/* Editor + Meta Panel */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <MarkdownEditor
+            value={content}
+            onChange={setContent}
+            height="100%"
+            layout="split"
+            readOnly={isReadOnly}
+          />
+        </div>
+
+        {/* Meta Panel */}
+        {showMetaPanel && wsId && (
+          <DocumentMetaPanel
+            document={{
+              id: doc.id,
+              title: doc.title,
+              categoryId: doc.categoryId ?? null,
+              categoryPath: doc.categoryId ?? null,
+              createdAt: doc.createdAt,
+              updatedAt: doc.updatedAt,
+              author: { id: doc.authorId, name: doc.authorId },
+            }}
+            workspaceSlug={workspaceSlug}
+            workspaceId={wsId}
+            role={currentWorkspace?.role ?? null}
+            onClose={() => setShowMetaPanel(false)}
+          />
+        )}
+
+        {/* Version History Side Panel */}
+        <VersionHistoryPanel
+          open={showVersionPanel}
+          onClose={() => setShowVersionPanel(false)}
+          workspaceSlug={workspaceSlug}
+          documentId={docId}
+          onOpenFullModal={() => { setShowVersionPanel(false); setShowVersionModal(true); }}
         />
       </div>
+
+      {/* Version History Full Modal */}
+      {wsId && (
+        <VersionHistoryModal
+          open={showVersionModal}
+          onClose={() => setShowVersionModal(false)}
+          workspaceId={wsId}
+          documentId={docId}
+          currentContent={content}
+          hasUnsavedChanges={saveStatus === 'unsaved'}
+          onRestore={(restoredContent) => setContent(restoredContent)}
+        />
+      )}
+
+      {/* Prev/Next Navigation */}
+      {relationsQuery.data && (relationsQuery.data.prev || relationsQuery.data.next) && (
+        <div style={{ display: 'flex', gap: '16px', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+          {relationsQuery.data.prev ? (
+            <Link
+              href={`/${workspaceSlug}/docs/${relationsQuery.data.prev.id}`}
+              style={{
+                flex: 1, padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)', textDecoration: 'none', color: 'inherit',
+                transition: 'border-color 0.15s',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                ← 이전 문서
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+                {relationsQuery.data.prev.title}
+              </div>
+            </Link>
+          ) : <div style={{ flex: 1 }} />}
+          {relationsQuery.data.next ? (
+            <Link
+              href={`/${workspaceSlug}/docs/${relationsQuery.data.next.id}`}
+              style={{
+                flex: 1, padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)', textAlign: 'right', textDecoration: 'none', color: 'inherit',
+                transition: 'border-color 0.15s',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                다음 문서 →
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+                {relationsQuery.data.next.title}
+              </div>
+            </Link>
+          ) : <div style={{ flex: 1 }} />}
+        </div>
+      )}
 
     </div>
   );

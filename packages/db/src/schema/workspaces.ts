@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, boolean, timestamp, text } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const workspaces = pgTable('workspaces', {
@@ -8,6 +8,8 @@ export const workspaces = pgTable('workspaces', {
   isRoot: boolean('is_root').notNull().default(false),
   isPublic: boolean('is_public').notNull().default(true),
   ownerId: uuid('owner_id').notNull().references(() => users.id),
+  themePreset: varchar('theme_preset', { length: 20 }).notNull().default('default'),
+  themeCss: text('theme_css').notNull().default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -57,7 +57,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
             &quot;{workspaceSlug}&quot; 주소의 워크스페이스가 존재하지 않거나 삭제되었습니다.
           </p>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/workspaces')}
             style={{
               padding: '9px 18px', background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: 'var(--radius)', fontSize: '13.5px',

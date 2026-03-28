@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useWorkspaceStore } from '../../stores/workspace-store';
-import type { Workspace } from '../../lib/types';
-import { CreateWorkspaceModal } from '../../components/create-workspace-modal';
+import { useWorkspaceStore } from '../../../stores/workspace-store';
+import type { Workspace } from '../../../lib/types';
+import { CreateWorkspaceModal } from '../../../components/create-workspace-modal';
+import { JoinRequestPanel } from '../../../components/join-request-panel';
 
 const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
   owner: { bg: 'var(--purple-lt)', text: 'var(--purple)' },
@@ -262,6 +263,9 @@ export default function WorkspaceListPage() {
           ))}
         </div>
       )}
+
+      {/* Join Request Panel */}
+      <JoinRequestPanel onRequestSent={() => void fetchWorkspaces()} />
 
       <CreateWorkspaceModal
         open={showCreateModal}

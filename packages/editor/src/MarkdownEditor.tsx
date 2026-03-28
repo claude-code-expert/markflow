@@ -10,6 +10,7 @@ import { PreviewPane } from './preview/PreviewPane'
 import { SettingsModal, getSavedWorkerUrl } from './toolbar/SettingsModal'
 import { ImageUploadGuide } from './toolbar/ImageUploadGuide'
 import { applyToolbarAction } from './utils/markdownActions'
+import { countWords } from './utils/wordCount'
 import { createCloudflareUploader } from './utils/cloudflareUploader'
 import { validateImageFile } from './utils/imageValidation'
 import type { MarkdownEditorProps, EditorLayout, EditorTheme, ToolbarAction, PreviewPaneHandle } from './types'
@@ -112,6 +113,10 @@ export function MarkdownEditor({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
+  // Cursor position tracking
+  const [cursorLine, setCursorLine] = useState(1)
+  const [cursorCol, setCursorCol] = useState(1)
+
   // Load saved Cloudflare Worker URL on mount
   useEffect(() => {
     setWorkerUrl(getSavedWorkerUrl())
@@ -139,6 +144,14 @@ export function MarkdownEditor({
     (newValue: string) => {
       if (!isControlled) setInternalValue(newValue)
       onChange?.(newValue)
+      // Update cursor position
+      const view = editorViewRef.current
+      if (view) {
+        const pos = view.state.selection.main.head
+        const line = view.state.doc.lineAt(pos)
+        setCursorLine(line.number)
+        setCursorCol(pos - line.from + 1)
+      }
     },
     [isControlled, onChange]
   )
@@ -367,9 +380,14 @@ export function MarkdownEditor({
               showPreview ? 'mf-pane-border-right' : '',
             ].join(' ')}
           >
-            <div className="mf-pane-header">
-              <PenLine size={10} />
-              Editor
+            <div className="mf-pane-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <PenLine size={10} />
+                Editor
+              </span>
+              <span style={{ fontWeight: 400, color: 'var(--mf-text-3, #9A9890)', fontSize: '11px' }}>
+                줄 {cursorLine}, 열 {cursorCol}
+              </span>
             </div>
             <div className="mf-pane-content">
               <EditorPane
@@ -395,9 +413,14 @@ export function MarkdownEditor({
               showEditor ? 'mf-pane-half' : 'mf-pane-full',
             ].join(' ')}
           >
-            <div className="mf-pane-header">
-              <Eye size={10} />
-              Preview
+            <div className="mf-pane-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Eye size={10} />
+                Preview
+              </span>
+              <span style={{ fontWeight: 400, color: 'var(--mf-text-3, #9A9890)', fontSize: '11px' }}>
+                {countWords(markdown)} words
+              </span>
             </div>
             <div className="mf-pane-content">
               <PreviewPane

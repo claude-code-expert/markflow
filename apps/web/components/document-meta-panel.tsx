@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, ApiError } from '../lib/api';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiFetch } from '../lib/api';
 import { usePermissions } from '../hooks/use-permissions';
-import { DAGPipelineGraph } from './dag-pipeline-graph';
-import type { GraphNode, GraphEdge } from './dag-pipeline-graph';
 import { TagInput } from './tag-input';
+import { DocumentLinksModal } from './document-links-modal';
+import { MiniDagDiagram } from './mini-dag-diagram';
+import { DagStructureModal } from './dag-structure-modal';
+import type { Category } from '../lib/types';
+
+/* ─── Types ─── */
 
 interface RelationDoc {
   id: string;
@@ -19,21 +23,33 @@ interface Relations {
   related: RelationDoc[];
 }
 
+interface GraphNode {
+  id: string;
+  title: string;
+  categoryId: string | null;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+  type: 'prev' | 'next' | 'related';
+}
+
+interface VersionSummary {
+  id: string;
+  version: number;
+  createdAt: string;
+  createdBy?: { id: string; name: string };
+}
+
 interface DocumentInfo {
   id: string;
   title: string;
+  categoryId: string | null;
   categoryPath: string | null;
   createdAt: string;
   updatedAt: string;
-  author: {
-    id: string;
-    name: string;
-  };
-}
-
-interface WorkspaceDoc {
-  id: string;
-  title: string;
+  author: { id: string; name: string };
 }
 
 interface DocumentMetaPanelProps {
@@ -41,355 +57,292 @@ interface DocumentMetaPanelProps {
   workspaceSlug: string;
   workspaceId: string;
   role: string | null | undefined;
+  onClose?: () => void;
 }
 
+/* ─── Helpers ─── */
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('ko-KR', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}분 전`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}일 전`;
+  return formatDate(dateStr);
+}
+
+/* ─── Section Components ─── */
+
+function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      marginBottom: '12px',
+    }}>
+      <span style={{
+        fontSize: '11px', fontWeight: 600, letterSpacing: '0.07em',
+        textTransform: 'uppercase', color: 'var(--text-3)',
+      }}>
+        {children}
+      </span>
+      {action}
+    </div>
+  );
+}
+
+function SmallButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        fontSize: '11px', padding: '3px 8px', borderRadius: 'var(--radius-sm)',
+        border: '1.5px solid var(--border-2)', background: 'var(--surface)',
+        color: 'var(--text-2)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function LinkDocItem({ title, onRemove }: { title: string; onRemove?: () => void }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '8px',
+      padding: '8px 10px', background: 'var(--bg)', borderRadius: 'var(--radius-sm)',
+      border: '1px solid var(--border)', marginBottom: '6px', fontSize: '13px',
+    }}>
+      <span>📄</span>
+      <span style={{ flex: 1, fontWeight: 500, fontSize: '13px' }}>{title}</span>
+      {onRemove && (
+        <button onClick={onRemove} style={{
+          width: '20px', height: '20px', fontSize: '11px', border: 'none',
+          background: 'none', cursor: 'pointer', color: 'var(--text-3)',
+        }}>✕</button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Component ─── */
+
 export function DocumentMetaPanel({
-  document: doc,
-  workspaceSlug,
-  workspaceId,
-  role,
+  document: doc, workspaceSlug, workspaceId, role,
+  onClose,
 }: DocumentMetaPanelProps) {
   const queryClient = useQueryClient();
   const permissions = usePermissions(role);
+  const [showLinksModal, setShowLinksModal] = useState(false);
+  const [showDagModal, setShowDagModal] = useState(false);
 
-  const [selectedPrev, setSelectedPrev] = useState<string>('');
-  const [selectedNext, setSelectedNext] = useState<string>('');
-  const [relatedIds, setRelatedIds] = useState<string[]>([]);
-  const [addRelatedId, setAddRelatedId] = useState<string>('');
-  const [error, setError] = useState('');
-  const [isDirty, setIsDirty] = useState(false);
+  // ── Data queries (all use workspaceId) ──
 
-  // Fetch current relations
   const relationsQuery = useQuery({
-    queryKey: ['relations', workspaceSlug, doc.id],
-    queryFn: () =>
-      apiFetch<Relations>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${doc.id}/relations`,
-      ),
+    queryKey: ['relations', workspaceId, doc.id],
+    queryFn: () => apiFetch<Relations>(`/workspaces/${workspaceId}/documents/${doc.id}/relations`),
+    enabled: !!workspaceId,
   });
 
-  // Fetch workspace documents for dropdowns
-  const docsQuery = useQuery({
-    queryKey: ['documents-list', workspaceSlug],
-    queryFn: async () => {
-      const data = await apiFetch<{ documents: WorkspaceDoc[] }>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents?limit=200`,
-      );
-      return data.documents;
-    },
-  });
-
-  // Fetch graph for mini visualization
   const graphQuery = useQuery({
-    queryKey: ['graph', workspaceSlug],
-    queryFn: () =>
-      apiFetch<{ nodes: GraphNode[]; edges: GraphEdge[] }>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/graph`,
-      ),
+    queryKey: ['graph', workspaceId],
+    queryFn: () => apiFetch<{ nodes: GraphNode[]; edges: GraphEdge[] }>(`/workspaces/${workspaceId}/graph`),
+    enabled: !!workspaceId,
   });
 
-  // Initialize form state from fetched relations
-  useEffect(() => {
-    if (relationsQuery.data) {
-      setSelectedPrev(relationsQuery.data.prev?.id ?? '');
-      setSelectedNext(relationsQuery.data.next?.id ?? '');
-      setRelatedIds(relationsQuery.data.related.map((r) => r.id));
-      setIsDirty(false);
-    }
-  }, [relationsQuery.data]);
-
-  // Save mutation
-  const saveMutation = useMutation({
-    mutationFn: async (payload: {
-      prev?: string;
-      next?: string;
-      related?: string[];
-    }) => {
-      return apiFetch<Relations>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${doc.id}/relations`,
-        { method: 'PUT', body: payload },
-      );
-    },
-    onSuccess: () => {
-      setError('');
-      setIsDirty(false);
-      void queryClient.invalidateQueries({ queryKey: ['relations', workspaceSlug, doc.id] });
-      void queryClient.invalidateQueries({ queryKey: ['graph', workspaceSlug] });
-    },
-    onError: (err) => {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('관계 저장 중 오류가 발생했습니다.');
-      }
-    },
+  const categoriesQuery = useQuery({
+    queryKey: ['categories', workspaceId],
+    queryFn: () => apiFetch<{ categories: Category[] }>(`/workspaces/${workspaceId}/categories`),
+    enabled: !!workspaceId,
   });
 
-  const handleSave = useCallback(() => {
-    const payload: { prev?: string; next?: string; related?: string[] } = {};
-    if (selectedPrev) payload.prev = selectedPrev;
-    if (selectedNext) payload.next = selectedNext;
-    if (relatedIds.length > 0) payload.related = relatedIds;
-    saveMutation.mutate(payload);
-  }, [selectedPrev, selectedNext, relatedIds, saveMutation]);
+  const tagsQuery = useQuery({
+    queryKey: ['doc-tags', workspaceId, doc.id],
+    queryFn: () => apiFetch<{ tags: Array<{ id: string; name: string }> }>(`/workspaces/${workspaceId}/documents/${doc.id}/tags`),
+    enabled: !!workspaceId,
+  });
 
-  const handleAddRelated = useCallback(() => {
-    if (!addRelatedId || relatedIds.includes(addRelatedId) || addRelatedId === doc.id) return;
-    if (relatedIds.length >= 20) {
-      setError('관련 문서는 최대 20개까지 추가할 수 있습니다.');
-      return;
+  // ── Category change handler ──
+
+  const handleCategoryChange = useCallback(async (categoryId: string | null) => {
+    try {
+      await apiFetch(`/workspaces/${workspaceId}/documents/${doc.id}`, {
+        method: 'PATCH',
+        body: { categoryId },
+      });
+      void queryClient.invalidateQueries({ queryKey: ['document'] });
+    } catch {
+      // silently fail
     }
-    setRelatedIds((prev) => [...prev, addRelatedId]);
-    setAddRelatedId('');
-    setIsDirty(true);
-  }, [addRelatedId, relatedIds, doc.id]);
+  }, [workspaceId, doc.id, queryClient]);
 
-  const handleRemoveRelated = useCallback((id: string) => {
-    setRelatedIds((prev) => prev.filter((r) => r !== id));
-    setIsDirty(true);
-  }, []);
+  const relations = relationsQuery.data;
+  const categories = categoriesQuery.data?.categories ?? [];
+  const docTags = tagsQuery.data?.tags ?? [];
 
-  // Available docs (exclude current doc from options)
-  const availableDocs = useMemo(() => {
-    return (docsQuery.data ?? []).filter((d) => d.id !== doc.id);
-  }, [docsQuery.data, doc.id]);
-
-  const getDocTitle = useCallback(
-    (id: string) => {
-      return availableDocs.find((d) => d.id === id)?.title ?? id;
-    },
-    [availableDocs],
-  );
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
+  // ── Render ──
 
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col border-l border-gray-200 bg-gray-50/50 overflow-y-auto">
-      <div className="px-4 py-4">
-        {/* Document Metadata */}
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          메타 정보
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs font-medium text-gray-500">작성자</p>
-            <p className="text-sm text-gray-700">{doc.author.name}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">카테고리</p>
-            <p className="text-sm text-gray-700">{doc.categoryPath ?? '없음'}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">생성일</p>
-            <p className="text-sm text-gray-700">{formatDate(doc.createdAt)}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-gray-500">수정일</p>
-            <p className="text-sm text-gray-700">{formatDate(doc.updatedAt)}</p>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <hr className="my-4 border-gray-200" />
-
-        {/* Tags */}
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          태그
-        </h3>
-        <TagInput
-          workspaceSlug={workspaceSlug}
-          documentId={doc.id}
-          initialTags={[]}
-          disabled={!permissions.canManageTags}
-        />
-
-        {/* Divider */}
-        <hr className="my-4 border-gray-200" />
-
-        {/* Document Relations */}
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          문서 관계
-        </h3>
-
-        {relationsQuery.isLoading && (
-          <div className="flex items-center justify-center py-4">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          </div>
-        )}
-
-        {!relationsQuery.isLoading && (
-          <div className="space-y-3">
-            {/* Previous Document */}
-            <div>
-              <label htmlFor="prev-doc" className="text-xs font-medium text-gray-500">
-                이전 문서
-              </label>
-              <select
-                id="prev-doc"
-                value={selectedPrev}
-                onChange={(e) => {
-                  setSelectedPrev(e.target.value);
-                  setIsDirty(true);
-                }}
-                disabled={!permissions.canEditDocument}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">없음</option>
-                {availableDocs
-                  .filter((d) => d.id !== selectedNext)
-                  .map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.title}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Next Document */}
-            <div>
-              <label htmlFor="next-doc" className="text-xs font-medium text-gray-500">
-                다음 문서
-              </label>
-              <select
-                id="next-doc"
-                value={selectedNext}
-                onChange={(e) => {
-                  setSelectedNext(e.target.value);
-                  setIsDirty(true);
-                }}
-                disabled={!permissions.canEditDocument}
-                className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">없음</option>
-                {availableDocs
-                  .filter((d) => d.id !== selectedPrev)
-                  .map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.title}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Related Documents */}
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-gray-500">
-                  관련 문서 ({relatedIds.length}/20)
-                </label>
-              </div>
-
-              {/* Related list */}
-              {relatedIds.length > 0 && (
-                <div className="mt-1.5 space-y-1">
-                  {relatedIds.map((id) => (
-                    <div
-                      key={id}
-                      className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-2 py-1"
-                    >
-                      <span className="truncate text-xs text-gray-700">
-                        {getDocTitle(id)}
-                      </span>
-                      {permissions.canEditDocument && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveRelated(id)}
-                          className="ml-1 shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
-                          aria-label={`${getDocTitle(id)} 관련 문서 제거`}
-                        >
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add related */}
-              {permissions.canEditDocument && relatedIds.length < 20 && (
-                <div className="mt-1.5 flex gap-1">
-                  <select
-                    value={addRelatedId}
-                    onChange={(e) => setAddRelatedId(e.target.value)}
-                    className="block flex-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">문서 선택...</option>
-                    {availableDocs
-                      .filter((d) => !relatedIds.includes(d.id))
-                      .map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.title}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAddRelated}
-                    disabled={!addRelatedId}
-                    className="rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-not-allowed disabled:text-gray-400"
-                  >
-                    추가
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700">
-                {error}
-              </div>
-            )}
-
-            {/* Save button */}
-            {permissions.canEditDocument && (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!isDirty || saveMutation.isPending}
-                className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                {saveMutation.isPending ? '저장 중...' : '관계 저장'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Divider */}
-        <hr className="my-4 border-gray-200" />
-
-        {/* Mini DAG Graph */}
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          문서 그래프
-        </h3>
-
-        {graphQuery.isLoading && (
-          <div className="flex items-center justify-center py-4">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          </div>
-        )}
-
-        {graphQuery.data && (
-          <DAGPipelineGraph
-            nodes={graphQuery.data.nodes}
-            edges={graphQuery.data.edges}
-            currentDocId={doc.id}
-            workspaceSlug={workspaceSlug}
-          />
+    <aside style={{
+      width: '300px', borderLeft: '1px solid var(--border)', background: 'var(--surface)',
+      overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 16px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontSize: '14px', fontWeight: 600 }}>문서 속성</span>
+        {onClose && (
+          <button onClick={onClose} style={{
+            width: '34px', height: '34px', borderRadius: 'var(--radius-sm)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-3)',
+          }}>✕</button>
         )}
       </div>
+
+      {/* ── Tags Section ── */}
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+        <SectionTitle>태그</SectionTitle>
+        <TagInput
+          workspaceSlug={workspaceSlug}
+          workspaceId={workspaceId}
+          documentId={doc.id}
+          initialTags={docTags}
+          disabled={!permissions.canManageTags}
+        />
+      </div>
+
+      {/* ── Category Section ── */}
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+        <SectionTitle>카테고리</SectionTitle>
+        <select
+          value={doc.categoryId ?? ''}
+          onChange={(e) => handleCategoryChange(e.target.value || null)}
+          disabled={!permissions.canEditDocument}
+          style={{
+            width: '100%', fontSize: '13px', padding: '8px 10px',
+            borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border)',
+            background: 'var(--surface)', color: 'var(--text)',
+            fontFamily: 'inherit', outline: 'none',
+          }}
+        >
+          <option value="">/ (루트)</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* ── Document Links Section ── */}
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+        <SectionTitle action={<SmallButton onClick={() => setShowLinksModal(true)}>관리</SmallButton>}>
+          문서 링크
+        </SectionTitle>
+
+        {relationsQuery.isLoading && (
+          <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-3)', fontSize: '12px' }}>로딩 중...</div>
+        )}
+
+        {relations && (
+          <>
+            {relations.prev && (
+              <>
+                <div style={{ fontSize: '12px', color: 'var(--text-3)', marginBottom: '8px' }}>← 이전</div>
+                <LinkDocItem title={relations.prev.title} />
+              </>
+            )}
+            {relations.next && (
+              <>
+                <div style={{ fontSize: '12px', color: 'var(--text-3)', margin: '8px 0' }}>다음 →</div>
+                <LinkDocItem title={relations.next.title} />
+              </>
+            )}
+            {relations.related.length > 0 && (
+              <>
+                <div style={{ fontSize: '12px', color: 'var(--text-3)', margin: '8px 0' }}>연관 문서</div>
+                {relations.related.map((r) => (
+                  <LinkDocItem key={r.id} title={r.title} />
+                ))}
+              </>
+            )}
+            {!relations.prev && !relations.next && relations.related.length === 0 && (
+              <div style={{ fontSize: '12px', color: 'var(--text-3)', textAlign: 'center', padding: '8px' }}>
+                연결된 문서가 없습니다
+              </div>
+            )}
+            <button
+              onClick={() => setShowLinksModal(true)}
+              style={{
+                width: '100%', fontSize: '12px', marginTop: '6px', color: 'var(--accent)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '6px', fontFamily: 'inherit',
+              }}
+            >
+              + 연관 문서 추가
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ── Document Structure Diagram ── */}
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+        <SectionTitle action={<SmallButton onClick={() => setShowDagModal(true)}>전체 보기</SmallButton>}>
+          문서 연결 구조
+        </SectionTitle>
+
+        {relations && (
+          <MiniDagDiagram
+            currentTitle={doc.title}
+            categoryName={doc.categoryPath}
+            prev={relations.prev}
+            next={relations.next}
+            related={relations.related}
+            onClickFullView={() => setShowDagModal(true)}
+          />
+        )}
+
+        {graphQuery.isLoading && !relations && (
+          <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-3)', fontSize: '12px' }}>로딩 중...</div>
+        )}
+      </div>
+
+      {/* ── Modals ── */}
+      <DocumentLinksModal
+        open={showLinksModal}
+        onClose={() => setShowLinksModal(false)}
+        workspaceId={workspaceId}
+        documentId={doc.id}
+        onSaved={() => {
+          void queryClient.invalidateQueries({ queryKey: ['relations', workspaceId, doc.id] });
+          void queryClient.invalidateQueries({ queryKey: ['graph', workspaceId] });
+        }}
+      />
+
+      {graphQuery.data && (
+        <DagStructureModal
+          open={showDagModal}
+          onClose={() => setShowDagModal(false)}
+          nodes={graphQuery.data.nodes}
+          edges={graphQuery.data.edges}
+          currentDocId={doc.id}
+          currentTitle={doc.title}
+          categoryName={doc.categoryPath}
+          workspaceSlug={workspaceSlug}
+          onEditLinks={() => { setShowDagModal(false); setShowLinksModal(true); }}
+        />
+      )}
     </aside>
   );
 }
 
-export type { DocumentMetaPanelProps, Relations, RelationDoc };
+export type { DocumentMetaPanelProps, DocumentInfo, Relations, RelationDoc };

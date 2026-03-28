@@ -165,7 +165,7 @@ export default function InviteAcceptPage({
           </p>
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/workspaces')}
             className="inline-flex items-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             홈으로 이동
@@ -289,7 +289,7 @@ export default function InviteAcceptPage({
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/workspaces')}
               className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               거절

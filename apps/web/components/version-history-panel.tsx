@@ -19,6 +19,7 @@ interface VersionHistoryPanelProps {
   onClose: () => void;
   workspaceSlug: string;
   documentId: string;
+  onOpenFullModal?: () => void;
 }
 
 export function VersionHistoryPanel({
@@ -26,6 +27,7 @@ export function VersionHistoryPanel({
   onClose,
   workspaceSlug,
   documentId,
+  onOpenFullModal,
 }: VersionHistoryPanelProps) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,16 +90,27 @@ export function VersionHistoryPanel({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <h3 className="text-sm font-semibold text-gray-900">버전 기록</h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          aria-label="패널 닫기"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenFullModal && (
+            <button
+              type="button"
+              onClick={onOpenFullModal}
+              className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+            >
+              전체 보기
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            aria-label="패널 닫기"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Version List */}

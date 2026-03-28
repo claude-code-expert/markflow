@@ -12,6 +12,7 @@ export { categories, categoryClosure } from './schema/categories';
 export { documents, documentVersions } from './schema/documents';
 export { documentRelations } from './schema/document-relations';
 export { tags, documentTags } from './schema/tags';
+export { embedTokens } from './schema/embed-tokens';
 
 // Re-export drizzle utilities consumers may need
 export { eq, and, or, desc, asc, sql, isNull, gt, lt, gte, lte, ne, like, ilike, inArray, notInArray, count } from 'drizzle-orm';

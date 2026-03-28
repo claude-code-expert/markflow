@@ -1,10 +1,15 @@
 import {
   workspaces,
   workspaceMembers,
+  joinRequests,
   users,
   eq,
   and,
   count,
+  ilike,
+  or,
+  sql,
+  notInArray,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
@@ -213,5 +218,80 @@ export function createWorkspaceService(db: Db) {
       .where(eq(workspaces.id, workspaceId));
   }
 
-  return { create, getById, listForUser, update, remove, transferOwnership };
+  async function listPublicWorkspaces(userId: string, query: string, page: number, limit: number) {
+    // Get workspace IDs where user is already a member
+    const memberRows = await db
+      .select({ wsId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.userId, userId));
+    const memberWsIds = memberRows.map((r) => r.wsId);
+
+    // Build conditions: public + not a member
+    const conditions = [eq(workspaces.isPublic, true)];
+    if (memberWsIds.length > 0) {
+      conditions.push(notInArray(workspaces.id, memberWsIds));
+    }
+    if (query.trim()) {
+      conditions.push(
+        or(
+          ilike(workspaces.name, `%${query}%`),
+          ilike(workspaces.slug, `%${query}%`),
+        )!,
+      );
+    }
+
+    const where = and(...conditions)!;
+
+    // Count total
+    const totalResult = await db
+      .select({ value: count() })
+      .from(workspaces)
+      .where(where);
+    const total = Number(totalResult[0]?.value ?? 0);
+
+    // Fetch page
+    const rows = await db
+      .select()
+      .from(workspaces)
+      .where(where)
+      .limit(limit)
+      .offset((page - 1) * limit)
+      .orderBy(workspaces.name);
+
+    // Get member counts + pending requests
+    const results = await Promise.all(
+      rows.map(async (ws) => {
+        const mcResult = await db
+          .select({ value: count() })
+          .from(workspaceMembers)
+          .where(eq(workspaceMembers.workspaceId, ws.id));
+        const memberCount = Number(mcResult[0]?.value ?? 0);
+
+        const pendingResult = await db
+          .select({ value: count() })
+          .from(joinRequests)
+          .where(
+            and(
+              eq(joinRequests.workspaceId, ws.id),
+              eq(joinRequests.userId, userId),
+              eq(joinRequests.status, 'pending'),
+            ),
+          );
+        const pendingRequest = Number(pendingResult[0]?.value ?? 0) > 0;
+
+        return {
+          id: ws.id,
+          name: ws.name,
+          slug: ws.slug,
+          memberCount,
+          isPublic: ws.isPublic,
+          pendingRequest,
+        };
+      }),
+    );
+
+    return { workspaces: results, total, page, limit };
+  }
+
+  return { create, getById, listForUser, listPublicWorkspaces, update, remove, transferOwnership };
 }

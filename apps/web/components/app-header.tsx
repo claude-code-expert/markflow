@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../stores/auth-store';
 import { useSidebarStore } from '../stores/sidebar-store';
@@ -54,6 +55,94 @@ function Breadcrumb() {
           )}
         </span>
       ))}
+    </div>
+  );
+}
+
+/* ─── Settings Dropdown ─── */
+
+const SETTINGS_MENU = [
+  { label: '문서', path: 'docs', icon: '📄' },
+  { label: '그래프', path: 'graph', icon: '🔗' },
+  { label: '휴지통', path: 'trash', icon: '🗑' },
+  { label: '멤버', path: 'settings/members', icon: '👥' },
+  { label: 'CSS 테마', path: 'settings/theme', icon: '🎨' },
+  { label: '임베드 연동', path: 'settings/embed', icon: '🔌' },
+  { label: '설정', path: 'settings', icon: '⚙️' },
+];
+
+function SettingsDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Extract workspace slug from pathname
+  const segments = pathname.split('/').filter(Boolean);
+  const slug = segments[0];
+  const reserved = new Set(['login', 'register', 'verify-email', 'invite', 'workspaces']);
+  const wsSlug = slug && !reserved.has(slug) ? slug : null;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!wsSlug) return null;
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        aria-label="설정"
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 'var(--radius-sm)', border: 'none',
+          background: open ? 'var(--surface-2)' : 'transparent',
+          cursor: 'pointer', color: 'var(--text-3)',
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', right: 0, marginTop: '4px',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', boxShadow: '0 4px 12px rgba(0,0,0,.1)',
+          minWidth: '180px', padding: '4px', zIndex: 100,
+        }}>
+          {SETTINGS_MENU.map((item) => {
+            const href = `/${wsSlug}/${item.path}`;
+            const isActive = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Link
+                key={item.path}
+                href={href}
+                onClick={() => setOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none', fontSize: '13px',
+                  color: isActive ? 'var(--accent)' : 'var(--text-2)',
+                  fontWeight: isActive ? 500 : 400,
+                  background: isActive ? 'var(--accent-2)' : 'transparent',
+                }}
+                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = isActive ? 'var(--accent-2)' : 'transparent'; }}
+              >
+                <span style={{ fontSize: '14px' }}>{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -187,7 +276,7 @@ function ProfileMenu() {
   );
 }
 
-export function AppHeader() {
+export function AppHeader({ onSearchClick }: { onSearchClick?: () => void } = {}) {
   const user = useAuthStore((s) => s.user);
   const toggleSidebar = useSidebarStore((s) => s.toggleSidebar);
 
@@ -246,8 +335,11 @@ export function AppHeader() {
       {/* Right: Save status + Search + User avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
+        <SettingsDropdown />
+
         <button
           aria-label="검색 (⌘K)"
+          onClick={onSearchClick}
           style={{
             width: '34px',
             height: '34px',

@@ -340,7 +340,7 @@ export default function LoginPage() {
       if (workspaces.length === 1 && workspaces[0]?.slug) {
         router.push(`/${workspaces[0].slug}/docs`);
       } else {
-        router.push('/');
+        router.push('/workspaces');
       }
     } catch (err) {
       if (err instanceof ApiError) {

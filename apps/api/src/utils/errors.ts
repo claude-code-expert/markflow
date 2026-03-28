@@ -1,12 +1,14 @@
 export class AppError extends Error {
   readonly code: string;
   readonly statusCode: number;
+  readonly details?: Record<string, unknown>;
 
-  constructor(code: string, message: string, statusCode: number) {
+  constructor(code: string, message: string, statusCode: number, details?: Record<string, unknown>) {
     super(message);
     this.name = 'AppError';
     this.code = code;
     this.statusCode = statusCode;
+    this.details = details;
   }
 
   toJSON() {
@@ -14,6 +16,7 @@ export class AppError extends Error {
       error: {
         code: this.code,
         message: this.message,
+        ...(this.details ? { details: this.details } : {}),
       },
     };
   }
@@ -31,8 +34,8 @@ export function unauthorized(message = 'Unauthorized'): AppError {
   return new AppError('UNAUTHORIZED', message, 401);
 }
 
-export function badRequest(code: string, message: string): AppError {
-  return new AppError(code, message, 400);
+export function badRequest(code: string, message: string, details?: Record<string, unknown>): AppError {
+  return new AppError(code, message, 400, details);
 }
 
 export function conflict(code: string, message: string): AppError {

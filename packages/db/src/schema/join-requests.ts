@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { users } from './users';
 import { workspaces } from './workspaces';
 
@@ -12,4 +13,8 @@ export const joinRequests = pgTable('join_requests', {
   assignedRole: varchar('assigned_role', { length: 20 }).$type<'admin' | 'editor' | 'viewer'>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  uniqueIndex('idx_join_requests_unique_pending')
+    .on(table.workspaceId, table.userId)
+    .where(sql`${table.status} = 'pending'`),
+]);

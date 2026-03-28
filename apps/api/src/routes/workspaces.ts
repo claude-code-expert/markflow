@@ -25,6 +25,17 @@ export async function workspacesRoutes(app: FastifyInstance, opts: WorkspacesRou
   // All routes require auth
   app.addHook('preHandler', authMiddleware);
 
+  // GET /api/v1/workspaces/public — search public workspaces
+  app.get<{
+    Querystring: { q?: string; page?: string; limit?: string };
+  }>('/workspaces/public', async (request) => {
+    const userId = (request as FastifyRequest & { userId: string }).userId;
+    const q = request.query.q ?? '';
+    const page = Math.max(1, Number(request.query.page ?? '1'));
+    const limit = Math.min(50, Math.max(1, Number(request.query.limit ?? '20')));
+    return workspaceService.listPublicWorkspaces(userId, q, page, limit);
+  });
+
   // POST /api/v1/workspaces
   app.post<{
     Body: { name: string; slug: string };

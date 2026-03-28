@@ -207,6 +207,7 @@ attributes: { '*': ['onclick', 'onerror', 'onload', 'style'] }
 - PostgreSQL 16 (primary), Cloudflare R2 (images) (001-kms-saas-platform)
 - TypeScript 5+ (strict mode, `any` 금지) + Next.js 16.2.1 (App Router), React 19.2.4, Zustand 5.0.0, @tanstack/react-query 5.72.0, Tailwind CSS 4 (002-kms-frontend-fix)
 - N/A (프론트엔드 전용 — 백엔드 API를 통해 PostgreSQL 간접 접근) (002-kms-frontend-fix)
+- PostgreSQL 16 (Drizzle ORM), Cloudflare R2 (images) (004-prototype-features)
 
 ## Recent Changes
 - 001-kms-saas-platform: Added TypeScript 5+ (strict mode, `any` 금지)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useWorkspaceStore } from '../stores/workspace-store';
@@ -14,7 +14,7 @@ function extractWorkspaceSlug(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
   const first = segments[0];
   if (first !== undefined) {
-    const reserved = new Set(['login', 'register', 'verify-email', 'invite']);
+    const reserved = new Set(['login', 'register', 'verify-email', 'invite', 'workspaces']);
     if (!reserved.has(first)) return first;
   }
   return null;
@@ -57,11 +57,25 @@ const settingsIcon = (
   </svg>
 );
 
+const themeIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 000 20 4 4 0 004-4v-1a2 2 0 012-2h1a4 4 0 004-4 10 10 0 00-10-10z" />
+    <circle cx="8" cy="10" r="1" /><circle cx="12" cy="8" r="1" /><circle cx="16" cy="10" r="1" />
+  </svg>
+);
+const embedIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
 const NAV_ITEMS: NavDef[] = [
   { key: 'docs', label: '문서', path: 'docs', icon: docsIcon },
   { key: 'trash', label: '휴지통', path: 'trash', icon: trashIcon },
   { key: 'members', label: '멤버', path: 'settings/members', icon: membersIcon },
   { key: 'graph', label: '그래프', path: 'graph', icon: graphIcon },
+  { key: 'theme', label: 'CSS 테마', path: 'settings/theme', icon: themeIcon },
+  { key: 'embed', label: '임베드 연동', path: 'settings/embed', icon: embedIcon },
   { key: 'settings', label: '설정', path: 'settings', icon: settingsIcon },
 ];
 
@@ -202,7 +216,7 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
           {/* 워크스페이스 목록 전체 보기 */}
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '4px', paddingTop: '4px' }}>
             <Link
-              href="/"
+              href="/workspaces"
               onClick={() => setOpen(false)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
@@ -228,10 +242,11 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
 
 /* ─── T016: Search Bar ─── */
 
-function SearchBar() {
+function SearchBar({ onClick }: { onClick?: () => void }) {
   return (
     <div style={{ padding: '0 10px', marginBottom: '8px' }}>
       <div
+        onClick={onClick}
         style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           padding: '7px 10px', background: 'var(--surface-2)',
@@ -273,17 +288,73 @@ function buildCategoryTree(flat: FlatCategory[]): TreeCategory[] {
   return roots;
 }
 
+function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState('');
+  return (
+    <div style={{ padding: '4px 8px 8px', display: 'flex', gap: '4px' }}>
+      <input
+        autoFocus
+        placeholder="폴더 이름..."
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && name.trim()) onSubmit(name.trim());
+          if (e.key === 'Escape') onCancel();
+        }}
+        style={{
+          flex: 1, padding: '5px 8px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)',
+          border: '1.5px solid var(--accent)', outline: 'none', fontFamily: 'inherit',
+          background: 'var(--surface)',
+        }}
+      />
+      <button
+        onClick={() => name.trim() && onSubmit(name.trim())}
+        style={{
+          padding: '5px 8px', fontSize: '11px', fontWeight: 500,
+          background: 'var(--accent)', color: '#fff', border: 'none',
+          borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        생성
+      </button>
+    </div>
+  );
+}
+
 function FolderTreeSection({ slug }: { slug: string }) {
   const [categories, setCategories] = useState<TreeCategory[]>([]);
+  const [showNewFolder, setShowNewFolder] = useState(false);
   const { workspaces } = useWorkspaceStore();
   const wsId = workspaces.find((ws) => ws.slug === slug)?.id;
 
-  useEffect(() => {
+  const loadCategories = useCallback(() => {
     if (!wsId) return;
     apiFetch<CategoriesResponse>(`/workspaces/${wsId}/categories`)
       .then((res) => setCategories(buildCategoryTree(res.categories)))
       .catch(() => setCategories([]));
   }, [wsId]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const handleCreateFolder = async (name: string) => {
+    if (!wsId) return;
+    try {
+      await apiFetch(`/workspaces/${wsId}/categories`, {
+        method: 'POST',
+        body: { name },
+      });
+      loadCategories();
+      setShowNewFolder(false);
+    } catch {
+      // silently fail
+    }
+  };
+
+  const pathname = usePathname();
+  const docsHref = `/${slug}/docs`;
+  const isDocsActive = pathname !== null && (pathname === docsHref || pathname.startsWith(docsHref + '/'));
 
   return (
     <div style={{ padding: '0 6px' }}>
@@ -292,8 +363,47 @@ function FolderTreeSection({ slug }: { slug: string }) {
         padding: '8px 8px 4px', fontSize: '11px', fontWeight: 600,
         color: 'var(--text-3)', textTransform: 'uppercase' as const, letterSpacing: '0.05em',
       }}>
-        <span>문서</span>
+        <span>폴더</span>
+        <button
+          onClick={() => setShowNewFolder(true)}
+          aria-label="새 폴더"
+          title="새 폴더"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: 'var(--radius-sm)',
+            color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
       </div>
+
+      {/* Inline new folder input */}
+      {showNewFolder && (
+        <NewFolderInline
+          onSubmit={handleCreateFolder}
+          onCancel={() => setShowNewFolder(false)}
+        />
+      )}
+      {/* 전체 문서 링크 */}
+      <Link
+        href={docsHref}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '7px 10px', borderRadius: 'var(--radius-sm)',
+          textDecoration: 'none', fontSize: '13.5px',
+          color: isDocsActive ? 'var(--accent)' : 'var(--text-2)',
+          fontWeight: isDocsActive ? 500 : 400,
+          background: isDocsActive ? 'var(--accent-2)' : 'transparent',
+        }}
+      >
+        <span style={{ opacity: isDocsActive ? 1 : 0.65, fontSize: '15px' }}>🗂</span>
+        전체 문서
+      </Link>
+      {/* 카테고리 트리 */}
       {categories.length > 0 ? (
         <CategoryTree
           categories={categories}
@@ -323,7 +433,7 @@ function NavSection({ slug }: { slug: string }) {
       </div>
       {NAV_ITEMS.map((item) => {
         const href = `/${slug}/${item.path}`;
-        const isActive = pathname === href || pathname.startsWith(href + '/');
+        const isActive = pathname !== null && (pathname === href || pathname.startsWith(href + '/'));
 
         return (
           <Link
@@ -352,7 +462,7 @@ function NavSection({ slug }: { slug: string }) {
 
 /* ─── Main Sidebar ─── */
 
-export function Sidebar() {
+export function Sidebar({ onSearchClick }: { onSearchClick?: () => void } = {}) {
   const pathname = usePathname();
   const slug = extractWorkspaceSlug(pathname);
 
@@ -368,18 +478,11 @@ export function Sidebar() {
       <WorkspaceSelector slug={slug} />
 
       {/* T016: Search Bar */}
-      {slug && <SearchBar />}
+      {slug && <SearchBar onClick={onSearchClick} />}
 
-      {/* Scrollable content */}
+      {/* Scrollable content — Folder tree only */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {/* T017: Folder Tree */}
         {slug && <FolderTreeSection slug={slug} />}
-
-        {/* Divider */}
-        {slug && <div style={{ height: '1px', background: 'var(--border)', margin: '8px 14px' }} />}
-
-        {/* T018: Navigation */}
-        {slug && <NavSection slug={slug} />}
       </div>
 
     </aside>

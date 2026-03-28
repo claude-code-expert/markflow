@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DM_Sans, Sora, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
+import { ToastProvider } from '../components/toast-provider';
 import './globals.css';
 import 'react-grab/styles.css';
 
@@ -31,7 +32,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${dmSans.variable} ${sora.variable} ${jetbrainsMono.variable} antialiased`}
     >
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ToastProvider />
+        </Providers>
       </body>
     </html>
   );
