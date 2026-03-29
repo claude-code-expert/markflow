@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../../../lib/api';
@@ -16,6 +16,9 @@ import { CategoryTree, type Category } from '../../../../components/category-tre
 import { FolderContextMenu } from '../../../../components/folder-context-menu';
 import { NewDocModal } from '../../../../components/new-doc-modal';
 import { NewFolderModal } from '../../../../components/new-folder-modal';
+import { ImportExportModal } from '../../../../components/import-export-modal';
+import { flattenCategories } from '../../../../lib/category-utils';
+import { Download, Plus } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Local types
@@ -64,27 +67,11 @@ function buildCategoryMap(cats: Category[]): Map<string, string> {
     for (const c of items) {
       const path = prefix ? `${prefix} / ${c.name}` : c.name;
       map.set(c.id, path);
-      if (c.children.length > 0) walk(c.children, path);
+      if (c.children && c.children.length > 0) walk(c.children, path);
     }
   }
   walk(cats, '');
   return map;
-}
-
-/** Flatten Category tree into a flat list of { id, name } for the NewDocModal */
-function flattenCategoryList(
-  cats: Category[],
-  prefix = '',
-): Array<{ id: string; name: string }> {
-  const result: Array<{ id: string; name: string }> = [];
-  for (const cat of cats) {
-    const name = prefix ? `${prefix} > ${cat.name}` : cat.name;
-    result.push({ id: cat.id, name });
-    if (cat.children.length > 0) {
-      result.push(...flattenCategoryList(cat.children, name));
-    }
-  }
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,9 +161,8 @@ export default function DocsPage() {
     position: { x: number; y: number };
   } | null>(null);
 
-  // Import
-  const importFileRef = useRef<HTMLInputElement>(null);
-  const [importing, setImporting] = useState(false);
+  // Import/Export modal
+  const [showImportExport, setShowImportExport] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -250,68 +236,6 @@ export default function DocsPage() {
     [sortField],
   );
 
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent, category: Category) => {
-      e.preventDefault();
-      setContextMenu({
-        category,
-        position: { x: e.clientX, y: e.clientY },
-      });
-    },
-    [],
-  );
-
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      await apiFetch<{ imported: number }>(
-        `/workspaces/${wsId}/import`,
-        { method: 'POST', body: formData },
-      );
-      void documentsQuery.refetch();
-      void categoriesQuery.refetch();
-    } catch {
-      // Error handled silently — could add toast notification
-    } finally {
-      setImporting(false);
-      if (importFileRef.current) importFileRef.current.value = '';
-    }
-  }
-
-  async function handleCategoryExport(catId: string) {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1'}/workspaces/${encodeURIComponent(workspaceSlug)}/categories/${catId}/export?format=zip`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken') ?? ''}`,
-          },
-          credentials: 'include',
-        },
-      );
-      if (!response.ok) return;
-      const blob = await response.blob();
-      const disposition = response.headers.get('content-disposition');
-      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-      const filename = filenameMatch
-        ? decodeURIComponent(filenameMatch[1]!)
-        : 'export.zip';
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      // Error handled silently
-    }
-  }
 
   // ---------------------------------------------------------------------------
   // Derived data
@@ -335,7 +259,7 @@ export default function DocsPage() {
           path.push(cat.name);
           return true;
         }
-        if (cat.children.length > 0) {
+        if (cat.children && cat.children.length > 0) {
           path.push(cat.name);
           if (findPath(cat.children, targetId)) return true;
           path.pop();
@@ -447,45 +371,15 @@ export default function DocsPage() {
 
             {/* Action buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* Import */}
+              {/* Import/Export */}
               {permissions.canImportExport && (
-                <>
-                  <input
-                    ref={importFileRef}
-                    type="file"
-                    accept=".md,.zip"
-                    onChange={(e) => void handleImport(e)}
-                    style={{ display: 'none' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => importFileRef.current?.click()}
-                    disabled={importing}
-                    style={{
-                      ...btnSecondary,
-                      opacity: importing ? 0.5 : 1,
-                      cursor: importing ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    {importing ? '가져오는 중...' : '가져오기'}
-                  </button>
-                </>
-              )}
-
-              {/* Export */}
-              {permissions.canImportExport && categoryIdParam && (
                 <button
                   type="button"
-                  onClick={() => void handleCategoryExport(categoryIdParam)}
+                  onClick={() => setShowImportExport(true)}
                   style={btnSecondary}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  내보내기
+                  <Download size={14} />
+                  가져오기 / 내보내기
                 </button>
               )}
 
@@ -499,10 +393,7 @@ export default function DocsPage() {
                   }}
                   style={btnPrimary}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
+                  <Plus size={14} strokeWidth={2.5} />
                   새 문서
                 </button>
               )}
@@ -1299,7 +1190,7 @@ export default function DocsPage() {
         onClose={() => setShowNewDocModal(false)}
         workspaceSlug={workspaceSlug}
         workspaceId={currentWorkspace?.id ?? workspaceSlug}
-        categories={flattenCategoryList(categories)}
+        categories={flattenCategories(categories).map((c) => ({ id: c.id, name: c.path }))}
       />
       <NewFolderModal
         open={showNewFolderModal}
@@ -1309,6 +1200,19 @@ export default function DocsPage() {
         defaultParentId={newFolderParentId}
         onCreated={() => void categoriesQuery.refetch()}
       />
+      {wsId && (
+        <ImportExportModal
+          open={showImportExport}
+          onClose={() => {
+            setShowImportExport(false);
+            void documentsQuery.refetch();
+            void categoriesQuery.refetch();
+          }}
+          workspaceId={wsId}
+          workspaceSlug={workspaceSlug}
+          currentCategoryId={categoryIdParam ?? undefined}
+        />
+      )}
 
       {/* Keyframe for spinner */}
       <style>{`

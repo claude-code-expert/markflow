@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FileText } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { useToastStore } from '../stores/toast-store';
 import type { Document } from '../lib/types';
@@ -123,7 +124,7 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
             <label className="text-[13px] font-medium text-[#57564F] mb-1.5 block">← 이전 문서 (Prev)</label>
             {relations.prev ? (
               <div className="flex items-center gap-2 p-2.5 bg-[#F8F7F4] rounded-md border border-[#E2E0D8]">
-                <span>📄</span>
+                <FileText size={14} className="shrink-0" />
                 <span className="flex-1 text-[13px] font-medium">{relations.prev.title}</span>
                 <button onClick={() => setRelations((r) => ({ ...r, prev: null }))} className="text-[#DC2626] text-xs">✕</button>
               </div>
@@ -138,8 +139,8 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                 {prevSearch && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
                     {filterDocs(prevSearch).map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm" onClick={() => selectPrev(d)}>
-                        📄 {d.title}
+                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => selectPrev(d)}>
+                        <FileText size={14} className="shrink-0" /> {d.title}
                       </div>
                     ))}
                   </div>
@@ -154,7 +155,7 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
             <label className="text-[13px] font-medium text-[#57564F] mb-1.5 block">다음 문서 (Next) →</label>
             {relations.next ? (
               <div className="flex items-center gap-2 p-2.5 bg-[#F8F7F4] rounded-md border border-[#E2E0D8]">
-                <span>📄</span>
+                <FileText size={14} className="shrink-0" />
                 <span className="flex-1 text-[13px] font-medium">{relations.next.title}</span>
                 <button onClick={() => setRelations((r) => ({ ...r, next: null }))} className="text-[#DC2626] text-xs">✕</button>
               </div>
@@ -169,8 +170,8 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                 {nextSearch && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
                     {filterDocs(nextSearch).map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm" onClick={() => selectNext(d)}>
-                        📄 {d.title}
+                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => selectNext(d)}>
+                        <FileText size={14} className="shrink-0" /> {d.title}
                       </div>
                     ))}
                   </div>
@@ -188,7 +189,7 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
               <div className="bg-[#F1F0EC] rounded-md p-2.5 border border-[#E2E0D8] mb-2 space-y-1.5">
                 {relations.related.map((r) => (
                   <div key={r.id} className="flex items-center gap-2 p-2 bg-[#F8F7F4] rounded-md border border-[#E2E0D8]">
-                    <span>📄</span>
+                    <FileText size={14} className="shrink-0" />
                     <span className="flex-1 text-[13px]">{r.title}</span>
                     <button onClick={() => removeRelated(r.id)} className="text-[#DC2626] text-xs cursor-pointer">✕</button>
                   </div>
@@ -207,8 +208,8 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                   {filterDocs(relatedSearch)
                     .filter((d) => !relations.related.some((r) => r.id === d.id))
                     .map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm" onClick={() => addRelated(d)}>
-                        📄 {d.title}
+                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => addRelated(d)}>
+                        <FileText size={14} className="shrink-0" /> {d.title}
                       </div>
                     ))}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { Search, FileText } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { useWorkspaceStore } from '../stores/workspace-store';
 import type { Document } from '../lib/types';
@@ -153,10 +154,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       >
         {/* Search Input */}
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-[#E2E0D8]">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A9890" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search size={16} className="text-[#9A9890] shrink-0" />
           <input
             ref={inputRef}
             className="flex-1 border-none outline-none text-base text-[#1A1916] bg-transparent placeholder:text-[#9A9890]"
@@ -172,7 +170,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         <div className="max-h-[420px] overflow-y-auto p-2">
           {displayItems.length === 0 && query.trim() && !isSearching && (
             <div className="text-center py-10 text-[#9A9890] text-sm">
-              🔍<br />
+              <Search size={16} className="inline-block mb-1" /><br />
               &laquo;{query}&raquo; 검색 결과가 없습니다
             </div>
           )}
@@ -198,7 +196,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               onClick={() => navigateToDoc(doc)}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
-              <span className="text-lg shrink-0 mt-0.5">📄</span>
+              <FileText size={16} className="shrink-0 mt-0.5 text-[#9A9890]" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium mb-0.5">
                   {highlightMatch(doc.title, query)}

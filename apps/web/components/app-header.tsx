@@ -3,6 +3,20 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import {
+  ChevronRight,
+  FileText,
+  Link as LinkIcon,
+  LogOut,
+  Palette,
+  PanelLeft,
+  Plug,
+  Search,
+  Settings,
+  Trash2,
+  User,
+  Users,
+} from 'lucide-react';
 import { useAuthStore } from '../stores/auth-store';
 import { useSidebarStore } from '../stores/sidebar-store';
 import { useWorkspaceStore } from '../stores/workspace-store';
@@ -37,9 +51,7 @@ function Breadcrumb() {
       {crumbs.map((c, i) => (
         <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {i > 0 && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.4 }}>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight size={14} style={{ opacity: 0.4 }} />
           )}
           {c.href && i < crumbs.length - 1 ? (
             <a href={c.href} style={{ color: 'inherit', textDecoration: 'none' }}
@@ -62,13 +74,13 @@ function Breadcrumb() {
 /* ─── Settings Dropdown ─── */
 
 const SETTINGS_MENU = [
-  { label: '문서', path: 'docs', icon: '📄' },
-  { label: '그래프', path: 'graph', icon: '🔗' },
-  { label: '휴지통', path: 'trash', icon: '🗑' },
-  { label: '멤버', path: 'settings/members', icon: '👥' },
-  { label: 'CSS 테마', path: 'settings/theme', icon: '🎨' },
-  { label: '임베드 연동', path: 'settings/embed', icon: '🔌' },
-  { label: '설정', path: 'settings', icon: '⚙️' },
+  { label: '문서', path: 'docs', icon: <FileText size={14} /> },
+  { label: '그래프', path: 'graph', icon: <LinkIcon size={14} /> },
+  { label: '휴지통', path: 'trash', icon: <Trash2 size={14} /> },
+  { label: '멤버', path: 'settings/members', icon: <Users size={14} /> },
+  { label: 'CSS 테마', path: 'settings/theme', icon: <Palette size={14} /> },
+  { label: '임베드 연동', path: 'settings/embed', icon: <Plug size={14} /> },
+  { label: '설정', path: 'settings', icon: <Settings size={14} /> },
 ];
 
 function SettingsDropdown() {
@@ -104,10 +116,7 @@ function SettingsDropdown() {
           cursor: 'pointer', color: 'var(--text-3)',
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-        </svg>
+        <Settings size={16} />
       </button>
 
       {open && (
@@ -136,7 +145,7 @@ function SettingsDropdown() {
                 onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
                 onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = isActive ? 'var(--accent-2)' : 'transparent'; }}
               >
-                <span style={{ fontSize: '14px' }}>{item.icon}</span>
+                <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                 <span>{item.label}</span>
               </Link>
             );
@@ -238,10 +247,7 @@ function ProfileMenu() {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <User size={14} />
               프로필 수정
             </button>
 
@@ -264,9 +270,7 @@ function ProfileMenu() {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--red-lt)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <LogOut size={14} />
               로그아웃
             </button>
           </div>
@@ -312,22 +316,20 @@ export function AppHeader({ onSearchClick }: { onSearchClick?: () => void } = {}
             color: 'var(--text-2)',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="18" rx="1" />
-            <line x1="14" y1="6" x2="21" y2="6" />
-            <line x1="14" y1="12" x2="21" y2="12" />
-            <line x1="14" y1="18" x2="21" y2="18" />
-          </svg>
+          <PanelLeft size={16} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '16px', borderRight: '1px solid var(--border)' }}>
+        <Link
+          href="/workspaces"
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '16px', borderRight: '1px solid var(--border)', textDecoration: 'none', color: 'inherit' }}
+        >
           <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontSize: '13px', fontWeight: 700 }}>M</span>
           </div>
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
             MarkFlow
           </span>
-        </div>
+        </Link>
 
         <Breadcrumb />
       </div>
@@ -353,10 +355,7 @@ export function AppHeader({ onSearchClick }: { onSearchClick?: () => void } = {}
             color: 'var(--text-3)',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <Search size={16} />
         </button>
 
         {user && <ProfileMenu />}

@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../stores/auth-store';
-import { NavBar } from '../components/landing/nav-bar';
-import { Hero } from '../components/landing/hero';
-import { FeaturesGrid } from '../components/landing/features-grid';
-import { PricingSection } from '../components/landing/pricing-section';
-import { Footer } from '../components/landing/footer';
+import { useAuthStore } from '../../stores/auth-store';
+import { NavBar } from '../../components/landing/nav-bar';
+import { Hero } from '../../components/landing/hero';
+import { FeaturesGrid } from '../../components/landing/features-grid';
+import { PricingSection } from '../../components/landing/pricing-section';
+import { Footer } from '../../components/landing/footer';
 
 export default function RootPage() {
   const router = useRouter();

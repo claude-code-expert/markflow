@@ -1,13 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { BarChart3, Lock, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import { useToastStore } from '../../stores/toast-store';
 
+const ICON_MAP = {
+  'members-csv': BarChart3,
+  'permissions-csv': Lock,
+  'activity-csv': ClipboardList,
+  'report-pdf': FileSpreadsheet,
+} as const;
+
 const EXPORT_OPTIONS = [
-  { id: 'members-csv', icon: '📊', color: 'var(--green-lt)', title: '멤버 목록 CSV', desc: '이름, 이메일, 역할, 가입일 포함' },
-  { id: 'permissions-csv', icon: '🔒', color: 'var(--accent-2)', title: '권한 현황 CSV', desc: '멤버별 역할 및 권한 범위' },
-  { id: 'activity-csv', icon: '📋', color: 'var(--amber-lt)', title: '활동 내역 CSV', desc: '문서 수정, 로그인, 권한 변경 이력' },
-  { id: 'report-pdf', icon: '📑', color: 'var(--purple-lt)', title: '전체 보고서 PDF', desc: '멤버 + 권한 + 활동 종합 리포트' },
+  { id: 'members-csv', color: 'var(--green-lt)', title: '멤버 목록 CSV', desc: '이름, 이메일, 역할, 가입일 포함' },
+  { id: 'permissions-csv', color: 'var(--accent-2)', title: '권한 현황 CSV', desc: '멤버별 역할 및 권한 범위' },
+  { id: 'activity-csv', color: 'var(--amber-lt)', title: '활동 내역 CSV', desc: '문서 수정, 로그인, 권한 변경 이력' },
+  { id: 'report-pdf', color: 'var(--purple-lt)', title: '전체 보고서 PDF', desc: '멤버 + 권한 + 활동 종합 리포트' },
 ] as const;
 
 export function MemberExportTab() {
@@ -41,9 +49,9 @@ export function MemberExportTab() {
             <div style={{
               width: '42px', height: '42px', borderRadius: 'var(--radius)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '14px', fontSize: '18px', background: opt.color,
+              marginBottom: '14px', background: opt.color,
             }}>
-              {opt.icon}
+              {(() => { const Icon = ICON_MAP[opt.id]; return <Icon size={18} />; })()}
             </div>
             <div style={{ fontFamily: 'var(--font-h)', fontSize: '15px', fontWeight: 600, marginBottom: '8px' }}>{opt.title}</div>
             <div style={{ fontSize: '13px', color: 'var(--text-2)' }}>{opt.desc}</div>

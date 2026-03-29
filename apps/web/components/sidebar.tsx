@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  FileText, Search, FolderOpen, Command, ChevronDown, Plus, Check, LayoutGrid,
+} from 'lucide-react';
 import { useWorkspaceStore } from '../stores/workspace-store';
-import { CategoryTree, type Category as TreeCategory } from './category-tree';
+import { CategoryTree, type Category as TreeCategory, type TreeDocument } from './category-tree';
 import { apiFetch } from '../lib/api';
-import type { Category as FlatCategory, CategoriesResponse } from '../lib/types';
 
 /* ─── helpers ─── */
 
@@ -20,64 +22,6 @@ function extractWorkspaceSlug(pathname: string): string | null {
   return null;
 }
 
-/* ─── nav config ─── */
-
-interface NavDef {
-  key: string;
-  label: string;
-  path: string; // appended to /{slug}/
-  icon: React.ReactNode;
-}
-
-const docsIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-);
-const trashIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-const membersIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-  </svg>
-);
-const graphIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><circle cx="18" cy="6" r="3" />
-    <line x1="8.7" y1="7.5" x2="15.3" y2="16.5" /><line x1="15.3" y1="7.5" x2="8.7" y2="16.5" />
-  </svg>
-);
-const settingsIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const themeIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 000 20 4 4 0 004-4v-1a2 2 0 012-2h1a4 4 0 004-4 10 10 0 00-10-10z" />
-    <circle cx="8" cy="10" r="1" /><circle cx="12" cy="8" r="1" /><circle cx="16" cy="10" r="1" />
-  </svg>
-);
-const embedIcon = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-
-const NAV_ITEMS: NavDef[] = [
-  { key: 'docs', label: '문서', path: 'docs', icon: docsIcon },
-  { key: 'trash', label: '휴지통', path: 'trash', icon: trashIcon },
-  { key: 'members', label: '멤버', path: 'settings/members', icon: membersIcon },
-  { key: 'graph', label: '그래프', path: 'graph', icon: graphIcon },
-  { key: 'theme', label: 'CSS 테마', path: 'settings/theme', icon: themeIcon },
-  { key: 'embed', label: '임베드 연동', path: 'settings/embed', icon: embedIcon },
-  { key: 'settings', label: '설정', path: 'settings', icon: settingsIcon },
-];
 
 /* ─── T015: Workspace Selector ─── */
 
@@ -143,12 +87,11 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
             {current?.name ?? 'MarkFlow'}
           </div>
         </div>
-        <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2"
+        <ChevronDown
+          size={14}
+          color="var(--text-3)"
           style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+        />
       </button>
 
       {/* 워크스페이스 드롭다운 목록 */}
@@ -206,9 +149,7 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
                 </div>
               </div>
               {ws.slug === slug && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <Check size={14} color="var(--accent)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
               )}
             </Link>
           ))}
@@ -227,10 +168,7 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-              </svg>
+              <LayoutGrid size={12} />
               전체 워크스페이스
             </Link>
           </div>
@@ -253,15 +191,14 @@ function SearchBar({ onClick }: { onClick?: () => void }) {
           borderRadius: 'var(--radius-sm)', cursor: 'pointer',
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <Search size={14} color="var(--text-3)" />
         <span style={{ fontSize: '13px', color: 'var(--text-3)', flex: 1 }}>문서 검색...</span>
         <span style={{
           fontSize: '11px', color: 'var(--text-3)', background: 'var(--surface)',
           padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border)',
+          display: 'inline-flex', alignItems: 'center', gap: '2px',
         }}>
-          ⌘K
+          <Command size={11} />K
         </span>
       </div>
     </div>
@@ -270,26 +207,25 @@ function SearchBar({ onClick }: { onClick?: () => void }) {
 
 /* ─── T017: Folder Tree Section ─── */
 
-function buildCategoryTree(flat: FlatCategory[]): TreeCategory[] {
-  const map = new Map<string, TreeCategory>();
-  const roots: TreeCategory[] = [];
-
-  for (const c of flat) {
-    map.set(c.id, { id: c.id, name: c.name, parentId: c.parentId, children: [] });
-  }
-  for (const c of flat) {
-    const node = map.get(c.id)!;
-    if (c.parentId) {
-      const parent = map.get(c.parentId);
-      if (parent) { parent.children.push(node); continue; }
-    }
-    roots.push(node);
-  }
-  return roots;
+interface CategoryTreeResponse {
+  categories: TreeCategory[];
+  uncategorized: TreeDocument[];
 }
 
-function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => void; onCancel: () => void }) {
+function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => Promise<void> | void; onCancel: () => void }) {
   const [name, setName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = useCallback(async () => {
+    if (!name.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(name.trim());
+    } finally {
+      setSubmitting(false);
+    }
+  }, [name, submitting, onSubmit]);
+
   return (
     <div style={{ padding: '4px 8px 8px', display: 'flex', gap: '4px' }}>
       <input
@@ -298,9 +234,10 @@ function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => v
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && name.trim()) onSubmit(name.trim());
+          if (e.key === 'Enter') void handleSubmit();
           if (e.key === 'Escape') onCancel();
         }}
+        disabled={submitting}
         style={{
           flex: 1, padding: '5px 8px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)',
           border: '1.5px solid var(--accent)', outline: 'none', fontFamily: 'inherit',
@@ -308,11 +245,13 @@ function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => v
         }}
       />
       <button
-        onClick={() => name.trim() && onSubmit(name.trim())}
+        onClick={() => void handleSubmit()}
+        disabled={submitting}
         style={{
           padding: '5px 8px', fontSize: '11px', fontWeight: 500,
           background: 'var(--accent)', color: '#fff', border: 'none',
-          borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'inherit',
+          borderRadius: 'var(--radius-sm)', cursor: submitting ? 'not-allowed' : 'pointer',
+          fontFamily: 'inherit', opacity: submitting ? 0.6 : 1,
         }}
       >
         생성
@@ -323,20 +262,33 @@ function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => v
 
 function FolderTreeSection({ slug }: { slug: string }) {
   const [categories, setCategories] = useState<TreeCategory[]>([]);
+  const [uncategorized, setUncategorized] = useState<TreeDocument[]>([]);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const { workspaces } = useWorkspaceStore();
   const wsId = workspaces.find((ws) => ws.slug === slug)?.id;
+  const pathname = usePathname();
 
-  const loadCategories = useCallback(() => {
+  const loadData = useCallback(() => {
     if (!wsId) return;
-    apiFetch<CategoriesResponse>(`/workspaces/${wsId}/categories`)
-      .then((res) => setCategories(buildCategoryTree(res.categories)))
-      .catch(() => setCategories([]));
+    apiFetch<CategoryTreeResponse>(`/workspaces/${wsId}/categories/tree`)
+      .then((res) => {
+        setCategories(res.categories);
+        setUncategorized(res.uncategorized);
+      })
+      .catch(() => {
+        setCategories([]);
+        setUncategorized([]);
+      });
   }, [wsId]);
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    loadData();
+  }, [loadData]);
+
+  // pathname 변경 시 refetch (문서 저장/생성 후 갱신)
+  useEffect(() => {
+    loadData();
+  }, [pathname, loadData]);
 
   const handleCreateFolder = async (name: string) => {
     if (!wsId) return;
@@ -345,16 +297,19 @@ function FolderTreeSection({ slug }: { slug: string }) {
         method: 'POST',
         body: { name },
       });
-      loadCategories();
+      loadData();
       setShowNewFolder(false);
     } catch {
       // silently fail
     }
   };
 
-  const pathname = usePathname();
   const docsHref = `/${slug}/docs`;
   const isDocsActive = pathname !== null && (pathname === docsHref || pathname.startsWith(docsHref + '/'));
+
+  // 현재 열린 문서 ID 추출
+  const docIdMatch = pathname?.match(/\/docs\/([^/]+)/);
+  const currentDocId = docIdMatch?.[1] ?? null;
 
   return (
     <div style={{ padding: '0 6px' }}>
@@ -363,7 +318,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
         padding: '8px 8px 4px', fontSize: '11px', fontWeight: 600,
         color: 'var(--text-3)', textTransform: 'uppercase' as const, letterSpacing: '0.05em',
       }}>
-        <span>폴더</span>
+        <span>문서</span>
         <button
           onClick={() => setShowNewFolder(true)}
           aria-label="새 폴더"
@@ -374,10 +329,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
             color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Plus size={12} strokeWidth={2.5} />
         </button>
       </div>
 
@@ -388,6 +340,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
           onCancel={() => setShowNewFolder(false)}
         />
       )}
+
       {/* 전체 문서 링크 */}
       <Link
         href={docsHref}
@@ -400,63 +353,54 @@ function FolderTreeSection({ slug }: { slug: string }) {
           background: isDocsActive ? 'var(--accent-2)' : 'transparent',
         }}
       >
-        <span style={{ opacity: isDocsActive ? 1 : 0.65, fontSize: '15px' }}>🗂</span>
+        <FolderOpen size={16} style={{ opacity: isDocsActive ? 1 : 0.65, flexShrink: 0 }} />
         전체 문서
       </Link>
-      {/* 카테고리 트리 */}
-      {categories.length > 0 ? (
+
+      {/* 미분류 문서 (카테고리 없는 문서) — "전체 문서" 하위 */}
+      {uncategorized.length > 0 && (
+        <div style={{ paddingLeft: '14px' }}>
+          {uncategorized.map((doc) => {
+            const docHref = `/${slug}/docs/${doc.id}`;
+            const isDocActive = currentDocId === doc.id;
+            return (
+              <Link
+                key={doc.id}
+                href={docHref}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '5px 12px', borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none', fontSize: '13px',
+                  fontWeight: isDocActive ? 500 : 400,
+                  color: isDocActive ? 'var(--accent)' : 'var(--text-2)',
+                  background: isDocActive ? 'var(--accent-2)' : 'transparent',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => { if (!isDocActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = isDocActive ? 'var(--accent-2)' : 'transparent'; }}
+              >
+                <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <span style={{
+                  flex: 1, minWidth: 0,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {doc.title || '제목 없음'}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 카테고리 트리 (문서 포함) */}
+      {categories.length > 0 && (
         <CategoryTree
           categories={categories}
           workspaceSlug={slug}
+          currentDocId={currentDocId}
         />
-      ) : (
-        <div style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-3)' }}>
-          폴더가 없습니다
-        </div>
       )}
     </div>
-  );
-}
-
-/* ─── T018: Navigation Items ─── */
-
-function NavSection({ slug }: { slug: string }) {
-  const pathname = usePathname();
-
-  return (
-    <nav style={{ padding: '4px 6px' }}>
-      <div style={{
-        padding: '8px 8px 4px', fontSize: '11px', fontWeight: 600,
-        color: 'var(--text-3)', textTransform: 'uppercase' as const, letterSpacing: '0.05em',
-      }}>
-        탐색
-      </div>
-      {NAV_ITEMS.map((item) => {
-        const href = `/${slug}/${item.path}`;
-        const isActive = pathname !== null && (pathname === href || pathname.startsWith(href + '/'));
-
-        return (
-          <Link
-            key={item.key}
-            href={href}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '7px 12px', borderRadius: 'var(--radius-sm)',
-              textDecoration: 'none', fontSize: '13.5px',
-              color: isActive ? 'var(--accent)' : 'var(--text-2)',
-              fontWeight: isActive ? 500 : 400,
-              background: isActive ? 'var(--accent-2)' : 'transparent',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
-            onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
-          >
-            <span style={{ opacity: isActive ? 1 : 0.65, flexShrink: 0 }}>{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
   );
 }
 
@@ -480,7 +424,7 @@ export function Sidebar({ onSearchClick }: { onSearchClick?: () => void } = {}) 
       {/* T016: Search Bar */}
       {slug && <SearchBar onClick={onSearchClick} />}
 
-      {/* Scrollable content — Folder tree only */}
+      {/* Scrollable content — Document tree */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {slug && <FolderTreeSection slug={slug} />}
       </div>

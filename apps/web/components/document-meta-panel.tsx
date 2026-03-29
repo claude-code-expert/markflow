@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileText } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { usePermissions } from '../hooks/use-permissions';
 import { TagInput } from './tag-input';
@@ -121,7 +122,7 @@ function LinkDocItem({ title, onRemove }: { title: string; onRemove?: () => void
       padding: '8px 10px', background: 'var(--bg)', borderRadius: 'var(--radius-sm)',
       border: '1px solid var(--border)', marginBottom: '6px', fontSize: '13px',
     }}>
-      <span>📄</span>
+      <FileText size={14} style={{ flexShrink: 0 }} />
       <span style={{ flex: 1, fontWeight: 500, fontSize: '13px' }}>{title}</span>
       {onRemove && (
         <button onClick={onRemove} style={{

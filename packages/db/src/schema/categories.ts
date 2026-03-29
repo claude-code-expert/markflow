@@ -8,7 +8,7 @@ export const categories = pgTable('categories', {
   parentId: uuid('parent_id').references((): AnyPgColumn => categories.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
-  unique('uq_category_name_parent').on(table.workspaceId, table.parentId, table.name),
+  unique('uq_category_name_parent').on(table.workspaceId, table.parentId, table.name).nullsNotDistinct(),
 ]);
 
 export const categoryClosure = pgTable('category_closure', {

@@ -2,20 +2,29 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
+import { ChevronRight, Folder, FolderOpen, FileText } from 'lucide-react';
 import { useSidebarStore } from '../stores/sidebar-store';
+
+export interface TreeDocument {
+  id: string;
+  title: string;
+  slug: string;
+  updatedAt: string;
+}
 
 export interface Category {
   id: string;
   name: string;
   parentId: string | null;
   children: Category[];
-  documentCount?: number;
+  documents: TreeDocument[];
 }
 
 interface CategoryTreeProps {
   categories: Category[];
   workspaceSlug: string;
   currentCategoryId?: string | null;
+  currentDocId?: string | null;
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
 }
 
@@ -23,68 +32,16 @@ interface CategoryNodeProps {
   category: Category;
   workspaceSlug: string;
   currentCategoryId?: string | null;
+  currentDocId?: string | null;
   depth: number;
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
-}
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      style={{
-        transition: 'transform 0.15s ease',
-        transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-        flexShrink: 0,
-      }}
-    >
-      <path
-        d="M4.5 2.5L8 6L4.5 9.5"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function FolderIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      style={{ opacity: 0.65, flexShrink: 0 }}
-    >
-      {open ? (
-        <path
-          d="M3.75 14.25C2.92157 14.25 2.25 13.5784 2.25 12.75V5.25C2.25 4.42157 2.92157 3.75 3.75 3.75H6.75L8.25 5.25H12.75C13.5784 5.25 14.25 5.92157 14.25 6.75V7.5M3.75 14.25H14.25C15.0784 14.25 15.75 13.5784 15.75 12.75V9.75C15.75 8.92157 15.0784 8.25 14.25 8.25H6.75C5.92157 8.25 5.25 8.92157 5.25 9.75V14.25C5.25 14.25 4.57843 14.25 3.75 14.25Z"
-          stroke="currentColor"
-          strokeWidth={1.25}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <path
-          d="M2.25 5.25C2.25 4.42157 2.92157 3.75 3.75 3.75H6.75L8.25 5.25H14.25C15.0784 5.25 15.75 5.92157 15.75 6.75V12.75C15.75 13.5784 15.0784 14.25 14.25 14.25H3.75C2.92157 14.25 2.25 13.5784 2.25 12.75V5.25Z"
-          stroke="currentColor"
-          strokeWidth={1.25}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
-  );
 }
 
 function CategoryNode({
   category,
   workspaceSlug,
   currentCategoryId,
+  currentDocId,
   depth,
   onContextMenu,
 }: CategoryNodeProps) {
@@ -92,6 +49,8 @@ function CategoryNode({
   const isExpanded = expandedCategoryIds.has(category.id);
   const isActive = currentCategoryId === category.id;
   const hasChildren = category.children.length > 0;
+  const hasDocs = category.documents.length > 0;
+  const hasContent = hasChildren || hasDocs;
 
   const handleToggle = useCallback(
     (e: React.MouseEvent) => {
@@ -159,19 +118,30 @@ function CategoryNode({
             padding: 0,
             border: 'none',
             background: 'none',
-            cursor: hasChildren ? 'pointer' : 'default',
-            color: hasChildren ? 'var(--text-2)' : 'transparent',
+            cursor: hasContent ? 'pointer' : 'default',
+            color: hasContent ? 'var(--text-2)' : 'transparent',
             flexShrink: 0,
             borderRadius: '2px',
           }}
           tabIndex={-1}
           aria-label={isExpanded ? '폴더 접기' : '폴더 펼치기'}
         >
-          <ChevronIcon expanded={isExpanded} />
+          <ChevronRight
+            size={12}
+            style={{
+              transition: 'transform 0.15s ease',
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              flexShrink: 0,
+            }}
+          />
         </button>
 
         {/* Folder icon */}
-        <FolderIcon open={isExpanded && hasChildren} />
+        {isExpanded && hasContent ? (
+          <FolderOpen size={16} style={{ opacity: 0.65, flexShrink: 0 }} />
+        ) : (
+          <Folder size={16} style={{ opacity: 0.65, flexShrink: 0 }} />
+        )}
 
         {/* Name */}
         <span
@@ -187,7 +157,7 @@ function CategoryNode({
         </span>
 
         {/* Document count badge */}
-        {category.documentCount !== undefined && category.documentCount > 0 && (
+        {hasDocs && (
           <span
             style={{
               flexShrink: 0,
@@ -199,24 +169,65 @@ function CategoryNode({
               color: 'var(--text-2)',
             }}
           >
-            {category.documentCount}
+            {category.documents.length}
           </span>
         )}
       </Link>
 
-      {/* Children */}
-      {hasChildren && isExpanded && (
+      {/* Children (subcategories + documents) */}
+      {isExpanded && (
         <div>
+          {/* Subcategories */}
           {category.children.map((child) => (
             <CategoryNode
               key={child.id}
               category={child}
               workspaceSlug={workspaceSlug}
               currentCategoryId={currentCategoryId}
+              currentDocId={currentDocId}
               depth={depth + 1}
               onContextMenu={onContextMenu}
             />
           ))}
+          {/* Documents in this category */}
+          {category.documents.map((doc) => {
+            const docHref = `/${workspaceSlug}/docs/${doc.id}`;
+            const isDocActive = currentDocId === doc.id;
+            return (
+              <Link
+                key={doc.id}
+                href={docHref}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  paddingLeft: `${(depth + 1) * 14 + 12}px`,
+                  fontSize: '13px',
+                  fontWeight: isDocActive ? 500 : 400,
+                  color: isDocActive ? 'var(--accent)' : 'var(--text-2)',
+                  background: isDocActive ? 'var(--accent-2)' : 'transparent',
+                  borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDocActive) e.currentTarget.style.background = 'var(--surface-2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = isDocActive ? 'var(--accent-2)' : 'transparent';
+                }}
+              >
+                <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <span style={{
+                  flex: 1, minWidth: 0,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {doc.title || '제목 없음'}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -227,47 +238,11 @@ export function CategoryTree({
   categories,
   workspaceSlug,
   currentCategoryId,
+  currentDocId,
   onContextMenu,
 }: CategoryTreeProps) {
   if (categories.length === 0) {
-    return (
-      <div
-        style={{
-          padding: '24px 16px',
-          textAlign: 'center',
-        }}
-      >
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 18 18"
-          fill="none"
-          style={{
-            margin: '0 auto 8px',
-            opacity: 0.3,
-            color: 'var(--text-2)',
-          }}
-        >
-          <path
-            d="M2.25 5.25C2.25 4.42157 2.92157 3.75 3.75 3.75H6.75L8.25 5.25H14.25C15.0784 5.25 15.75 5.92157 15.75 6.75V12.75C15.75 13.5784 15.0784 14.25 14.25 14.25H3.75C2.92157 14.25 2.25 13.5784 2.25 12.75V5.25Z"
-            stroke="currentColor"
-            strokeWidth={1.25}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <p
-          style={{
-            fontSize: '12px',
-            color: 'var(--text-2)',
-            opacity: 0.5,
-            margin: 0,
-          }}
-        >
-          폴더가 없습니다
-        </p>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -278,6 +253,7 @@ export function CategoryTree({
           category={category}
           workspaceSlug={workspaceSlug}
           currentCategoryId={currentCategoryId}
+          currentDocId={currentDocId}
           depth={0}
           onContextMenu={onContextMenu}
         />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, type FormEvent } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import type { Category } from './category-tree';
+import { flattenCategories } from '../lib/category-utils';
 
 interface NewFolderModalProps {
   open: boolean;
@@ -17,22 +18,6 @@ interface CreateCategoryResponse {
   id: string;
   name: string;
   parentId: string | null;
-}
-
-/** Build a flat list of { id, path } from a category tree for display in selector */
-function flattenCategories(
-  categories: Category[],
-  parentPath: string = '',
-): Array<{ id: string; path: string }> {
-  const result: Array<{ id: string; path: string }> = [];
-  for (const cat of categories) {
-    const path = parentPath ? `${parentPath} > ${cat.name}` : cat.name;
-    result.push({ id: cat.id, path });
-    if (cat.children.length > 0) {
-      result.push(...flattenCategories(cat.children, path));
-    }
-  }
-  return result;
 }
 
 export function NewFolderModal({

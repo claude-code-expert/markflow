@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brewnet Pro — Full Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#070d1a;--bg1:#0c1525;--bg2:#111e33;--bg3:#162640;--bg4:#1c3052;
+  --bdr:#1a2d47;--bdr2:#22385c;--bdr3:#2c4a70;
+  --amber:#e8a849;--amber2:#f5c97e;--amber3:#b07a18;
+  --teal:#3dd6c8;--teal2:#26a89c;
+  --green:#3de89a;--red:#f04b5a;--blue:#5b8fff;--violet:#a78bfa;--oran:#fb923c;
+  --txt:#d2dff5;--txt2:#7a93be;--txt3:#3a5070;
+  --mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;
+  --r:8px;--r2:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg0);color:var(--txt);font-family:var(--sans);overflow:hidden;font-size:14px}
+#shell{display:flex;height:100vh}
+#sidebar{width:224px;flex-shrink:0;background:var(--bg1);border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#topbar{height:52px;background:var(--bg1);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 24px;gap:10px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:28px 30px}
+
+/* SIDEBAR */
+.logo{height:52px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 18px;gap:9px;flex-shrink:0}
+.logo-txt{font-family:var(--mono);font-weight:700;font-size:14.5px;color:var(--amber);letter-spacing:.4px}
+.logo-pro{margin-left:auto;font-size:9px;font-family:var(--mono);font-weight:700;background:var(--amber3);color:#000;padding:2px 5px;border-radius:3px}
+.snav{flex:1;padding:10px 8px;overflow-y:auto}
+.nsec{font-size:9px;font-family:var(--mono);color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;padding:10px 10px 5px}
+.nitem{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);font-size:13px;color:var(--txt2);cursor:pointer;transition:all .14s;margin-bottom:1px;user-select:none}
+.nitem:hover{background:var(--bg2);color:var(--txt)}
+.nitem.active{background:rgba(232,168,73,.13);color:var(--amber)}
+.nic{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+.nbadge{margin-left:auto;font-size:10px;font-family:var(--mono);background:var(--bg3);color:var(--txt2);padding:1px 7px;border-radius:10px}
+.sbfoot{border-top:1px solid var(--bdr);padding:12px 8px}
+.srv-pill{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--bg2);border-radius:var(--r)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-g{background:var(--green);box-shadow:0 0 7px var(--green)}
+.dot-r{background:var(--red)}
+.dot-a{background:var(--amber)}
+
+/* TOPBAR */
+.bc{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--txt2)}
+.bc .s{color:var(--txt3)}.bc .c{color:var(--txt);font-weight:600}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .14s;white-space:nowrap;user-select:none;line-height:1}
+.btn:active{transform:scale(.97)}
+.bp{background:var(--amber);color:#000}.bp:hover{background:var(--amber2)}
+.bg{background:transparent;color:var(--txt2);border:1px solid var(--bdr2)}.bg:hover{background:var(--bg3);color:var(--txt)}
+.bt{background:rgba(61,214,200,.1);color:var(--teal);border:1px solid rgba(61,214,200,.22)}.bt:hover{background:rgba(61,214,200,.18)}
+.br{background:rgba(240,75,90,.1);color:var(--red);border:1px solid rgba(240,75,90,.22)}.br:hover{background:rgba(240,75,90,.18)}
+.bv{background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.22)}
+.bsm{padding:6px 12px;font-size:12px}.bxs{padding:3px 9px;font-size:11px}
+
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:20px}
+.b-run{background:rgba(61,232,154,.09);color:var(--green);border:1px solid rgba(61,232,154,.2)}
+.b-stop{background:rgba(240,75,90,.09);color:var(--red);border:1px solid rgba(240,75,90,.2)}
+.b-build{background:rgba(232,168,73,.09);color:var(--amber);border:1px solid rgba(232,168,73,.2)}
+.b-live{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);font-weight:700;color:var(--red);background:rgba(240,75,90,.1);border:1px solid rgba(240,75,90,.22);padding:3px 10px;border-radius:20px}
+.blink{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:20px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ct{font-size:13.5px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:7px}
+
+/* FORMS */
+.fg{margin-bottom:18px}
+.fl{display:block;font-size:11.5px;color:var(--txt2);font-weight:500;margin-bottom:7px;letter-spacing:.2px}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);padding:9px 13px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .14s}
+.fi:focus{border-color:var(--amber)}.fi::placeholder{color:var(--txt3)}
+.fhint{font-size:11px;color:var(--txt3);font-family:var(--mono);margin-top:5px}
+.ferr{font-size:11px;color:var(--red);margin-top:5px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(4,8,18,.88);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;z-index:900;padding:16px;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg2);border:1px solid var(--bdr2);border-radius:14px;width:100%;box-shadow:0 30px 100px rgba(0,0,0,.65);animation:mUp .2s ease}
+@keyframes mUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.msm{max-width:460px}.mmd{max-width:560px}.mlg{max-width:680px}
+.mh{display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 0}
+.mt-m{font-size:15px;font-weight:700}.ms{font-size:12px;color:var(--txt2);margin-top:3px}
+.mb-m{padding:20px 24px}.mfoot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:4px 24px 22px}
+.xbtn{width:28px;height:28px;border-radius:6px;background:var(--bg3);border:none;color:var(--txt2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .14s;flex-shrink:0}
+.xbtn:hover{background:var(--bdr2);color:var(--txt)}
+
+/* PROGRESS */
+.ptr{background:var(--bg3);border-radius:4px;height:5px;overflow:hidden;margin:12px 0 6px}
+.pfl{height:100%;background:linear-gradient(90deg,var(--amber),var(--teal));border-radius:4px;transition:width .4s ease}
+.plbl{font-size:11px;font-family:var(--mono);color:var(--txt3)}
+
+/* STEPS */
+.sl{display:flex;flex-direction:column;gap:10px}
+.sr{display:flex;align-items:flex-start;gap:11px;font-size:13px}
+.sic{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px}
+.siw{background:var(--bg3);color:var(--txt3)}
+.sis{background:rgba(232,168,73,.15);color:var(--amber);animation:spin 1s linear infinite}
+.sid{background:rgba(61,232,154,.15);color:var(--green)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--bdr);margin-bottom:22px}
+.tab{padding:10px 17px;font-size:13px;cursor:pointer;color:var(--txt2);border-bottom:2px solid transparent;transition:all .14s;margin-bottom:-1px;font-weight:500;user-select:none}
+.tab:hover{color:var(--txt)}.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* INFO ROWS */
+.ir{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg3);border-radius:var(--r);margin-bottom:7px}
+.ir:last-child{margin-bottom:0}.ik{font-size:11.5px;color:var(--txt2);font-weight:500}
+.iv{font-size:12px;font-family:var(--mono);color:var(--teal)}.ivd{color:var(--txt3)}
+
+/* CODE */
+.cb{background:var(--bg0);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--txt2);line-height:1.8;position:relative;white-space:pre-wrap;word-break:break-all}
+.cpb{position:absolute;top:9px;right:9px;background:var(--bg3);border:1px solid var(--bdr2);color:var(--txt2);font-size:11px;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:var(--sans);transition:all .14s}
+.cpb:hover{background:var(--bdr2);color:var(--txt)}
+.cm-c{color:var(--txt3)}.ck-c{color:var(--teal)}.cv-c{color:var(--amber2)}.cs-c{color:var(--green)}
+
+/* TOGGLE */
+.tg{width:38px;height:20px;border-radius:10px;background:var(--bg3);border:1.5px solid var(--bdr2);cursor:pointer;position:relative;transition:all .2s;flex-shrink:0}
+.tg.on{background:rgba(61,232,154,.2);border-color:var(--green)}
+.tg::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--txt3);transition:all .2s}
+.tg.on::after{left:19px;background:var(--green)}
+
+/* PIPELINE */
+.ppl{display:flex;flex-direction:column;gap:6px}
+.pst{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:var(--r);background:var(--bg3);border:1px solid transparent;transition:all .3s}
+.pst.done{border-color:rgba(61,232,154,.18)}.pst.active{border-color:rgba(232,168,73,.3);background:rgba(232,168,73,.05)}.pst.wait{opacity:.38}
+.pnum{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);font-weight:700;flex-shrink:0}
+.pnum.done{background:rgba(61,232,154,.18);color:var(--green)}.pnum.active{background:rgba(232,168,73,.18);color:var(--amber)}.pnum.wait{background:var(--bg0);color:var(--txt3)}
+
+/* TERMINAL */
+.term{background:var(--bg0);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.tbar{display:flex;align-items:center;justify-content:space-between;padding:8px 13px;background:var(--bg2);border-bottom:1px solid var(--bdr)}
+.tdots{display:flex;gap:5px}.tdt{width:10px;height:10px;border-radius:50%}
+.tbody{padding:13px 15px;font-family:var(--mono);font-size:12px;line-height:1.75;overflow-y:auto;color:var(--txt2)}
+.lt{color:var(--txt3)}.lok{color:var(--green)}.lwn{color:var(--amber)}.ler{color:var(--red)}.lin{color:var(--txt2)}.lblu{color:var(--blue)}
+
+/* STATS */
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.stats2{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+.sbox{background:var(--bg3);border-radius:var(--r);padding:14px 16px}
+.sk{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:5px}
+.sv{font-size:19px;font-weight:700;font-family:var(--mono)}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;text-align:left;padding:9px 12px;color:var(--txt3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--bdr);font-weight:600}
+.tbl td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--bdr);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:rgba(255,255,255,.018)}
+.mono{font-family:var(--mono);font-size:12px}
+
+/* METER */
+.mtrack{background:var(--bg3);border-radius:20px;height:8px;overflow:hidden;flex:1}
+.mfill{height:100%;border-radius:20px;transition:width .5s}
+.mg{background:linear-gradient(90deg,#26a89c,#3de89a)}.ma{background:linear-gradient(90deg,#b07a18,#e8a849)}.mr{background:linear-gradient(90deg,#c02030,#f04b5a)}
+
+/* APP CARDS */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:15px}
+.acard{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:19px;cursor:pointer;transition:all .17s;position:relative;overflow:hidden}
+.acard::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),var(--teal));opacity:0;transition:opacity .17s}
+.acard:hover{border-color:var(--bdr3);transform:translateY(-2px);box-shadow:0 10px 38px rgba(0,0,0,.34)}
+.acard:hover::after{opacity:1}
+.aico{width:36px;height:36px;border-radius:9px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:var(--mono);flex-shrink:0}
+.new-card{background:var(--bg1);border:1.5px dashed var(--bdr2);border-radius:var(--r2);padding:19px;min-height:155px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:all .17s;color:var(--txt3)}
+.new-card:hover{border-color:var(--amber);color:var(--amber);background:rgba(232,168,73,.03)}
+
+/* LANG/FW */
+.lgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.lcard{background:var(--bg3);border:1.5px solid var(--bdr);border-radius:var(--r);padding:13px 6px;text-align:center;cursor:pointer;transition:all .14s;user-select:none}
+.lcard:hover{border-color:var(--bdr3)}.lcard.sel{border-color:var(--amber);background:rgba(232,168,73,.08)}
+.lem{font-size:22px;margin-bottom:5px}.lnm{font-size:11.5px;font-weight:700;font-family:var(--mono);margin-bottom:2px}.lsm{font-size:10px;color:var(--txt3)}
+.fwrow{display:flex;flex-wrap:wrap;gap:7px}
+.fchip{padding:5px 13px;border-radius:20px;border:1.5px solid var(--bdr2);font-size:12px;font-family:var(--mono);cursor:pointer;background:var(--bg3);color:var(--txt2);transition:all .14s;user-select:none}
+.fchip:hover{border-color:var(--amber);color:var(--amber)}.fchip.sel{border-color:var(--amber);background:rgba(232,168,73,.09);color:var(--amber)}
+
+/* ALERTS */
+.alert{padding:11px 14px;border-radius:var(--r);font-size:12.5px;line-height:1.5}
+.a-warn{background:rgba(232,168,73,.07);border:1px solid rgba(232,168,73,.2);color:var(--amber)}
+.a-info{background:rgba(61,214,200,.06);border:1px solid rgba(61,214,200,.17);color:var(--teal)}
+.a-blue{background:rgba(91,143,255,.06);border:1px solid rgba(91,143,255,.2);color:var(--blue)}
+.a-err{background:rgba(240,75,90,.07);border:1px solid rgba(240,75,90,.2);color:var(--red)}
+.a-ok{background:rgba(61,232,154,.07);border:1px solid rgba(61,232,154,.2);color:var(--green)}
+.a-dim{background:rgba(255,255,255,.03);border:1px solid var(--bdr);color:var(--txt2)}
+
+/* SCENARIO */
+.scgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.sccard{background:var(--bg3);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 10px;cursor:pointer;transition:all .14s;text-align:center;user-select:none}
+.sccard:hover{border-color:var(--bdr3)}.sccard.sel{border-color:var(--amber);background:rgba(232,168,73,.07)}
+
+/* FILE TREE */
+.ftree{background:var(--bg0);border:1px solid var(--bdr);border-radius:var(--r);padding:13px 16px;font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--txt2);margin-top:14px}
+.ftd{color:var(--amber)}.ftf{color:var(--teal2)}
+
+/* PORT ERR */
+.porterr{background:rgba(240,75,90,.06);border:1px solid rgba(240,75,90,.2);border-radius:var(--r);padding:12px 14px;margin-top:12px}
+
+/* SUCCESS */
+.sbox-wrap{background:linear-gradient(135deg,rgba(61,232,154,.07),rgba(61,214,200,.04));border:1px solid rgba(61,232,154,.17);border-radius:var(--r2);padding:22px;text-align:center}
+.sbox-url{font-family:var(--mono);font-size:13px;color:var(--teal);background:var(--bg0);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 13px;display:flex;align-items:center;justify-content:space-between;margin-top:11px;word-break:break-all}
+.sbox-chips{display:flex;align-items:center;justify-content:center;gap:13px;margin-top:9px;flex-wrap:wrap}
+.schip{font-size:11.5px;color:var(--txt2);display:flex;align-items:center;gap:4px}
+
+/* EXPLAIN BOX — page description */
+.ebox{background:linear-gradient(135deg,rgba(232,168,73,.04),rgba(61,214,200,.03));border:1px solid rgba(232,168,73,.18);border-left:3px solid var(--amber);border-radius:var(--r);padding:14px 16px;margin-bottom:22px}
+.ebox-title{font-size:13px;font-weight:700;color:var(--amber);display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ebox-desc{font-size:12.5px;color:var(--txt2);line-height:1.65}
+.ebox-tags{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.etag{font-size:10.5px;font-family:var(--mono);background:var(--bg3);color:var(--txt3);padding:2px 8px;border-radius:4px}
+
+/* DASHBOARD */
+.dash-hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--bdr);border-radius:var(--r2);padding:24px;margin-bottom:20px;display:flex;align-items:center;gap:20px}
+.dash-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.dstat{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;display:flex;align-items:center;gap:13px;cursor:pointer;transition:all .15s}
+.dstat:hover{border-color:var(--bdr3);transform:translateY(-1px)}
+.dstat-icon{font-size:24px;width:44px;height:44px;background:var(--bg3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.activity-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.activity-row:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+/* GIT SERVER */
+.repo-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;cursor:pointer;transition:all .15s;margin-bottom:10px}
+.repo-card:hover{border-color:var(--bdr3);box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.commit-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.commit-row:last-child{border-bottom:none}
+
+/* ROUTING */
+.route-row{display:flex;align-items:center;gap:0;padding:11px 14px;border-bottom:1px solid var(--bdr);font-size:13px;transition:background .12s}
+.route-row:last-child{border-bottom:none}.route-row:hover{background:rgba(255,255,255,.02)}
+.rarrow{color:var(--txt3);margin:0 10px;font-size:12px}
+
+/* SERVICES */
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.svc-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px;transition:all .15s}
+.svc-card:hover{border-color:var(--bdr3)}.svc-card.installed{border-color:rgba(61,232,154,.25)}
+.svc-ico{font-size:30px;margin-bottom:10px}
+.svc-nm{font-size:14px;font-weight:700;margin-bottom:4px}
+.svc-desc{font-size:12px;color:var(--txt2);line-height:1.45;margin-bottom:12px}
+.svc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.stag{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--bg3);color:var(--txt3)}
+
+/* DOMAINS */
+.domain-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bdr)}
+.domain-row:last-child{border-bottom:none}
+.domain-icon-box{width:38px;height:38px;background:var(--bg3);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+
+/* MONITOR */
+.metric-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:18px}
+.cpu-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.proc-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:12.5px}
+.proc-row:last-child{border-bottom:none}
+
+/* SETTINGS */
+.settings-sec{margin-bottom:28px}
+.ssec-label{font-size:10.5px;font-family:var(--mono);color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:8px;transition:background .12s}
+.srow:last-child{margin-bottom:0}
+.srow:hover{background:var(--bg3)}.sr-nm{font-size:13.5px;font-weight:500;margin-bottom:3px}
+.sr-desc{font-size:12px;color:var(--txt2)}
+
+/* DHERO */
+.dhero{display:flex;align-items:flex-start;gap:15px;margin-bottom:22px}
+.dhero-ico{width:50px;height:50px;border-radius:13px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;font-family:var(--mono);flex-shrink:0}
+.dhero-act{margin-left:auto;display:flex;align-items:center;gap:7px;flex-shrink:0}
+
+/* DEPLOY HISTORY */
+.dhrow{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--bdr)}
+.dhrow:last-child{border-bottom:none}
+
+/* PAGE HEADER */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.ptitle{font-size:19px;font-weight:800;letter-spacing:-.3px}
+.psub{font-size:12.5px;color:var(--txt2);margin-top:3px}
+
+/* TOAST */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.tel{background:var(--bg2);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 15px;font-size:12.5px;display:flex;align-items:center;gap:9px;box-shadow:0 8px 30px rgba(0,0,0,.45);min-width:220px;animation:tIn .18s ease;pointer-events:auto}
+@keyframes tIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+
+/* UTILS */
+.hidden{display:none!important}
+.flex{display:flex}.fac{align-items:center}.jsb{justify-content:space-between}
+.g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}.g16{gap:16px}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+.mno{font-family:var(--mono)}.tamb{color:var(--amber)}.ttl{color:var(--teal)}.tgrn{color:var(--green)}.tred{color:var(--red)}.tmut{color:var(--txt2)}.tdim{color:var(--txt3)}
+.tsm{font-size:12.5px}.txs{font-size:11px}.tw7{font-weight:700}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="shell">
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="logo">
+    <span style="font-size:20px">🍺</span>
+    <span class="logo-txt">Brewnet</span>
+    <span class="logo-pro">PRO</span>
+  </div>
+  <nav class="snav">
+    <div class="nsec">메인</div>
+    <div class="nitem" id="nav-dash"     onclick="go('dash')"><span class="nic">▦</span>Dashboard</div>
+    <div class="nitem active" id="nav-apps" onclick="go('apps')"><span class="nic">⬡</span>Apps<span class="nbadge" id="app-cnt">3</span></div>
+    <div class="nsec">인프라</div>
+    <div class="nitem" id="nav-git"      onclick="go('git')"><span class="nic">⎇</span>Git Server</div>
+    <div class="nitem" id="nav-routing"  onclick="go('routing')"><span class="nic">⇄</span>Routing</div>
+    <div class="nitem" id="nav-services" onclick="go('services')"><span class="nic">▣</span>Services<span class="nbadge">12</span></div>
+    <div class="nsec">외부 접근</div>
+    <div class="nitem" id="nav-domains"  onclick="go('domains')"><span class="nic">⊕</span>Domains</div>
+    <div class="nsec">시스템</div>
+    <div class="nitem" id="nav-monitor"  onclick="go('monitor')"><span class="nic">◈</span>Monitor</div>
+    <div class="nitem" id="nav-settings" onclick="go('settings')"><span class="nic">⚙</span>Settings</div>
+  </nav>
+  <div class="sbfoot">
+    <div class="srv-pill">
+      <div class="dot dot-g"></div>
+      <div>
+        <div style="font-size:12px;font-weight:600">homeserver</div>
+        <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)">192.168.1.100 · Docker 5 running</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <header id="topbar">
+    <div class="bc" id="bc"><span>Brewnet</span><span class="s">›</span><span class="c">Apps</span></div>
+    <div class="tbr" id="tbr">
+      <button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button>
+      <button class="btn bp bsm" id="tb-new" onclick="openNew()">+ New App</button>
+    </div>
+  </header>
+  <main id="content">
+
+<!-- ═══ SCREEN: DASHBOARD ═══ -->
+<div id="s-dash" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">▦ Dashboard — 서버 전체 현황 한눈에 보기</div>
+    <div class="ebox-desc">Brewnet이 관리하는 모든 앱·서비스·인프라의 실시간 상태를 한 화면에서 확인합니다. CPU/메모리/디스크 사용량, 최근 배포 이력, 서비스 업타임, 알림 이벤트를 중앙에서 모니터링하고 빠르게 이동할 수 있습니다.</div>
+    <div class="ebox-tags"><span class="etag">실시간 상태</span><span class="etag">리소스 현황</span><span class="etag">최근 배포</span><span class="etag">알림 이벤트</span><span class="etag">빠른 이동</span></div>
+  </div>
+
+  <div class="dash-hero">
+    <div style="font-size:38px">🍺</div>
+    <div style="flex:1">
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">homeserver에 오신 것을 환영합니다</div>
+      <div style="font-size:13px;color:var(--txt2)">Brewnet v1.4.2 · Standard Mode (Traefik + Gitea + Cloudflare Tunnel) · <span style="color:var(--green)">정상 운영 중</span></div>
+      <div class="flex fac g10 mt8">
+        <span class="bdg b-run">● 5 containers running</span>
+        <span class="bdg b-build" style="font-size:10px">🌐 Cloudflare Tunnel 연결됨</span>
+      </div>
+    </div>
+    <div class="flex fac g8">
+      <button class="btn bg bsm" onclick="go('monitor')">◈ 모니터링</button>
+      <button class="btn bp bsm" onclick="openNew()">+ New App</button>
+    </div>
+  </div>
+
+  <div class="dash-stat-row">
+    <div class="dstat" onclick="go('apps')">
+      <div class="dstat-icon">⬡</div>
+      <div><div style="font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:4px">APPS</div><div style="font-size:24px;font-weight:800;font-family:var(--mono)">3</div><div style="font-size:11.5px;color:var(--green)">2 실행 중</div></div>
+    </div>
+    <div class="dstat" onclick="go('services')">
+      <div class="dstat-icon">▣</div>
+      <div><div style="font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:4px">SERVICES</div><div style="font-size:24px;font-weight:800;font-family:var(--mono)">5</div><div style="font-size:11.5px;color:var(--green)">모두 정상</div></div>
+    </div>
+    <div class="dstat" onclick="go('domains')">
+      <div class="dstat-icon">⊕</div>
+      <div><div style="font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:4px">DOMAINS</div><div style="font-size:24px;font-weight:800;font-family:var(--mono)">2</div><div style="font-size:11.5px;color:var(--teal)">HTTPS 활성</div></div>
+    </div>
+    <div class="dstat" onclick="go('monitor')">
+      <div class="dstat-icon">◈</div>
+      <div><div style="font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:4px">CPU</div><div style="font-size:24px;font-weight:800;font-family:var(--mono)" style="color:var(--green)">28%</div><div style="font-size:11.5px;color:var(--txt2)">RAM 3.2/8 GB</div></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">🚀 최근 배포</div>
+        <button class="btn bg bsm" onclick="go('apps')">전체 보기</button>
+      </div>
+      <div class="activity-row">
+        <div class="act-dot" style="background:var(--green)"></div>
+        <div style="flex:1">
+          <div class="flex fac g8"><span style="font-weight:600;font-size:13px">my-api</span><span class="mno txs tamb">a3f2b1c</span></div>
+          <div class="txs tdim mt4">"feat: add health endpoint" · 2분 전 · 42초 소요</div>
+        </div>
+        <span class="bdg b-run" style="font-size:10px">✅ 성공</span>
+      </div>
+      <div class="activity-row">
+        <div class="act-dot" style="background:var(--red)"></div>
+        <div style="flex:1">
+          <div class="flex fac g8"><span style="font-weight:600;font-size:13px">spring-demo</span><span class="mno txs tamb">7a1b3f0</span></div>
+          <div class="txs tdim mt4">"wip: untested changes" · 3시간 전 · 빌드 실패</div>
+        </div>
+        <span class="bdg b-stop" style="font-size:10px">❌ 실패</span>
+      </div>
+      <div class="activity-row">
+        <div class="act-dot" style="background:var(--green)"></div>
+        <div style="flex:1">
+          <div class="flex fac g8"><span style="font-weight:600;font-size:13px">blog-api</span><span class="mno txs tamb">f91d4a2</span></div>
+          <div class="txs tdim mt4">"docs: update readme" · 1일 전</div>
+        </div>
+        <span class="bdg b-run" style="font-size:10px">✅ 성공</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">📊 리소스 현황</div>
+        <button class="btn bg bsm" onclick="go('monitor')">상세 보기</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="flex fac jsb mb4"><span class="tsm">CPU</span><span class="mno txs tamb">28%</span></div>
+        <div class="mtrack"><div class="mfill mg" style="width:28%"></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="flex fac jsb mb4"><span class="tsm">RAM</span><span class="mno txs tamb">3.2 / 8.0 GB</span></div>
+        <div class="mtrack"><div class="mfill mg" style="width:40%"></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="flex fac jsb mb4"><span class="tsm">Disk</span><span class="mno txs" style="color:var(--oran)">71 / 120 GB</span></div>
+        <div class="mtrack"><div class="mfill ma" style="width:59%"></div></div>
+      </div>
+      <div>
+        <div class="flex fac jsb mb4"><span class="tsm">Network In/Out</span><span class="mno txs ttl">↓ 1.2 MB/s  ↑ 0.4 MB/s</span></div>
+        <div class="mtrack"><div class="mfill mg" style="width:15%"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">🔔 최근 이벤트</div>
+      </div>
+      <div class="activity-row"><div class="act-dot" style="background:var(--green)"></div><div><div class="tsm">Cloudflare Tunnel 연결 확인</div><div class="txs tdim mt4">blog-api → api.myserver.dpdns.org · 5분 전</div></div></div>
+      <div class="activity-row"><div class="act-dot" style="background:var(--amber)"></div><div><div class="tsm">디스크 사용량 60% 초과 경고</div><div class="txs tdim mt4">120GB 중 71GB 사용 중 · 1시간 전</div></div></div>
+      <div class="activity-row"><div class="act-dot" style="background:var(--blue)"></div><div><div class="tsm">Gitea 백업 완료</div><div class="txs tdim mt4">~/.brewnet/backup/gitea-20260312.tar.gz · 오전 3:00</div></div></div>
+      <div class="activity-row"><div class="act-dot" style="background:var(--green)"></div><div><div class="tsm">Traefik SSL 인증서 갱신</div><div class="txs tdim mt4">Let's Encrypt · 30일 남음 · 어제</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <div class="ct">⚡ 빠른 실행</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <button class="btn bg" style="justify-content:flex-start" onclick="openNew()">+ New App 생성</button>
+        <button class="btn bg" style="justify-content:flex-start" onclick="go('services')">▣ Services 추가</button>
+        <button class="btn bg" style="justify-content:flex-start" onclick="go('domains')">⊕ Domain 연결</button>
+        <button class="btn bg" style="justify-content:flex-start" onclick="go('git')">⎇ Git Server</button>
+        <button class="btn bg" style="justify-content:flex-start" onclick="go('routing')">⇄ Routing 확인</button>
+        <button class="btn bg" style="justify-content:flex-start" onclick="go('settings')">⚙ 시스템 설정</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: APPS ═══ -->
+<div id="s-apps" class="hidden">
+  <div class="ph">
+    <div>
+      <div class="ptitle">Apps</div>
+      <div class="psub">3개 앱 · 2개 실행 중 · Gitea 자동 연동됨</div>
+    </div>
+  </div>
+  <div class="agrid" id="app-grid">
+    <div class="acard" onclick="openDetail('my-api')">
+      <div class="flex fac jsb mb8"><div><div style="font-size:14.5px;font-weight:700">my-api</div><div class="txs mno tmut">Go · Gin · port 8080</div></div><div class="aico" style="color:var(--teal)">Go</div></div>
+      <div style="font-size:11px;color:var(--teal);font-family:var(--mono);margin:8px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 http://my-api.brewnet.local</div>
+      <div class="flex fac jsb"><span class="bdg b-run">● Running</span><span class="txs tdim mno">2min ago</span></div>
+    </div>
+    <div class="acard" onclick="openDetail('blog-api')">
+      <div class="flex fac jsb mb8"><div><div style="font-size:14.5px;font-weight:700">blog-api</div><div class="txs mno tmut">Python · FastAPI · port 8000</div></div><div class="aico" style="color:#facc15">🐍</div></div>
+      <div style="font-size:11px;color:var(--teal);font-family:var(--mono);margin:8px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🌐 https://api.myserver.dpdns.org</div>
+      <div class="flex fac jsb"><span class="bdg b-run">● Running</span><span class="txs tdim mno">1hr ago</span></div>
+    </div>
+    <div class="acard" onclick="openDetail('spring-demo')">
+      <div class="flex fac jsb mb8"><div><div style="font-size:14.5px;font-weight:700">spring-demo</div><div class="txs mno tmut">Java · Spring Boot · port 8080</div></div><div class="aico" style="color:var(--amber)">☕</div></div>
+      <div style="font-size:11px;color:var(--teal);font-family:var(--mono);margin:8px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 http://spring-demo.brewnet.local</div>
+      <div class="flex fac jsb"><span class="bdg b-stop">● Stopped</span><span class="txs tdim mno">3hr ago</span></div>
+    </div>
+    <div class="new-card" onclick="openNew()">
+      <div style="font-size:28px;line-height:1">+</div>
+      <div style="font-size:13px;font-weight:500">New App</div>
+      <div style="font-size:11px;text-align:center">보일러플레이트 선택 →<br>자동 설정</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: APP DETAIL ═══ -->
+<div id="s-detail" class="hidden">
+  <div class="flex fac g6 mb12" style="margin-bottom:18px">
+    <button class="btn bg bsm" onclick="goBack()">← Apps</button>
+  </div>
+  <div class="dhero">
+    <div class="dhero-ico" id="d-icon"></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:21px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px" id="d-name"></div>
+      <div style="font-size:12.5px;color:var(--txt2);font-family:var(--mono);margin-bottom:8px" id="d-stack"></div>
+      <div class="flex fac g10">
+        <span class="bdg" id="d-badge"></span>
+        <span style="font-size:11.5px;font-family:var(--mono);color:var(--teal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px" id="d-url"></span>
+      </div>
+    </div>
+    <div class="dhero-act">
+      <button class="btn bg bsm" onclick="toast('🌐','브라우저에서 앱을 엽니다')">Open →</button>
+      <button class="btn bg bsm" id="d-ss" onclick="toggleStatus()"></button>
+      <button class="btn bt bsm" onclick="openDomain()">🌐 Domain</button>
+      <button class="btn bg bsm" onclick="toast('···','Restart / Delete / Env Vars / Logs')">···</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tab-ov" onclick="stab('ov')">Overview</div>
+    <div class="tab" id="tab-git2" onclick="stab('git2')">Git</div>
+    <div class="tab" id="tab-dep" onclick="stab('dep')">Deploy</div>
+    <div class="tab" id="tab-log" onclick="stab('log')">Logs</div>
+  </div>
+  <div id="tc-ov">
+    <div class="stats3 mb12">
+      <div class="sbox"><div class="sk">Status</div><div class="sv" id="ov-st" style="color:var(--green)">● Running</div></div>
+      <div class="sbox"><div class="sk">Uptime</div><div class="sv tamb" id="ov-up">4m 22s</div></div>
+      <div class="sbox"><div class="sk">Deploys</div><div class="sv" id="ov-deps">3</div></div>
+    </div>
+    <div class="card mb12">
+      <div class="ct mb12">🔗 Endpoints</div>
+      <div class="ir"><span class="ik">Local</span><span class="iv" id="ov-local"></span></div>
+      <div class="ir"><span class="ik">External (Cloudflare)</span><div class="flex fac g8"><span class="iv" id="ov-ext" style="color:var(--txt3)">미연결</span><button class="btn bt bxs" onclick="openDomain()">+ 연결</button></div></div>
+    </div>
+    <div class="card">
+      <div class="ct mb12">📦 Container</div>
+      <div class="ir"><span class="ik">Container Name</span><span class="iv" id="ov-cname"></span></div>
+      <div class="ir"><span class="ik">Image</span><span class="iv" id="ov-img"></span></div>
+      <div class="ir"><span class="ik">Network</span><span class="iv">brewnet-network</span></div>
+      <div class="ir"><span class="ik">Health Check</span><span class="iv tgrn" id="ov-health"></span></div>
+    </div>
+  </div>
+  <div id="tc-git2" class="hidden">
+    <div class="card mb12">
+      <div class="ch"><div class="ct">📁 Repository</div><button class="btn bg bsm" onclick="toast('⎇','Gitea 열기 → http://localhost:3000')">Gitea 열기 →</button></div>
+      <div class="ir"><span class="ik">저장소 URL</span><span class="iv" id="git-url"></span></div>
+      <div class="ir"><span class="ik">기본 브랜치</span><span class="iv">main</span></div>
+      <div class="ir"><span class="ik">로컬 경로</span><div class="flex fac g8"><span class="iv" id="git-path"></span><button class="btn bg bxs" onclick="toast('💻','VS Code 열기')">VS Code</button></div></div>
+      <div class="ir"><span class="ik">Webhook</span><span class="iv tgrn">✓ 자동 설정됨 → POST /api/deploy/hook</span></div>
+    </div>
+    <div class="card mb12">
+      <div class="ct mb12">📋 Clone URLs</div>
+      <div style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:7px">HTTP</div>
+      <div class="cb mb12" id="git-http"><button class="cpb" onclick="toast('📋','복사됨')">복사</button></div>
+      <div style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:7px">SSH</div>
+      <div class="cb" id="git-ssh"><button class="cpb" onclick="toast('📋','복사됨')">복사</button></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">⚡ Quick Setup</div><button class="btn bg bsm" onclick="toast('📋','전체 복사됨')">전체 복사</button></div>
+      <div class="cb" id="git-qs"><button class="cpb" onclick="toast('📋','복사됨')">복사</button></div>
+    </div>
+  </div>
+  <div id="tc-dep" class="hidden">
+    <div class="card mb12">
+      <div class="ct mb12">⚙ Deploy Settings</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:16px">
+        <div><div class="fl">Auto Deploy</div><div class="flex fac jsb"><span class="tsm">main push → 자동 배포</span><div class="tg on" onclick="this.classList.toggle('on');toast('⚙','Auto Deploy ' + (this.classList.contains('on')?'ON':'OFF'))"></div></div></div>
+        <div><div class="fl">Deploy Branch</div><select class="fi" style="cursor:pointer"><option>main</option><option>develop</option></select></div>
+      </div>
+      <div class="flex fac g8">
+        <button class="btn bp bsm" onclick="startDeploy()">🚀 Deploy Now</button>
+        <button class="btn bg bsm" onclick="toast('↩','이전 버전으로 롤백')">↩ Rollback</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct mb12">📜 Deploy History</div>
+      <div class="dhrow"><span style="font-size:15px">✅</span><div style="flex:1;min-width:0"><div class="flex fac g8 mb4"><span class="mno txs tamb">a3f2b1c</span><span class="tsm">"feat: add health endpoint"</span></div><div class="txs tdim">2분 전 · 42초 · main</div></div><div class="flex fac g6"><button class="btn bg bxs" onclick="viewLogs('a3f2b1c')">Logs</button><button class="btn bg bxs" onclick="toast('↩','롤백')">Rollback</button></div></div>
+      <div class="dhrow"><span style="font-size:15px">✅</span><div style="flex:1;min-width:0"><div class="flex fac g8 mb4"><span class="mno txs tamb">9d4c2e1</span><span class="tsm">"fix: port binding"</span></div><div class="txs tdim">1시간 전 · 38초 · main</div></div><div class="flex fac g6"><button class="btn bg bxs" onclick="viewLogs('9d4c2e1')">Logs</button><button class="btn bg bxs" onclick="toast('↩','롤백')">Rollback</button></div></div>
+      <div class="dhrow"><span style="font-size:15px">❌</span><div style="flex:1;min-width:0"><div class="flex fac g8 mb4"><span class="mno txs tamb">7a1b3f0</span><span class="tsm">"wip: untested changes"</span></div><div class="txs tdim">3시간 전 · 빌드 실패 (exit code 1)</div></div><div class="flex fac g6"><button class="btn bg bxs" onclick="viewLogs('7a1b3f0')">Logs</button></div></div>
+    </div>
+  </div>
+  <div id="tc-log" class="hidden">
+    <div class="card">
+      <div class="ch"><div class="ct">📄 Container Logs</div><div class="flex fac g8"><div class="b-live"><span class="blink"></span>LIVE</div><button class="btn bg bsm" onclick="toast('📋','복사됨')">복사</button><button class="btn bg bsm" onclick="toast('↓','다운로드')">↓</button></div></div>
+      <div class="term"><div class="tbar"><div class="tdots"><div class="tdt" style="background:#f04b5a"></div><div class="tdt" style="background:#e8a849"></div><div class="tdt" style="background:#3de89a"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--txt3)">brewnet-<span id="log-an">my-api</span></span><div></div></div><div class="tbody" id="live-log" style="height:300px"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: DEPLOY MONITOR ═══ -->
+<div id="s-mon" class="hidden">
+  <button class="btn bg bsm mb12" onclick="backMon()" style="margin-bottom:18px">← Deploy</button>
+  <div class="flex fac jsb mb16">
+    <div><div style="font-size:19px;font-weight:800;margin-bottom:5px" id="mon-title">🚀 my-api 배포 중</div><div class="flex fac g10 tsm tmut">커밋 <span class="mno tamb" id="mon-hash">a3f2b1c</span><span id="mon-msg"></span></div></div>
+    <div class="b-live"><span class="blink"></span>LIVE</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:18px">
+    <div>
+      <div class="ppl">
+        <div class="pst done" id="ps1"><div class="pnum done">✓</div><div><div style="font-weight:600;font-size:13px">Git Pull</div><div class="txs tdim">최신 커밋 가져오기</div></div><div style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--txt3)">0.3s</div></div>
+        <div class="pst wait" id="ps2"><div class="pnum wait" id="pn2">2</div><div><div style="font-weight:600;font-size:13px">Docker Build</div><div class="txs tdim" id="ps2-sub">대기 중...</div></div><div style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--txt3)" id="pt2">−</div></div>
+        <div class="pst wait" id="ps3"><div class="pnum wait" id="pn3">3</div><div><div style="font-weight:600;font-size:13px">Container Start</div><div class="txs tdim">컨테이너 기동</div></div><div style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--txt3)" id="pt3">−</div></div>
+        <div class="pst wait" id="ps4"><div class="pnum wait" id="pn4">4</div><div><div style="font-weight:600;font-size:13px">Health Check</div><div class="txs tdim">서비스 상태 확인</div></div><div style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--txt3)" id="pt4">−</div></div>
+      </div>
+      <div class="ptr mt12"><div class="pfl" id="mon-bar" style="width:8%"></div></div>
+      <div class="plbl" id="mon-pct">8% — 준비 중...</div>
+      <div class="flex fac g8 mt16"><button class="btn br bsm" id="cancel-btn" onclick="cancelDeploy()">✕ Cancel</button><span class="txs tdim" id="build-el"></span></div>
+      <div id="mon-done" class="hidden mt16"><div class="alert a-ok">✅ 배포 완료! 서버 정상 실행 중</div><div class="flex fac g8 mt12"><button class="btn bp bsm" onclick="toast('🌐','앱 열기')">Open App →</button><button class="btn bg bsm" onclick="backMon()">← History</button></div></div>
+    </div>
+    <div><div class="term"><div class="tbar"><div class="tdots"><div class="tdt" style="background:#f04b5a"></div><div class="tdt" style="background:#e8a849"></div><div class="tdt" style="background:#3de89a"></div></div><span style="font-family:var(--mono);font-size:11px;color:var(--txt3)">deploy — <span id="mon-an">my-api</span></span><div class="b-live" style="font-size:9.5px;padding:2px 8px"><span class="blink"></span>LIVE</div></div><div class="tbody" id="mon-log" style="height:310px"></div></div></div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: GIT SERVER ═══ -->
+<div id="s-git" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">⎇ Git Server — 로컬 Gitea 저장소 관리</div>
+    <div class="ebox-desc">Brewnet에 내장된 <strong>Gitea</strong>는 GitHub처럼 동작하는 셀프호스트 Git 서버입니다. 모든 앱의 소스코드가 여기에 저장되며, git push 한 번으로 자동 빌드·배포가 트리거됩니다. SSH 키 관리, 브랜치 보호, Webhook 설정을 이 화면에서 관리합니다.</div>
+    <div class="ebox-tags"><span class="etag">자체 Git 호스팅</span><span class="etag">Push → 자동 배포</span><span class="etag">SSH 키 관리</span><span class="etag">Webhook 자동 설정</span><span class="etag">Gitea v1.21</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Git Server</div><div class="psub">Gitea · http://localhost:3000 · 관리자: admin</div></div>
+    <div class="flex fac g8">
+      <button class="btn bg bsm" onclick="toast('⎇','Gitea 웹 UI를 새 탭에서 엽니다\nhttp://localhost:3000')">Gitea 열기 →</button>
+      <button class="btn bt bsm" onclick="toast('🔑','SSH 공개키를 Gitea에 등록합니다')">+ SSH Key</button>
+    </div>
+  </div>
+
+  <div class="stats3 mb16">
+    <div class="sbox"><div class="sk">Repositories</div><div class="sv">3</div><div class="txs tdim mt4">모두 private</div></div>
+    <div class="sbox"><div class="sk">Gitea Status</div><div class="sv tgrn">● Online</div><div class="txs tdim mt4">localhost:3000</div></div>
+    <div class="sbox"><div class="sk">SSH Port</div><div class="sv mno">2222</div><div class="txs tdim mt4">git@localhost:2222</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div>
+      <div class="ct mb12" style="font-size:13.5px;font-weight:600">📁 저장소 목록</div>
+      <div class="repo-card" onclick="openDetail('my-api')">
+        <div class="flex fac jsb mb8"><div class="flex fac g8"><span style="font-size:15px">🐹</span><span style="font-weight:700">my-api</span><span class="bdg b-run" style="font-size:10px">● Running</span></div><span class="txs tdim mno">a3f2b1c</span></div>
+        <div class="txs tmut mb8">"feat: add health endpoint" · 2분 전</div>
+        <div class="flex fac g8"><span class="txs mno ttl">main</span><span class="txs tdim">·</span><span class="txs mno tdim">http://localhost:3000/admin/my-api</span></div>
+      </div>
+      <div class="repo-card" onclick="openDetail('blog-api')">
+        <div class="flex fac jsb mb8"><div class="flex fac g8"><span style="font-size:15px">🐍</span><span style="font-weight:700">blog-api</span><span class="bdg b-run" style="font-size:10px">● Running</span></div><span class="txs tdim mno">f91d4a2</span></div>
+        <div class="txs tmut mb8">"docs: update readme" · 1일 전</div>
+        <div class="flex fac g8"><span class="txs mno ttl">main</span><span class="txs tdim">·</span><span class="txs mno tdim">http://localhost:3000/admin/blog-api</span></div>
+      </div>
+      <div class="repo-card" onclick="openDetail('spring-demo')">
+        <div class="flex fac jsb mb8"><div class="flex fac g8"><span style="font-size:15px">☕</span><span style="font-weight:700">spring-demo</span><span class="bdg b-stop" style="font-size:10px">● Stopped</span></div><span class="txs tdim mno">b72e1c0</span></div>
+        <div class="txs tmut mb8">"wip: untested changes" · 3시간 전</div>
+        <div class="flex fac g8"><span class="txs mno ttl">main</span><span class="txs tdim">·</span><span class="txs mno tdim">http://localhost:3000/admin/spring-demo</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mb12">
+        <div class="ct mb12">🔑 SSH 접속 정보</div>
+        <div class="ir"><span class="ik">SSH Clone URL 형식</span><span class="iv">ssh://git@localhost:2222</span></div>
+        <div class="ir"><span class="ik">등록된 SSH Keys</span><span class="iv">1개 (macbook-m3)</span></div>
+        <div class="ir"><span class="ik">HTTP Clone URL 형식</span><span class="iv">http://localhost:3000</span></div>
+        <div class="alert a-info mt12">💡 SSH 키를 등록하면 비밀번호 없이 git push가 가능합니다. ~/.ssh/id_rsa.pub 내용을 Gitea → Settings → SSH Keys에 추가하세요.</div>
+      </div>
+      <div class="card">
+        <div class="ct mb12">📋 최근 커밋 (전체)</div>
+        <div class="commit-row"><span class="mno txs tamb">a3f2b1c</span><div style="flex:1;min-width:0;margin:0 10px"><div class="tsm">feat: add health endpoint</div><div class="txs tdim">my-api · admin · 2분 전</div></div></div>
+        <div class="commit-row"><span class="mno txs tamb">f91d4a2</span><div style="flex:1;min-width:0;margin:0 10px"><div class="tsm">docs: update readme</div><div class="txs tdim">blog-api · admin · 1일 전</div></div></div>
+        <div class="commit-row"><span class="mno txs tamb">7a1b3f0</span><div style="flex:1;min-width:0;margin:0 10px"><div class="tsm">wip: untested changes</div><div class="txs tdim">spring-demo · admin · 3시간 전</div></div></div>
+        <div class="commit-row"><span class="mno txs tamb">9d4c2e1</span><div style="flex:1;min-width:0;margin:0 10px"><div class="tsm">fix: port binding config</div><div class="txs tdim">my-api · admin · 1시간 전</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: ROUTING ═══ -->
+<div id="s-routing" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">⇄ Routing — Traefik 리버스 프록시 관리</div>
+    <div class="ebox-desc"><strong>Traefik</strong>은 Brewnet의 핵심 라우팅 엔진입니다. 도메인/경로를 기반으로 요청을 각 앱 컨테이너로 전달합니다. 앱을 추가하면 <code>docker-compose.yml</code> 라벨을 통해 라우팅 규칙이 자동으로 등록됩니다. 별도 설정 파일 수정 없이 <em>docker compose up -d</em> 만으로 즉시 반영됩니다.</div>
+    <div class="ebox-tags"><span class="etag">자동 라우팅 등록</span><span class="etag">Docker Label 기반</span><span class="etag">HTTP/HTTPS</span><span class="etag">Let's Encrypt 자동 SSL</span><span class="etag">Traefik v3</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Routing</div><div class="psub">Traefik · localhost:8080 · 5개 라우트 활성</div></div>
+    <div class="flex fac g8">
+      <button class="btn bg bsm" onclick="toast('⇄','Traefik 대시보드 → http://localhost:8080/dashboard/')">Traefik 대시보드 →</button>
+    </div>
+  </div>
+
+  <div class="stats4 mb16">
+    <div class="sbox"><div class="sk">Active Routes</div><div class="sv">5</div></div>
+    <div class="sbox"><div class="sk">Traefik Status</div><div class="sv tgrn">● Online</div></div>
+    <div class="sbox"><div class="sk">EntryPoints</div><div class="sv mno">80/443</div></div>
+    <div class="sbox"><div class="sk">SSL Certs</div><div class="sv ttl">2</div></div>
+  </div>
+
+  <div class="card mb16">
+    <div class="ct mb12">📡 활성 라우트 (HTTP/HTTPS)</div>
+    <div class="alert a-info mb12">ℹ️ 새 앱을 생성하면 docker-compose.yml 라벨이 자동 추가되고, docker compose up -d 실행 시 아래 목록에 즉시 반영됩니다. 별도 설정 파일 수정이 필요 없습니다.</div>
+    <div style="border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden">
+      <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:9px 14px;border-bottom:1px solid var(--bdr);font-size:11px;font-family:var(--mono);color:var(--txt3);text-transform:uppercase;letter-spacing:.7px">
+        <div>Rule (Host)</div><div>Backend</div><div>Entrypoint</div><div>Status</div>
+      </div>
+      <div class="route-row" style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:11px 14px">
+        <div class="mno tsm tamb">my-api.brewnet.local</div><div class="mno txs ttl">brewnet-my-api:8080</div><div class="mno txs">web</div><div><span class="bdg b-run" style="font-size:10px">● Active</span></div>
+      </div>
+      <div class="route-row" style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:11px 14px">
+        <div class="mno tsm tamb">blog-api.brewnet.local</div><div class="mno txs ttl">brewnet-blog-api:8000</div><div class="mno txs">web</div><div><span class="bdg b-run" style="font-size:10px">● Active</span></div>
+      </div>
+      <div class="route-row" style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:11px 14px">
+        <div class="mno tsm tamb">api.myserver.dpdns.org</div><div class="mno txs ttl">brewnet-blog-api:8000</div><div class="mno txs">websecure</div><div><span class="bdg b-run" style="font-size:10px">● Active</span></div>
+      </div>
+      <div class="route-row" style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:11px 14px">
+        <div class="mno tsm tamb">gitea.brewnet.local</div><div class="mno txs ttl">brewnet-gitea:3000</div><div class="mno txs">web</div><div><span class="bdg b-run" style="font-size:10px">● Active</span></div>
+      </div>
+      <div class="route-row" style="display:grid;grid-template-columns:2fr 1.5fr 1fr 80px;padding:11px 14px;opacity:.45">
+        <div class="mno tsm tamb">spring-demo.brewnet.local</div><div class="mno txs ttl">brewnet-spring-demo:8080</div><div class="mno txs">web</div><div><span class="bdg b-stop" style="font-size:10px">● Stopped</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct mb12">📋 Traefik 라벨 자동 생성 예시</div>
+    <div class="alert a-dim mb12" style="font-size:12px">새 앱 생성 시 아래 라벨이 docker-compose.yml에 자동 삽입됩니다. <code>brewnet add</code> 명령으로도 동일하게 동작합니다.</div>
+    <div class="cb"><span class="cm-c"># docker-compose.yml — 자동 생성된 Traefik 라벨</span>
+labels:
+  <span class="ck-c">traefik.enable</span>: <span class="cs-c">"true"</span>
+  <span class="ck-c">traefik.http.routers.my-api.rule</span>: <span class="cs-c">Host(`my-api.brewnet.local`)</span>
+  <span class="ck-c">traefik.http.routers.my-api.entrypoints</span>: <span class="cs-c">"web"</span>
+  <span class="ck-c">traefik.http.services.my-api.loadbalancer.server.port</span>: <span class="cv-c">"8080"</span></div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: SERVICES ═══ -->
+<div id="s-services" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">▣ Services — 셀프호스트 서비스 마켓플레이스</div>
+    <div class="ebox-desc">Nextcloud, Jellyfin, Vaultwarden 등 인기 오픈소스 서비스를 <strong>클릭 한 번</strong>으로 설치합니다. 각 서비스는 Docker Compose로 격리 실행되며, Traefik을 통해 서브도메인이 자동 연결됩니다. 이미 설치된 서비스는 별도 인프라 없이 즉시 사용 가능합니다.</div>
+    <div class="ebox-tags"><span class="etag">원클릭 설치</span><span class="etag">Docker 격리</span><span class="etag">서브도메인 자동 연결</span><span class="etag">데이터 영구 보존</span><span class="etag">업데이트 관리</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Services</div><div class="psub">5개 설치됨 · 7개 사용 가능 · 원클릭 설치</div></div>
+    <div class="flex fac g8">
+      <input class="fi" style="width:200px;padding:7px 11px" placeholder="서비스 검색...">
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-family:var(--mono);color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">✅ 설치된 서비스</div>
+  <div class="svc-grid mb20" style="margin-bottom:20px">
+    <div class="svc-card installed">
+      <div class="flex fac jsb mb8"><div class="svc-ico">☁️</div><span class="bdg b-run" style="font-size:10px">● Running</span></div>
+      <div class="svc-nm">Nextcloud</div>
+      <div class="svc-desc">파일 저장·동기화·공유. Google Drive 대체. 클라이언트 앱으로 PC/모바일과 실시간 동기화됩니다.</div>
+      <div class="svc-tags"><span class="stag">파일 스토리지</span><span class="stag">WebDAV</span><span class="stag">CalDAV</span></div>
+      <div class="flex fac g6"><button class="btn bg bsm" onclick="toast('☁️','nextcloud.brewnet.local 열기')">Open →</button><button class="btn bg bxs" onclick="toast('⚙','Nextcloud 설정')">설정</button></div>
+    </div>
+    <div class="svc-card installed">
+      <div class="flex fac jsb mb8"><div class="svc-ico">🎬</div><span class="bdg b-run" style="font-size:10px">● Running</span></div>
+      <div class="svc-nm">Jellyfin</div>
+      <div class="svc-desc">미디어 서버. 영화·드라마·음악을 어디서나 스트리밍. Netflix/Plex 대체 오픈소스 솔루션.</div>
+      <div class="svc-tags"><span class="stag">미디어 스트리밍</span><span class="stag">트랜스코딩</span></div>
+      <div class="flex fac g6"><button class="btn bg bsm" onclick="toast('🎬','jellyfin.brewnet.local 열기')">Open →</button><button class="btn bg bxs" onclick="toast('⚙','Jellyfin 설정')">설정</button></div>
+    </div>
+    <div class="svc-card installed">
+      <div class="flex fac jsb mb8"><div class="svc-ico">🔐</div><span class="bdg b-run" style="font-size:10px">● Running</span></div>
+      <div class="svc-nm">Vaultwarden</div>
+      <div class="svc-desc">비밀번호 관리자. Bitwarden 호환 셀프호스트 서버. 팀 공유·2FA·브라우저 확장 지원.</div>
+      <div class="svc-tags"><span class="stag">비밀번호 관리</span><span class="stag">Bitwarden API</span></div>
+      <div class="flex fac g6"><button class="btn bg bsm" onclick="toast('🔐','vault.brewnet.local 열기')">Open →</button><button class="btn bg bxs" onclick="toast('⚙','Vault 설정')">설정</button></div>
+    </div>
+    <div class="svc-card installed">
+      <div class="flex fac jsb mb8"><div class="svc-ico">📊</div><span class="bdg b-run" style="font-size:10px">● Running</span></div>
+      <div class="svc-nm">Uptime Kuma</div>
+      <div class="svc-desc">서비스 가용성 모니터링. HTTP·TCP·DNS·Docker 모니터링. 슬랙·텔레그램 알림 연동.</div>
+      <div class="svc-tags"><span class="stag">모니터링</span><span class="stag">알림</span></div>
+      <div class="flex fac g6"><button class="btn bg bsm" onclick="toast('📊','kuma.brewnet.local 열기')">Open →</button><button class="btn bg bxs">설정</button></div>
+    </div>
+    <div class="svc-card installed">
+      <div class="flex fac jsb mb8"><div class="svc-ico">🛡️</div><span class="bdg b-run" style="font-size:10px">● Running</span></div>
+      <div class="svc-nm">AdGuard Home</div>
+      <div class="svc-desc">DNS 기반 광고·추적 차단. 가정 내 모든 기기 적용. Pi-hole 대체. 통계 대시보드 제공.</div>
+      <div class="svc-tags"><span class="stag">DNS 광고차단</span><span class="stag">DNS over HTTPS</span></div>
+      <div class="flex fac g6"><button class="btn bg bsm" onclick="toast('🛡️','adguard.brewnet.local 열기')">Open →</button><button class="btn bg bxs">설정</button></div>
+    </div>
+  </div>
+
+  <div style="font-size:11px;font-family:var(--mono);color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">➕ 설치 가능한 서비스</div>
+  <div class="svc-grid">
+    <div class="svc-card">
+      <div class="svc-ico">📸</div><div class="svc-nm">Immich</div>
+      <div class="svc-desc">사진·영상 관리. Google Photos 대체. 얼굴 인식·지도 검색·앨범 공유 지원.</div>
+      <div class="svc-tags"><span class="stag">사진 관리</span><span class="stag">AI 분류</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Immich')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">🎵</div><div class="svc-nm">Navidrome</div>
+      <div class="svc-desc">음악 스트리밍 서버. Subsonic API 호환. Spotify 대체. 어떤 Subsonic 클라이언트와도 연동.</div>
+      <div class="svc-tags"><span class="stag">음악 스트리밍</span><span class="stag">Subsonic API</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Navidrome')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">📁</div><div class="svc-nm">FileBrowser</div>
+      <div class="svc-desc">웹 기반 파일 관리자. 브라우저에서 파일 업로드·다운로드·수정. 사용자 권한 관리.</div>
+      <div class="svc-tags"><span class="stag">파일 관리</span><span class="stag">WebUI</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('FileBrowser')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">🐘</div><div class="svc-nm">Portainer</div>
+      <div class="svc-desc">Docker 컨테이너 웹 관리 UI. 컨테이너 시작·중지·로그·통계를 GUI로 관리. Brewnet 보완재.</div>
+      <div class="svc-tags"><span class="stag">Docker 관리</span><span class="stag">컨테이너 UI</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Portainer')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">🔄</div><div class="svc-nm">Syncthing</div>
+      <div class="svc-desc">P2P 파일 동기화. 클라우드 없이 기기 간 직접 동기화. 개인정보 완전 보호.</div>
+      <div class="svc-tags"><span class="stag">파일 동기화</span><span class="stag">P2P</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Syncthing')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">📬</div><div class="svc-nm">Authelia</div>
+      <div class="svc-desc">SSO 인증 서버. 2FA·OAuth2 지원. 모든 서비스에 단일 로그인 적용. 외부 공개 서비스 보호.</div>
+      <div class="svc-tags"><span class="stag">SSO</span><span class="stag">2FA</span><span class="stag">OAuth2</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Authelia')">+ Install</button>
+    </div>
+    <div class="svc-card">
+      <div class="svc-ico">📦</div><div class="svc-nm">Gitea Registry</div>
+      <div class="svc-desc">Gitea 내장 컨테이너 레지스트리. 빌드한 Docker 이미지를 로컬에 저장·관리. Docker Hub 대체.</div>
+      <div class="svc-tags"><span class="stag">컨테이너 레지스트리</span><span class="stag">OCI</span></div>
+      <button class="btn bp bsm" style="width:100%" onclick="installSvc('Gitea Registry')">+ Install</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: DOMAINS ═══ -->
+<div id="s-domains" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">⊕ Domains — 외부 도메인 & Cloudflare Tunnel 관리</div>
+    <div class="ebox-desc">집에서 실행 중인 앱을 인터넷 어디서나 접근 가능하게 만듭니다. <strong>Cloudflare Named Tunnel</strong>을 사용해 포트 포워딩 없이 안전한 HTTPS 연결을 제공합니다. 무료 도메인(.dpdns.org)부터 기존 커스텀 도메인까지 3가지 시나리오를 지원합니다.</div>
+    <div class="ebox-tags"><span class="etag">Cloudflare Tunnel</span><span class="etag">포트 포워딩 불필요</span><span class="etag">자동 HTTPS</span><span class="etag">커스텀 도메인</span><span class="etag">무료 .dpdns.org</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Domains</div><div class="psub">Cloudflare Named Tunnel · 2개 연결됨</div></div>
+    <div class="flex fac g8">
+      <button class="btn bt bsm" onclick="openDomain()">+ Connect Domain</button>
+    </div>
+  </div>
+
+  <div class="alert a-ok mb16">🌐 Cloudflare Tunnel 상태: <strong>연결됨</strong> · 터널 ID: <span class="mno">a8f3b2c1-4e5d-...</span> · 업타임 99.9%</div>
+
+  <div class="card mb16">
+    <div class="ct mb12">🔗 연결된 도메인</div>
+    <div class="domain-row">
+      <div class="domain-icon-box">🌐</div>
+      <div style="flex:1;min-width:0">
+        <div class="flex fac g8 mb4"><span style="font-weight:700;font-size:13.5px">api.myserver.dpdns.org</span><span class="bdg b-run" style="font-size:10px">● Active</span></div>
+        <div class="txs mno tdim">→ blog-api (port 8000) · HTTPS · SSL 자동 갱신 (Let's Encrypt)</div>
+      </div>
+      <div class="flex fac g6"><button class="btn bg bxs" onclick="toast('🌐','브라우저 열기')">Open</button><button class="btn bg bxs" onclick="toast('✕','도메인 연결 해제')">해제</button></div>
+    </div>
+    <div class="domain-row">
+      <div class="domain-icon-box">🌐</div>
+      <div style="flex:1;min-width:0">
+        <div class="flex fac g8 mb4"><span style="font-weight:700;font-size:13.5px">my-api.brewnet.local</span><span class="bdg b-build" style="font-size:10px">◉ Local Only</span></div>
+        <div class="txs mno tdim">→ my-api (port 8080) · 로컬 네트워크 전용 · Traefik 라우팅</div>
+      </div>
+      <div class="flex fac g6"><button class="btn bt bxs" onclick="openDomain()">외부 연결</button></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="ct mb12">📌 3가지 연결 시나리오</div>
+      <div class="ir mb8" style="flex-direction:column;align-items:flex-start;gap:7px;cursor:pointer" onclick="openDomain()">
+        <div class="flex fac g8"><span style="font-size:16px">🆓</span><span style="font-weight:600;font-size:13px">시나리오 A · 무료 도메인</span></div>
+        <div class="txs tdim">DigitalPlat에서 무료 .dpdns.org 도메인을 발급받고 Cloudflare에 연결합니다. 도메인이 없어도 즉시 시작 가능.</div>
+      </div>
+      <div class="ir mb8" style="flex-direction:column;align-items:flex-start;gap:7px;cursor:pointer" onclick="openDomain()">
+        <div class="flex fac g8"><span style="font-size:16px">🔄</span><span style="font-weight:600;font-size:13px">시나리오 B · 기존 도메인 이전</span></div>
+        <div class="txs tdim">이미 보유한 도메인의 네임서버를 Cloudflare로 변경합니다. 풀 DNS 관리 & 자동 SSL.</div>
+      </div>
+      <div class="ir" style="flex-direction:column;align-items:flex-start;gap:7px;cursor:pointer" onclick="openDomain()">
+        <div class="flex fac g8"><span style="font-size:16px">📌</span><span style="font-weight:600;font-size:13px">시나리오 C · CNAME만 추가</span></div>
+        <div class="txs tdim">현재 DNS 레지스트라에 CNAME 레코드만 추가합니다. 기존 DNS 설정 유지하며 최소 변경.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct mb12">🔒 보안 상태</div>
+      <div class="ir"><span class="ik">Cloudflare Proxy</span><span class="iv tgrn">✓ 활성화 (DDoS 차단)</span></div>
+      <div class="ir"><span class="ik">SSL 모드</span><span class="iv tgrn">✓ Full (Strict)</span></div>
+      <div class="ir"><span class="ik">포트 노출</span><span class="iv tgrn">✓ 없음 (Tunnel 전용)</span></div>
+      <div class="ir"><span class="ik">HSTS</span><span class="iv tgrn">✓ 활성화</span></div>
+      <div class="alert a-info mt12">💡 Named Tunnel은 서버가 Cloudflare로 아웃바운드 연결을 시작합니다. 방화벽 인바운드 포트 개방이 필요 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: MONITOR ═══ -->
+<div id="s-monitor" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">◈ Monitor — 실시간 시스템 리소스 모니터링</div>
+    <div class="ebox-desc">CPU, 메모리, 디스크, 네트워크 사용량을 실시간으로 추적합니다. 각 컨테이너별 리소스 소비를 확인하고, 이상 징후 발생 시 알림을 설정할 수 있습니다. 홈서버가 건강하게 운영되고 있는지 한눈에 파악하세요.</div>
+    <div class="ebox-tags"><span class="etag">실시간 CPU/RAM</span><span class="etag">컨테이너별 분석</span><span class="etag">디스크 I/O</span><span class="etag">네트워크 트래픽</span><span class="etag">임계값 알림</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Monitor</div><div class="psub">실시간 시스템 현황 · 업데이트 주기: 2초</div></div>
+    <div><button class="btn bg bsm" onclick="toast('⚙','알림 임계값 설정')">⚙ 알림 설정</button></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px">
+    <div class="metric-card">
+      <div class="flex fac jsb mb12"><div style="font-weight:600;font-size:13px">🖥 CPU</div><span class="mno txs tamb">28%</span></div>
+      <div class="mtrack"><div class="mfill mg" style="width:28%"></div></div>
+      <div class="txs tdim mt8">4코어 · 3.2 GHz</div>
+      <div class="txs tdim">평균 (5m): 24%</div>
+    </div>
+    <div class="metric-card">
+      <div class="flex fac jsb mb12"><div style="font-weight:600;font-size:13px">💾 RAM</div><span class="mno txs tamb">3.2 / 8 GB</span></div>
+      <div class="mtrack"><div class="mfill mg" style="width:40%"></div></div>
+      <div class="txs tdim mt8">40% 사용 중</div>
+      <div class="txs tdim">Cached: 1.1 GB</div>
+    </div>
+    <div class="metric-card">
+      <div class="flex fac jsb mb12"><div style="font-weight:600;font-size:13px">💿 Disk</div><span class="mno txs" style="color:var(--oran)">71 / 120 GB</span></div>
+      <div class="mtrack"><div class="mfill ma" style="width:59%"></div></div>
+      <div class="txs tdim mt8">59% 사용 중</div>
+      <div class="txs tdim">Write: 2.1 MB/s</div>
+    </div>
+    <div class="metric-card">
+      <div class="flex fac jsb mb12"><div style="font-weight:600;font-size:13px">🌐 Network</div><span class="mno txs ttl">1.6 MB/s</span></div>
+      <div class="mtrack"><div class="mfill mg" style="width:15%"></div></div>
+      <div class="txs tdim mt8">↓ 1.2 MB/s ↑ 0.4 MB/s</div>
+      <div class="txs tdim">Today: 4.2 GB</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="ct mb12">📦 컨테이너별 CPU / 메모리</div>
+      <div class="proc-row">
+        <div style="flex:1;min-width:0"><div class="tsm mb4">brewnet-blog-api</div><div class="flex fac g8"><div class="mtrack" style="width:100px"><div class="mfill mg" style="width:34%"></div></div><span class="txs mno tdim">34%</span></div></div>
+        <div style="text-align:right"><div class="txs mno tmut">540 MB</div></div>
+      </div>
+      <div class="proc-row">
+        <div style="flex:1;min-width:0"><div class="tsm mb4">brewnet-my-api</div><div class="flex fac g8"><div class="mtrack" style="width:100px"><div class="mfill mg" style="width:18%"></div></div><span class="txs mno tdim">18%</span></div></div>
+        <div style="text-align:right"><div class="txs mno tmut">128 MB</div></div>
+      </div>
+      <div class="proc-row">
+        <div style="flex:1;min-width:0"><div class="tsm mb4">brewnet-gitea</div><div class="flex fac g8"><div class="mtrack" style="width:100px"><div class="mfill mg" style="width:12%"></div></div><span class="txs mno tdim">12%</span></div></div>
+        <div style="text-align:right"><div class="txs mno tmut">320 MB</div></div>
+      </div>
+      <div class="proc-row">
+        <div style="flex:1;min-width:0"><div class="tsm mb4">brewnet-traefik</div><div class="flex fac g8"><div class="mtrack" style="width:100px"><div class="mfill mg" style="width:6%"></div></div><span class="txs mno tdim">6%</span></div></div>
+        <div style="text-align:right"><div class="txs mno tmut">48 MB</div></div>
+      </div>
+      <div class="proc-row">
+        <div style="flex:1;min-width:0"><div class="tsm mb4">brewnet-cloudflared</div><div class="flex fac g8"><div class="mtrack" style="width:100px"><div class="mfill mg" style="width:4%"></div></div><span class="txs mno tdim">4%</span></div></div>
+        <div style="text-align:right"><div class="txs mno tmut">24 MB</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct mb12">💿 디스크 사용 현황</div>
+      <div class="ir"><span class="ik">~/.brewnet/apps</span><span class="iv mno">22 GB</span></div>
+      <div class="ir"><span class="ik">~/.brewnet/services</span><span class="iv mno">31 GB</span></div>
+      <div class="ir"><span class="ik">~/.brewnet/gitea</span><span class="iv mno">8 GB</span></div>
+      <div class="ir"><span class="ik">~/.brewnet/data</span><span class="iv mno">7 GB</span></div>
+      <div class="ir"><span class="ik">기타</span><span class="iv mno">3 GB</span></div>
+      <div class="ir" style="margin-top:8px"><span class="ik" style="font-weight:700">총 사용</span><span class="iv mno" style="color:var(--oran)">71 GB / 120 GB (59%)</span></div>
+      <div class="alert a-warn mt12" style="font-size:12px">⚠ 디스크 사용량 60% 초과. ~/.brewnet/services 정리를 권장합니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: SETTINGS ═══ -->
+<div id="s-settings" class="hidden">
+  <div class="ebox">
+    <div class="ebox-title">⚙ Settings — Brewnet 시스템 설정</div>
+    <div class="ebox-desc">Brewnet의 동작 방식, Gitea 자격증명, Cloudflare 터널, 백업·업데이트 정책을 이 화면에서 관리합니다. 설정은 <code>~/.brewnet/config.yml</code>에 저장되며, CLI와 실시간 동기화됩니다.</div>
+    <div class="ebox-tags"><span class="etag">시스템 설정</span><span class="etag">Gitea 자격증명</span><span class="etag">Cloudflare Token</span><span class="etag">백업 정책</span><span class="etag">Pro 라이선스</span></div>
+  </div>
+
+  <div class="ph">
+    <div><div class="ptitle">Settings</div><div class="psub">~/.brewnet/config.yml · v1.4.2</div></div>
+    <div><button class="btn bg bsm" onclick="toast('💾','설정 저장됨')">💾 저장</button></div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">🔑 Gitea 연동</div>
+    <div class="srow">
+      <div><div class="sr-nm">Gitea 서버 URL</div><div class="sr-desc">내부 Gitea 접속 주소 · 기본값: http://localhost:3000</div></div>
+      <input class="fi" style="width:260px" value="http://localhost:3000">
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">관리자 계정</div><div class="sr-desc">Gitea admin 사용자명 · 앱 생성 시 저장소 자동 생성에 사용</div></div>
+      <input class="fi" style="width:200px" value="admin">
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">API Token</div><div class="sr-desc">Gitea REST API 토큰 · Settings → Applications → Generate Token</div></div>
+      <div class="flex fac g8"><input class="fi" style="width:200px;font-family:var(--mono)" type="password" value="gitea_api_***"><button class="btn bg bxs" onclick="toast('👁','토큰 표시')">표시</button></div>
+    </div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">🌐 Cloudflare Tunnel</div>
+    <div class="srow">
+      <div><div class="sr-nm">Tunnel 토큰</div><div class="sr-desc">cloudflared 인증 토큰 · Cloudflare Zero Trust → Tunnels에서 발급</div></div>
+      <div class="flex fac g8"><input class="fi" style="width:200px;font-family:var(--mono)" type="password" value="eyJh***"><button class="btn bg bxs" onclick="toast('👁','토큰 표시')">표시</button></div>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">Tunnel 연결 상태</div><div class="sr-desc">현재 Cloudflare Tunnel 연결 상태</div></div>
+      <span class="bdg b-run">● Connected</span>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">자동 Ingress 업데이트</div><div class="sr-desc">도메인 연결 시 Cloudflare Ingress 규칙 자동 업데이트</div></div>
+      <div class="tg on" onclick="this.classList.toggle('on');toast('⚙','자동 업데이트 ' + (this.classList.contains('on')?'ON':'OFF'))"></div>
+    </div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">⚙ 배포 설정</div>
+    <div class="srow">
+      <div><div class="sr-nm">Auto Deploy on Push</div><div class="sr-desc">main 브랜치 push 시 자동 배포 기본값</div></div>
+      <div class="tg on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">빌드 캐시</div><div class="sr-desc">Docker layer 캐시 사용 · 빌드 속도 향상</div></div>
+      <div class="tg on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">롤백 보존 수</div><div class="sr-desc">이전 빌드 이미지 보존 개수 (1~10)</div></div>
+      <select class="fi" style="width:100px"><option>3</option><option>5</option><option>10</option></select>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">Health Check Timeout</div><div class="sr-desc">컨테이너 기동 후 상태 확인 대기 시간</div></div>
+      <select class="fi" style="width:100px"><option>30s</option><option selected>60s</option><option>120s</option></select>
+    </div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">💾 백업</div>
+    <div class="srow">
+      <div><div class="sr-nm">자동 백업</div><div class="sr-desc">Gitea 데이터 + 앱 설정 자동 백업</div></div>
+      <div class="tg on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">백업 주기</div><div class="sr-desc">마지막 백업: 오전 3:00 (14시간 전)</div></div>
+      <select class="fi" style="width:130px"><option>매일 새벽 3시</option><option>주 1회</option><option>수동</option></select>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">백업 경로</div><div class="sr-desc">백업 파일 저장 위치</div></div>
+      <input class="fi" style="width:260px;font-family:var(--mono)" value="~/.brewnet/backup">
+    </div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">🏅 Pro 라이선스</div>
+    <div class="srow">
+      <div><div class="sr-nm">라이선스 상태</div><div class="sr-desc">Pro 대시보드 기능 활성 · license key로 인증됨</div></div>
+      <div class="flex fac g8"><span class="bdg" style="background:rgba(232,168,73,.1);color:var(--amber);border:1px solid rgba(232,168,73,.25);font-size:11px">⭐ PRO</span><button class="btn bg bxs" onclick="toast('ℹ️','라이선스 키 확인')">Key 확인</button></div>
+    </div>
+    <div class="srow">
+      <div><div class="sr-nm">자동 업데이트</div><div class="sr-desc">Brewnet CLI & Pro 대시보드 자동 업데이트</div></div>
+      <div class="tg on" onclick="this.classList.toggle('on')"></div>
+    </div>
+  </div>
+
+  <div class="settings-sec">
+    <div class="ssec-label">⚠ 위험 구역</div>
+    <div class="srow" style="border-color:rgba(240,75,90,.2)">
+      <div><div class="sr-nm" style="color:var(--red)">Brewnet 초기화</div><div class="sr-desc">모든 앱·서비스·설정 삭제. 되돌릴 수 없습니다.</div></div>
+      <button class="btn br bsm" onclick="toast('⚠','안전을 위해 직접 CLI 명령 실행 필요:\nbrew reset --confirm')">초기화...</button>
+    </div>
+  </div>
+</div>
+
+  </main>
+</div>
+</div>
+
+<!-- TOASTS -->
+<div id="toasts"></div>
+
+<!-- MODAL: NEW APP -->
+<div class="overlay hidden" id="ov-new">
+<div class="modal mlg">
+  <div class="mh"><div><div class="mt-m">🍺 새 앱 만들기</div><div class="ms">언어 선택 → 자동 보일러플레이트 설정</div></div><button class="xbtn" onclick="closeNew()">✕</button></div>
+  <div class="mb-m">
+    <div id="new-step1">
+      <div class="fl" style="margin-bottom:10px">개발 언어</div>
+      <div class="lgrid mb12">
+        <div class="lcard" id="lc-go" onclick="selectLang('go')"><div class="lem">🐹</div><div class="lnm">Go</div><div class="lsm">Gin / Fiber</div></div>
+        <div class="lcard" id="lc-python" onclick="selectLang('python')"><div class="lem">🐍</div><div class="lnm">Python</div><div class="lsm">FastAPI / Flask</div></div>
+        <div class="lcard" id="lc-node" onclick="selectLang('node')"><div class="lem">🟩</div><div class="lnm">Node.js</div><div class="lsm">Express / Fastify</div></div>
+        <div class="lcard" id="lc-java" onclick="selectLang('java')"><div class="lem">☕</div><div class="lnm">Java</div><div class="lsm">Spring Boot</div></div>
+        <div class="lcard" id="lc-rust" onclick="selectLang('rust')"><div class="lem">🦀</div><div class="lnm">Rust</div><div class="lsm">Actix / Axum</div></div>
+        <div class="lcard" id="lc-kotlin" onclick="selectLang('kotlin')"><div class="lem">🎯</div><div class="lnm">Kotlin</div><div class="lsm">Ktor / Spring</div></div>
+      </div>
+      <div class="fl" style="margin-bottom:10px">프레임워크</div>
+      <div class="fwrow mb16" id="fw-row"><div class="txs tdim">← 언어를 선택하세요</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="fg"><label class="fl">앱 이름</label><input class="fi" id="ni-name" placeholder="my-api" oninput="validatePort()"><div class="fhint" id="ni-hint">Gitea 저장소 이름 · 소문자·숫자·하이픈</div></div>
+        <div class="fg"><label class="fl">포트</label><input class="fi" id="ni-port" placeholder="8080" oninput="validatePort()"><div id="port-hint" class="fhint">컨테이너 내부 포트</div></div>
+      </div>
+      <div id="porterr-box" class="hidden">
+        <div class="porterr"><span class="mno" style="color:var(--red)">⚠ 포트 충돌!</span> <span class="txs tdim">이 포트는 이미 사용 중입니다. 다른 포트를 선택하세요.</span></div>
+      </div>
+      <div id="new-tree" class="hidden"><div style="font-size:11px;color:var(--txt3);font-family:var(--mono);margin-bottom:5px">📁 생성될 파일 구조</div><div class="ftree" id="tree-content"></div></div>
+    </div>
+    <div id="new-step2" class="hidden">
+      <div class="sl" id="create-steps"></div>
+      <div class="ptr mt12"><div class="pfl" id="create-bar" style="width:0%"></div></div>
+      <div class="plbl" id="create-pct">준비 중...</div>
+    </div>
+    <div id="new-step3" class="hidden">
+      <div class="sbox-wrap">
+        <div style="font-size:28px;margin-bottom:8px">🍺</div>
+        <div style="font-weight:800;font-size:16px;margin-bottom:5px">앱 생성 완료!</div>
+        <div style="font-size:12.5px;color:var(--txt2);margin-bottom:11px">이제 코드를 작성하고 git push 하면 자동 배포됩니다</div>
+        <div class="sbox-url"><span id="new-url"></span><button class="cpb" style="position:static;margin-left:8px" onclick="toast('📋','복사됨')">복사</button></div>
+        <div class="sbox-chips">
+          <span class="schip">⎇ Gitea 저장소 생성됨</span>
+          <span class="schip">⇄ Traefik 라우팅 등록됨</span>
+          <span class="schip">🪝 Webhook 자동 설정됨</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot" id="new-foot">
+    <button class="btn bg bsm" onclick="closeNew()">취소</button>
+    <button class="btn bp bsm" id="new-cta" onclick="newNextStep()" disabled>언어 선택 후 계속</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: DOMAIN CONNECT -->
+<div class="overlay hidden" id="ov-domain">
+<div class="modal mlg">
+  <div class="mh"><div><div class="mt-m">🌐 외부 도메인 연결</div><div class="ms" id="dom-for">앱을 인터넷에서 접근 가능하게 만들기</div></div><button class="xbtn" onclick="closeDomain()">✕</button></div>
+  <div class="mb-m">
+    <div id="dom-step1">
+      <div class="fl" style="margin-bottom:10px">연결 시나리오 선택</div>
+      <div class="scgrid mb14">
+        <div class="sccard" id="sc-a" onclick="selectSc('a')"><div style="font-size:20px;margin-bottom:6px">🆓</div><div style="font-weight:700;font-size:13px;margin-bottom:4px">시나리오 A</div><div style="font-size:11.5px;color:var(--txt2)">무료 도메인<br>(.dpdns.org)</div></div>
+        <div class="sccard" id="sc-b" onclick="selectSc('b')"><div style="font-size:20px;margin-bottom:6px">🔄</div><div style="font-weight:700;font-size:13px;margin-bottom:4px">시나리오 B</div><div style="font-size:11.5px;color:var(--txt2)">기존 도메인<br>NS 이전</div></div>
+        <div class="sccard" id="sc-c" onclick="selectSc('c')"><div style="font-size:20px;margin-bottom:6px">📌</div><div style="font-weight:700;font-size:13px;margin-bottom:4px">시나리오 C</div><div style="font-size:11.5px;color:var(--txt2)">CNAME만<br>추가</div></div>
+      </div>
+      <div class="fg">
+        <label class="fl">서브도메인</label>
+        <input class="fi" id="dom-sub" placeholder="api" oninput="updateDomPreview()">
+        <div class="fhint" id="dom-prev">예: api → api.yourdomain.com</div>
+      </div>
+      <div class="fg" id="dom-full-fg">
+        <label class="fl">도메인</label>
+        <input class="fi" id="dom-full" placeholder="myserver.dpdns.org" oninput="updateDomPreview()">
+      </div>
+      <div class="alert a-info" id="dom-hint-box">← 시나리오를 선택하세요</div>
+    </div>
+    <div id="dom-step2" class="hidden">
+      <div class="sl" id="dom-steps"></div>
+      <div class="ptr mt12"><div class="pfl" id="dom-bar" style="width:0%"></div></div>
+      <div class="plbl" id="dom-pct">준비 중...</div>
+    </div>
+    <div id="dom-step3" class="hidden">
+      <div class="sbox-wrap">
+        <div style="font-size:28px;margin-bottom:8px">🌐</div>
+        <div style="font-weight:800;font-size:16px;margin-bottom:5px">도메인 연결 완료!</div>
+        <div style="font-size:12.5px;color:var(--txt2);margin-bottom:11px">이제 외부에서 HTTPS로 접근 가능합니다</div>
+        <div class="sbox-url"><span id="dom-final-url"></span><button class="cpb" style="position:static;margin-left:8px" onclick="toast('📋','복사됨')">복사</button></div>
+        <div class="sbox-chips"><span class="schip">🔒 HTTPS 자동 설정</span><span class="schip">🌐 Cloudflare Tunnel</span><span class="schip">🛡 DDoS 보호</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot" id="dom-foot">
+    <button class="btn bg bsm" onclick="closeDomain()">취소</button>
+    <button class="btn bp bsm" id="dom-cta" onclick="domNextStep()" disabled>시나리오 선택 후 계속</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: SERVICE INSTALL -->
+<div class="overlay hidden" id="ov-svc">
+<div class="modal mmd">
+  <div class="mh"><div><div class="mt-m" id="svc-title">📦 서비스 설치</div><div class="ms">원클릭 설치 · Docker Compose 자동 생성</div></div><button class="xbtn" onclick="document.getElementById('ov-svc').classList.add('hidden')">✕</button></div>
+  <div class="mb-m">
+    <div id="svc-body">
+      <div class="alert a-info mb12" id="svc-desc-box"></div>
+      <div class="sl" id="svc-steps"></div>
+      <div class="ptr mt12"><div class="pfl" id="svc-bar" style="width:0%"></div></div>
+      <div class="plbl" id="svc-pct"></div>
+    </div>
+    <div id="svc-done" class="hidden">
+      <div class="sbox-wrap">
+        <div style="font-size:28px;margin-bottom:8px">✅</div>
+        <div style="font-weight:800;font-size:16px;margin-bottom:5px">설치 완료!</div>
+        <div class="sbox-url"><span id="svc-url"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot" id="svc-foot">
+    <button class="btn bg bsm" onclick="document.getElementById('ov-svc').classList.add('hidden')">닫기</button>
+  </div>
+</div>
+</div>
+
+<script>
+/* ══════ DATA ══════ */
+const APPS = {
+  'my-api':      {icon:'Go',  ic:'var(--teal)',  stack:'Go · Gin · port 8080',       status:'running', local:'http://my-api.brewnet.local',   ext:null,                        img:'brewnet/my-api:latest',     health:'GET /health → 200'},
+  'blog-api':    {icon:'🐍', ic:'#facc15',       stack:'Python · FastAPI · port 8000',status:'running', local:'http://blog-api.brewnet.local', ext:'https://api.myserver.dpdns.org', img:'brewnet/blog-api:latest', health:'GET /ping → 200'},
+  'spring-demo': {icon:'☕', ic:'var(--amber)',   stack:'Java · Spring Boot · port 8080',status:'stopped',local:'http://spring-demo.brewnet.local',ext:null,                    img:'brewnet/spring-demo:latest',health:'N/A'}
+};
+const LANG_FW = {
+  go:     {fws:['Gin','Fiber','Echo'],    port:'8080', tree:'<span class="ftd">my-api/</span>\n├── <span class="ftf">main.go</span>\n├── <span class="ftf">Dockerfile</span>\n├── <span class="ftf">docker-compose.yml</span>\n└── <span class="ftf">go.mod</span>'},
+  python: {fws:['FastAPI','Flask','Django'],port:'8000',tree:'<span class="ftd">my-api/</span>\n├── <span class="ftf">main.py</span>\n├── <span class="ftf">requirements.txt</span>\n├── <span class="ftf">Dockerfile</span>\n└── <span class="ftf">docker-compose.yml</span>'},
+  node:   {fws:['Express','Fastify','NestJS'],port:'3000',tree:'<span class="ftd">my-api/</span>\n├── <span class="ftf">src/index.ts</span>\n├── <span class="ftf">package.json</span>\n├── <span class="ftf">Dockerfile</span>\n└── <span class="ftf">docker-compose.yml</span>'},
+  java:   {fws:['Spring Boot','Quarkus'],  port:'8080',tree:'<span class="ftd">my-api/</span>\n├── <span class="ftd">src/main/java/</span>\n│   └── <span class="ftf">Application.java</span>\n├── <span class="ftf">build.gradle</span>\n└── <span class="ftf">Dockerfile</span>'},
+  rust:   {fws:['Actix-web','Axum'],       port:'8080',tree:'<span class="ftd">my-api/</span>\n├── <span class="ftd">src/</span>\n│   └── <span class="ftf">main.rs</span>\n├── <span class="ftf">Cargo.toml</span>\n└── <span class="ftf">Dockerfile</span>'},
+  kotlin: {fws:['Ktor','Spring Boot (Kotlin)'],port:'8080',tree:'<span class="ftd">my-api/</span>\n├── <span class="ftd">src/main/kotlin/</span>\n│   └── <span class="ftf">Application.kt</span>\n├── <span class="ftf">build.gradle.kts</span>\n└── <span class="ftf">Dockerfile</span>'}
+};
+const USED_PORTS = [8080,8000,3000,3001,8888];
+let curApp='my-api', selLang='', selFw='', curSc='', newStep=0, domStep=0;
+let deployTimer=null, monTimer=null;
+
+/* ══════ UTILS ══════ */
+function eid(id){return document.getElementById(id)}
+function hide(id){eid(id).classList.add('hidden')}
+function show(id){eid(id).classList.remove('hidden')}
+
+function toast(icon, msg) {
+  const w = eid('toasts');
+  const t = document.createElement('div');
+  t.className = 'tel';
+  t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  w.appendChild(t);
+  setTimeout(()=>t.style.opacity='0',2200);
+  setTimeout(()=>t.remove(),2500);
+}
+
+function copyTxt(txt) {
+  navigator.clipboard?.writeText(txt).catch(()=>{});
+  toast('📋','클립보드에 복사됨');
+}
+
+/* ══════ NAV ══════ */
+function go(page) {
+  // Hide all screens
+  ['dash','apps','detail','mon','git','routing','services','domains','monitor','settings'].forEach(s=>{
+    const el = eid('s-'+s);
+    if(el) el.classList.add('hidden');
+  });
+  // Clear active nav items
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('active'));
+
+  const navMap = {
+    dash:'nav-dash', apps:'nav-apps', git:'nav-git', routing:'nav-routing',
+    services:'nav-services', domains:'nav-domains', monitor:'nav-monitor', settings:'nav-settings'
+  };
+
+  // Breadcrumb and topbar
+  const labels = {
+    dash:'Dashboard', apps:'Apps', git:'Git Server', routing:'Routing',
+    services:'Services', domains:'Domains', monitor:'Monitor', settings:'Settings'
+  };
+
+  const el = eid('s-'+page);
+  if(el) el.classList.remove('hidden');
+
+  const navEl = eid(navMap[page]);
+  if(navEl) navEl.classList.add('active');
+
+  const label = labels[page] || page;
+  eid('bc').innerHTML = `<span>Brewnet</span><span class="s">›</span><span class="c">${label}</span>`;
+
+  // Update topbar buttons
+  const tbr = eid('tbr');
+  if(page==='apps') {
+    tbr.innerHTML = `<button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button><button class="btn bp bsm" onclick="openNew()">+ New App</button>`;
+  } else if(page==='domains') {
+    tbr.innerHTML = `<button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button><button class="btn bt bsm" onclick="openDomain()">+ Connect Domain</button>`;
+  } else if(page==='services') {
+    tbr.innerHTML = `<button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button>`;
+  } else if(page==='dash') {
+    tbr.innerHTML = `<button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button><button class="btn bp bsm" onclick="openNew()">+ New App</button>`;
+  } else {
+    tbr.innerHTML = `<button class="btn bg bsm" onclick="toast('🔄','새로고침...')">↻</button>`;
+  }
+}
+
+/* ══════ APP DETAIL ══════ */
+function openDetail(name) {
+  curApp = name;
+  const a = APPS[name];
+  go('detail');
+  // Update nav badge
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('active'));
+  eid('nav-apps').classList.add('active');
+  eid('bc').innerHTML = `<span onclick="go('apps')" style="cursor:pointer">Apps</span><span class="s">›</span><span class="c">${name}</span>`;
+
+  eid('tbr').innerHTML = `<button class="btn bg bsm" onclick="go('apps')">← Apps</button>`;
+
+  // Populate
+  eid('d-icon').textContent = a.icon;
+  eid('d-icon').style.color = a.ic;
+  eid('d-name').textContent = name;
+  eid('d-stack').textContent = a.stack;
+  eid('d-badge').className = 'bdg ' + (a.status==='running'?'b-run':'b-stop');
+  eid('d-badge').textContent = a.status==='running' ? '● Running' : '● Stopped';
+  eid('d-url').textContent = a.ext || a.local;
+  eid('d-ss').textContent = a.status==='running' ? '⏹ Stop' : '▶ Start';
+
+  // Overview
+  eid('ov-st').textContent = a.status==='running'?'● Running':'● Stopped';
+  eid('ov-st').style.color = a.status==='running'?'var(--green)':'var(--red)';
+  eid('ov-up').textContent = a.status==='running'?'4m 22s':'—';
+  eid('ov-deps').textContent = '3';
+  eid('ov-local').textContent = a.local;
+  eid('ov-ext').textContent = a.ext || '미연결';
+  eid('ov-ext').style.color = a.ext ? 'var(--teal)' : 'var(--txt3)';
+  eid('ov-cname').textContent = 'brewnet-'+name;
+  eid('ov-img').textContent = a.img;
+  eid('ov-health').textContent = a.health;
+
+  // Git
+  eid('git-url').textContent = `http://localhost:3000/admin/${name}`;
+  eid('git-path').textContent = `~/.brewnet/apps/${name}`;
+  eid('git-http').innerHTML = `http://localhost:3000/admin/${name}.git<button class="cpb" onclick="copyTxt('http://localhost:3000/admin/${name}.git')">복사</button>`;
+  eid('git-ssh').innerHTML = `ssh://git@localhost:2222/admin/${name}.git<button class="cpb" onclick="copyTxt('ssh://git@localhost:2222/admin/${name}.git')">복사</button>`;
+  eid('git-qs').innerHTML = `<span class="cm-c"># 최초 설정</span>\ngit clone http://localhost:3000/admin/${name}.git\ncd ${name}\n\n<span class="cm-c"># 개발 후 배포</span>\ngit add . && git commit -m "feat: my changes"\ngit push origin main  <span class="cm-c"># → 자동 배포 트리거!</span><button class="cpb" onclick="copyTxt('git clone http://localhost:3000/admin/${name}.git')">복사</button>`;
+
+  eid('log-an').textContent = name;
+  eid('mon-an').textContent = name;
+
+  stab('ov');
+
+  // Start live log
+  const logLines = [
+    `<span class="lt">[${new Date().toLocaleTimeString()}]</span> <span class="lin">Brewnet watching ${name}...</span>`,
+    `<span class="lt">[${new Date().toLocaleTimeString()}]</span> <span class="lok">INFO: Server started on :${a.stack.match(/\d{4}/)?.[0]||8080}</span>`,
+    `<span class="lt">[${new Date().toLocaleTimeString()}]</span> <span class="lin">INFO: Connected to brewnet-network</span>`,
+  ];
+  eid('live-log').innerHTML = logLines.join('\n');
+}
+
+function stab(t) {
+  ['ov','git2','dep','log'].forEach(x=>{
+    eid('tab-'+x).classList.toggle('active',x===t);
+    eid('tc-'+x).classList.toggle('hidden',x!==t);
+  });
+  if(t==='log') startLiveLog();
+}
+
+function startLiveLog() {
+  const msgs = [
+    ['lin','INFO: Request GET /health 200 OK 1.2ms'],
+    ['lin','INFO: Request POST /api/data 201 Created 8.4ms'],
+    ['lok','DEBUG: Cache hit for key=user:42'],
+    ['lin','INFO: Request GET /api/data 200 OK 3.1ms'],
+    ['lwn','WARN: Slow query detected (>100ms)'],
+    ['lin','INFO: Request DELETE /api/item/99 204 No Content'],
+    ['lok','INFO: Health check passed'],
+  ];
+  let i=0;
+  const el = eid('live-log');
+  clearInterval(window._logInt);
+  window._logInt = setInterval(()=>{
+    const [cls,msg] = msgs[i%msgs.length];
+    el.innerHTML += `\n<span class="lt">[${new Date().toLocaleTimeString()}]</span> <span class="${cls}">${msg}</span>`;
+    el.scrollTop = el.scrollHeight;
+    i++;
+  },900);
+}
+
+function goBack() { go('apps'); clearInterval(window._logInt); }
+
+function toggleStatus() {
+  const a = APPS[curApp];
+  a.status = a.status==='running'?'stopped':'running';
+  openDetail(curApp);
+  toast(a.status==='running'?'▶':'⏹', curApp + ' ' + (a.status==='running'?'started':'stopped'));
+}
+
+/* ══════ DEPLOY MONITOR ══════ */
+function startDeploy() {
+  go('mon');
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('active'));
+  eid('nav-apps').classList.add('active');
+  eid('bc').innerHTML = `<span onclick="go('apps')" style="cursor:pointer">Apps</span><span class="s">›</span><span onclick="openDetail('${curApp}')" style="cursor:pointer">${curApp}</span><span class="s">›</span><span class="c">Deploy</span>`;
+  eid('tbr').innerHTML = '';
+
+  eid('mon-title').textContent = `🚀 ${curApp} 배포 중`;
+  eid('mon-hash').textContent = 'a3f2b1c';
+  eid('mon-msg').textContent = '"feat: add health endpoint"';
+  eid('mon-an').textContent = curApp;
+
+  // Reset pipeline
+  hide('mon-done'); show('cancel-btn');
+  const stages = [{id:1,done:true},{id:2},{id:3},{id:4}];
+  stages.forEach(s=>{
+    const el = eid('ps'+s.id);
+    const pnum = eid('pn'+s.id);
+    if(s.done){
+      el.className='pst done';
+      if(pnum){pnum.className='pnum done';pnum.textContent='✓';}
+    } else {
+      el.className='pst wait';
+      if(pnum){pnum.className='pnum wait';pnum.textContent=s.id;}
+    }
+    const pt = eid('pt'+s.id);
+    if(pt) pt.textContent = s.done?'0.3s':'−';
+    const sub = eid('ps'+s.id+'-sub');
+    if(sub) sub.textContent = '대기 중...';
+  });
+
+  eid('mon-bar').style.width='8%';
+  eid('mon-pct').textContent='8% — Git Pull 완료, Docker 빌드 준비...';
+
+  const monLog = eid('mon-log');
+  monLog.innerHTML = `<span class="lt">[0.0s]</span> <span class="lok">✓ Git Pull: HEAD → a3f2b1c</span>
+<span class="lt">[0.3s]</span> <span class="lin">Docker Build 시작...</span>`;
+
+  let elapsed = 0;
+  let phase = 1;
+  clearInterval(deployTimer);
+  const buildLines = [
+    [0.4,'lblu','Step 1/5: FROM golang:1.22-alpine'],
+    [1.2,'lin','Step 2/5: WORKDIR /app'],
+    [1.5,'lin','Step 3/5: COPY go.mod go.sum ./'],
+    [2.1,'lin','Step 4/5: RUN go mod download'],
+    [4.8,'lin','Step 5/5: COPY . .'],
+    [6.2,'lok','Successfully built image a8b3c2d1'],
+  ];
+  let lineIdx=0;
+
+  deployTimer = setInterval(()=>{
+    elapsed += 0.3;
+
+    if(phase===1 && elapsed > 1){
+      eid('ps2').className='pst active'; eid('pn2').className='pnum active'; eid('pn2').textContent='⟳';
+      eid('ps2-sub').textContent='Dockerfile 빌드 중...';
+      phase=2;
+    }
+
+    if(lineIdx < buildLines.length){
+      const [t,cls,msg] = buildLines[lineIdx];
+      if(elapsed >= t){
+        monLog.innerHTML += `\n<span class="lt">[${elapsed.toFixed(1)}s]</span> <span class="${cls}">${msg}</span>`;
+        monLog.scrollTop = monLog.scrollHeight;
+        lineIdx++;
+      }
+    }
+
+    const pct = Math.min(85, Math.round(elapsed/7*70+8));
+    eid('mon-bar').style.width=pct+'%';
+
+    if(elapsed >= 6.5 && phase===2){
+      eid('ps2').className='pst done'; eid('pn2').className='pnum done'; eid('pn2').textContent='✓';
+      eid('pt2').textContent=elapsed.toFixed(1)+'s';
+      eid('ps3').className='pst active'; eid('pn3').className='pnum active'; eid('pn3').textContent='⟳';
+      monLog.innerHTML += `\n<span class="lt">[${elapsed.toFixed(1)}s]</span> <span class="lin">Container 기동 중...</span>`;
+      phase=3;
+    }
+
+    if(elapsed >= 8 && phase===3){
+      eid('ps3').className='pst done'; eid('pn3').className='pnum done'; eid('pn3').textContent='✓';
+      eid('pt3').textContent='1.4s';
+      eid('ps4').className='pst active'; eid('pn4').className='pnum active'; eid('pn4').textContent='⟳';
+      monLog.innerHTML += `\n<span class="lt">[${elapsed.toFixed(1)}s]</span> <span class="lin">Health Check: GET /health...</span>`;
+      eid('mon-pct').textContent='92% — Health Check 실행 중...';
+      phase=4;
+    }
+
+    if(elapsed >= 9.5 && phase===4){
+      clearInterval(deployTimer);
+      eid('ps4').className='pst done'; eid('pn4').className='pnum done'; eid('pn4').textContent='✓';
+      eid('pt4').textContent='0.8s';
+      eid('mon-bar').style.width='100%';
+      eid('mon-pct').textContent='100% — 배포 완료 ✅';
+      monLog.innerHTML += `\n<span class="lt">[${elapsed.toFixed(1)}s]</span> <span class="lok">✓ Health Check: 200 OK</span>
+<span class="lt">[${elapsed.toFixed(1)}s]</span> <span class="lok">✅ Deploy SUCCESS — ${curApp} running</span>`;
+      monLog.scrollTop = monLog.scrollHeight;
+      hide('cancel-btn');
+      show('mon-done');
+      APPS[curApp].status = 'running';
+      toast('✅','배포 성공! '+curApp+' 서버 실행 중');
+    }
+
+    eid('build-el').textContent = elapsed.toFixed(1)+'s 경과';
+  }, 300);
+}
+
+function viewLogs(hash) {
+  toast('📄','로그 보기: '+hash);
+}
+
+function backMon() {
+  clearInterval(deployTimer);
+  openDetail(curApp);
+  stab('dep');
+}
+
+function cancelDeploy() {
+  clearInterval(deployTimer);
+  eid('mon-log').innerHTML += '\n<span class="ler">✕ Deploy cancelled by user</span>';
+  eid('mon-bar').style.width='0%';
+  eid('mon-pct').textContent='취소됨';
+  hide('cancel-btn');
+  toast('✕','배포가 취소되었습니다');
+}
+
+/* ══════ NEW APP ══════ */
+function openNew() {
+  selLang=''; selFw=''; newStep=0;
+  hide('new-step2'); hide('new-step3'); show('new-step1');
+  eid('ni-name').value=''; eid('ni-port').value='';
+  hide('porterr-box'); hide('new-tree');
+  document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));
+  eid('fw-row').innerHTML='<div class="txs tdim">← 언어를 선택하세요</div>';
+  eid('new-cta').disabled=true; eid('new-cta').textContent='언어 선택 후 계속';
+  show('new-foot');
+  eid('new-foot').querySelector('.btn.bg').textContent='취소';
+  show('ov-new');
+}
+
+function selectLang(lang) {
+  selLang=lang; selFw='';
+  document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));
+  eid('lc-'+lang).classList.add('sel');
+  const d = LANG_FW[lang];
+  eid('ni-port').value = d.port;
+  eid('fw-row').innerHTML = d.fws.map((f,i)=>`<div class="fchip${i===0?' sel':''}" onclick="selectFw(this,'${f}')">${f}</div>`).join('');
+  selFw = d.fws[0];
+  show('new-tree');
+  eid('tree-content').innerHTML = d.tree;
+  validatePort();
+  eid('new-cta').textContent='보일러플레이트 생성';
+}
+
+function selectFw(el, fw) {
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  selFw=fw;
+}
+
+function validatePort() {
+  const p = parseInt(eid('ni-port').value);
+  const n = eid('ni-name').value.trim();
+  const portErr = !isNaN(p) && USED_PORTS.includes(p) && !Object.values(APPS).find(a=>a.local.includes(':'+p));
+  eid('porterr-box').classList.toggle('hidden', !portErr);
+  const ready = selLang && n.length>0 && !portErr;
+  eid('new-cta').disabled = !ready;
+  if(ready) eid('new-cta').textContent='보일러플레이트 생성';
+}
+
+function newNextStep() {
+  if(newStep===0){
+    newStep=1;
+    hide('new-step1'); show('new-step2'); hide('new-foot');
+    const name = eid('ni-name').value.trim()||'my-app';
+    const port = eid('ni-port').value||'8080';
+    const steps=[
+      {lbl:'Gitea 저장소 생성', sub:`http://localhost:3000/admin/${name}`},
+      {lbl:'보일러플레이트 생성', sub:`${name}/Dockerfile, docker-compose.yml`},
+      {lbl:'Traefik 라우팅 등록', sub:`Host(\`${name}.brewnet.local\`) → :${port}`},
+      {lbl:'Webhook 자동 설정', sub:`POST /api/deploy/hook → push 감지`},
+      {lbl:'초기 컨테이너 빌드', sub:`docker compose up --build -d`},
+      {lbl:'Health Check', sub:`컨테이너 상태 확인`}
+    ];
+    const sl = eid('create-steps');
+    sl.innerHTML = steps.map((s,i)=>`
+      <div class="sr" id="cr${i}">
+        <div class="sic siw" id="ci${i}">${i+1}</div>
+        <div><div style="font-weight:600;font-size:13px">${s.lbl}</div><div class="txs tdim" id="cs${i}">${s.sub}</div></div>
+      </div>`).join('');
+    let idx=0;
+    const iv=setInterval(()=>{
+      if(idx>0){
+        eid('ci'+(idx-1)).className='sic sid'; eid('ci'+(idx-1)).textContent='✓';
+        eid('cs'+(idx-1)).textContent='완료';
+      }
+      if(idx<steps.length){
+        eid('ci'+idx).className='sic sis'; eid('ci'+idx).textContent='⟳';
+        const pct=Math.round((idx+1)/steps.length*100);
+        eid('create-bar').style.width=pct+'%';
+        eid('create-pct').textContent=pct+'% — '+steps[idx].lbl+'...';
+        idx++;
+      } else {
+        clearInterval(iv);
+        setTimeout(()=>{
+          hide('new-step2'); show('new-step3');
+          eid('new-url').textContent=`http://${name}.brewnet.local`;
+          APPS[name]={icon:selLang.substring(0,2).toUpperCase(),ic:'var(--teal)',stack:`${selLang} · ${selFw} · port ${eid('ni-port').value||'8080'}`,status:'running',local:`http://${name}.brewnet.local`,ext:null,img:`brewnet/${name}:latest`,health:'GET /health → 200'};
+          eid('app-cnt').textContent=Object.keys(APPS).length;
+          renderApps();
+          show('new-foot');
+          eid('new-foot').querySelector('.btn.bg').textContent='닫기';
+          eid('new-foot').querySelector('.btn.bg').onclick=closeNew;
+          hide('new-foot');
+          toast('🍺',name+' 앱이 생성되었습니다!');
+        },300);
+      }
+    },600);
+  }
+}
+
+function closeNew() { hide('ov-new'); newStep=0; }
+
+function renderApps() {
+  const grid = eid('app-grid');
+  let h = Object.entries(APPS).map(([n,a])=>`
+    <div class="acard" onclick="openDetail('${n}')">
+      <div class="flex fac jsb mb8">
+        <div><div style="font-size:14.5px;font-weight:700">${n}</div><div class="txs mno tmut">${a.stack}</div></div>
+        <div class="aico" style="color:${a.ic}">${a.icon}</div>
+      </div>
+      <div style="font-size:11px;color:var(--teal);font-family:var(--mono);margin:8px 0 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.ext?'🌐 '+a.ext:'🔗 '+a.local}</div>
+      <div class="flex fac jsb"><span class="bdg ${a.status==='running'?'b-run':'b-stop'}">${a.status==='running'?'● Running':'● Stopped'}</span><span class="txs tdim mno">just now</span></div>
+    </div>`).join('');
+  h += `<div class="new-card" onclick="openNew()"><div style="font-size:28px;line-height:1">+</div><div style="font-size:13px;font-weight:500">New App</div><div style="font-size:11px;text-align:center">보일러플레이트 선택 →<br>자동 설정</div></div>`;
+  grid.innerHTML = h;
+}
+
+/* ══════ DOMAIN MODAL ══════ */
+function openDomain(forApp) {
+  domStep=0; curSc='';
+  hide('dom-step2'); hide('dom-step3'); show('dom-step1');
+  eid('dom-for').textContent = forApp ? forApp+' 앱을 외부에서 접근 가능하게 만들기' : '앱을 인터넷에서 접근 가능하게 만들기';
+  ['a','b','c'].forEach(s=>eid('sc-'+s).classList.remove('sel'));
+  eid('dom-cta').disabled=true; eid('dom-cta').textContent='시나리오 선택 후 계속';
+  eid('dom-sub').value=''; eid('dom-full').value='';
+  eid('dom-hint-box').textContent='← 시나리오를 선택하세요';
+  eid('dom-hint-box').className='alert a-info';
+  show('dom-foot'); show('ov-domain');
+}
+
+function selectSc(sc) {
+  curSc=sc;
+  ['a','b','c'].forEach(s=>eid('sc-'+s).classList.remove('sel'));
+  eid('sc-'+sc).classList.add('sel');
+  const hints={
+    a:'💡 DigitalPlat(digitalplat.org)에서 무료 .dpdns.org 도메인을 발급받은 후 Cloudflare에 등록하세요. 도메인이 없어도 즉시 시작 가능합니다.',
+    b:'💡 이미 보유한 도메인의 네임서버를 Cloudflare NS로 변경합니다. 풀 DNS 관리 및 자동 SSL이 활성화됩니다.',
+    c:'💡 현재 DNS 레지스트라에서 CNAME 레코드를 추가합니다. 기존 DNS 설정을 유지하면서 최소한의 변경으로 연결합니다.'
+  };
+  eid('dom-hint-box').textContent=hints[sc];
+  eid('dom-hint-box').className='alert a-info';
+  eid('dom-cta').disabled=false; eid('dom-cta').textContent='도메인 연결 시작';
+  updateDomPreview();
+}
+
+function updateDomPreview() {
+  const sub=eid('dom-sub').value||'api';
+  const full=eid('dom-full').value||'myserver.dpdns.org';
+  eid('dom-prev').textContent=`예: ${sub} → https://${sub}.${full}`;
+}
+
+function domNextStep() {
+  if(domStep===0){
+    domStep=1;
+    hide('dom-step1'); show('dom-step2'); hide('dom-foot');
+    const sub=eid('dom-sub').value.trim()||'api';
+    const full=eid('dom-full').value.trim()||'myserver.dpdns.org';
+    const finalUrl=`https://${sub}.${full}`;
+    const steps={
+      a:[{lbl:'Cloudflare Tunnel 확인',sub:'Named Tunnel 연결 상태 확인'},{lbl:'DNS A 레코드 생성',sub:`${sub}.${full} → Tunnel CNAME`},{lbl:'Cloudflare Ingress 규칙 추가',sub:`${finalUrl} → traefik:80`},{lbl:'SSL 인증서 프로비저닝',sub:'Let\'s Encrypt · Cloudflare 자동 발급'},{lbl:'Traefik 라우팅 업데이트',sub:`Host(\`${sub}.${full}\`) → :80`},{lbl:'연결 테스트',sub:'HTTPS GET → 200 OK'}],
+      b:[{lbl:'네임서버 변경 확인',sub:'Cloudflare NS로 전환 확인'},{lbl:'DNS 레코드 마이그레이션',sub:'기존 레코드 Cloudflare로 이전'},{lbl:'Proxy 활성화',sub:`${full} → Cloudflare Proxy`},{lbl:'Tunnel Ingress 추가',sub:`${finalUrl} → traefik:80`},{lbl:'SSL 발급',sub:'Cloudflare 관리 인증서'},{lbl:'전파 대기',sub:'DNS 전파 확인 (최대 48시간)'}],
+      c:[{lbl:'CNAME 레코드 추가',sub:`${sub} → {tunnel-id}.cfargotunnel.com`},{lbl:'Tunnel Ingress 추가',sub:`${finalUrl} → traefik:80`},{lbl:'Cloudflare Proxy 상태 확인',sub:'Proxied 설정 확인'},{lbl:'SSL 인증서 발급',sub:'Universal SSL'},{lbl:'연결 테스트',sub:'HTTPS 접속 확인'}]
+    };
+    const sl=eid('dom-steps');
+    const stepsArr=steps[curSc]||steps['a'];
+    sl.innerHTML=stepsArr.map((s,i)=>`
+      <div class="sr" id="dr${i}">
+        <div class="sic siw" id="di${i}">${i+1}</div>
+        <div><div style="font-weight:600;font-size:13px">${s.lbl}</div><div class="txs tdim" id="ds${i}">${s.sub}</div></div>
+      </div>`).join('');
+    let idx=0;
+    const iv=setInterval(()=>{
+      if(idx>0){eid('di'+(idx-1)).className='sic sid';eid('di'+(idx-1)).textContent='✓';eid('ds'+(idx-1)).textContent='완료';}
+      if(idx<stepsArr.length){
+        eid('di'+idx).className='sic sis';eid('di'+idx).textContent='⟳';
+        const pct=Math.round((idx+1)/stepsArr.length*100);
+        eid('dom-bar').style.width=pct+'%';
+        eid('dom-pct').textContent=pct+'% — '+stepsArr[idx].lbl+'...';
+        idx++;
+      } else {
+        clearInterval(iv);
+        setTimeout(()=>{
+          hide('dom-step2');show('dom-step3');
+          eid('dom-final-url').textContent=finalUrl;
+          show('dom-foot');
+          eid('dom-foot').querySelector('.btn.bg').textContent='닫기';
+          eid('dom-foot').querySelector('.btn.bg').onclick=closeDomain;
+          hide('dom-foot');
+          toast('🌐','도메인 연결 완료: '+finalUrl);
+        },300);
+      }
+    },700);
+  }
+}
+
+function closeDomain(){hide('ov-domain');domStep=0;}
+
+/* ══════ SERVICE INSTALL ══════ */
+function installSvc(name) {
+  const desc={
+    Immich:'Google Photos를 대체하는 고성능 사진·영상 관리 서버입니다. AI 기반 얼굴 인식, 지도 보기, 앨범 공유를 지원합니다.',
+    Navidrome:'Subsonic API 호환 음악 스트리밍 서버입니다. 어떤 Subsonic 클라이언트와도 연동되며, Spotify 대체로 활용됩니다.',
+    FileBrowser:'웹 브라우저에서 서버 파일을 관리하는 간편한 UI입니다. 업로드, 다운로드, 편집, 공유 링크 생성을 지원합니다.',
+    Portainer:'Docker 컨테이너를 GUI로 관리하는 웹 UI입니다. Brewnet과 함께 사용하면 더욱 강력합니다.',
+    Syncthing:'클라우드 없이 기기 간 직접 파일을 동기화합니다. 완전한 개인정보 보호와 빠른 전송 속도.',
+    Authelia:'모든 서비스에 SSO 로그인과 2FA를 적용합니다. 외부 공개 서비스 보안을 강화합니다.',
+    'Gitea Registry':'Gitea 내장 컨테이너 레지스트리입니다. Docker Hub 없이 이미지를 로컬에 저장·관리합니다.'
+  };
+  eid('svc-title').textContent = '📦 ' + name + ' 설치';
+  eid('svc-desc-box').textContent = desc[name] || name + ' 설치 중...';
+  hide('svc-done'); show('svc-body');
+  eid('svc-bar').style.width='0%'; eid('svc-pct').textContent='';
+  const steps=[
+    {lbl:'Docker Compose 생성',sub:`~/.brewnet/services/${name.toLowerCase()}/docker-compose.yml`},
+    {lbl:'이미지 Pull',sub:`Docker Hub → ${name.toLowerCase()}:latest`},
+    {lbl:'볼륨 생성',sub:`~/.brewnet/data/${name.toLowerCase()}/`},
+    {lbl:'컨테이너 기동',sub:'docker compose up -d'},
+    {lbl:'Traefik 라우팅 등록',sub:`${name.toLowerCase()}.brewnet.local`},
+    {lbl:'상태 확인',sub:'Health Check 통과'}
+  ];
+  eid('svc-steps').innerHTML=steps.map((s,i)=>`
+    <div class="sr" id="sv${i}"><div class="sic siw" id="si${i}">${i+1}</div>
+    <div><div style="font-weight:600;font-size:13px">${s.lbl}</div><div class="txs tdim" id="ss${i}">${s.sub}</div></div></div>`).join('');
+  let idx=0;
+  const iv=setInterval(()=>{
+    if(idx>0){eid('si'+(idx-1)).className='sic sid';eid('si'+(idx-1)).textContent='✓';eid('ss'+(idx-1)).textContent='완료';}
+    if(idx<steps.length){
+      eid('si'+idx).className='sic sis';eid('si'+idx).textContent='⟳';
+      const pct=Math.round((idx+1)/steps.length*100);
+      eid('svc-bar').style.width=pct+'%';
+      eid('svc-pct').textContent=pct+'% — '+steps[idx].lbl+'...';
+      idx++;
+    } else {
+      clearInterval(iv);
+      setTimeout(()=>{
+        hide('svc-body');show('svc-done');
+        eid('svc-url').textContent=`http://${name.toLowerCase()}.brewnet.local`;
+        toast('✅',name+' 설치 완료!');
+      },300);
+    }
+  },600);
+  show('ov-svc');
+}
+
+/* ══════ INIT ══════ */
+go('apps');
+</script>
+</body>
+</html>

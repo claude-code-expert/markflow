@@ -54,6 +54,17 @@ export async function categoriesRoutes(app: FastifyInstance, opts: CategoriesRou
     return reply.status(200).send({ categories: categoriesList });
   });
 
+  // GET /api/v1/workspaces/:wsId/categories/tree
+  // 카테고리 트리 + 소속 문서를 한 번에 반환
+  app.get<{
+    Params: { wsId: string };
+  }>('/workspaces/:wsId/categories/tree', {
+    preHandler: requireRole('viewer'),
+  }, async (request, reply) => {
+    const result = await categoryService.tree(request.params.wsId);
+    return reply.status(200).send(result);
+  });
+
   // PATCH /api/v1/workspaces/:wsId/categories/:id
   app.patch<{
     Params: { wsId: string; id: string };

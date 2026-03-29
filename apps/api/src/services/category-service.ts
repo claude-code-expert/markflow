@@ -5,11 +5,27 @@ import {
   eq,
   and,
   isNull,
+  asc,
   sql,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+
+export interface CategoryTreeDocument {
+  id: string;
+  title: string;
+  slug: string;
+  updatedAt: Date;
+}
+
+export interface CategoryTreeNode {
+  id: string;
+  name: string;
+  parentId: string | null;
+  children: CategoryTreeNode[];
+  documents: CategoryTreeDocument[];
+}
 
 export function createCategoryService(db: Db) {
   async function create(workspaceId: string, name: string, parentId?: string | null) {
@@ -239,5 +255,65 @@ export function createCategoryService(db: Db) {
     logger.info('Category deleted', { categoryId, workspaceId });
   }
 
-  return { create, list, rename, remove };
+  async function tree(workspaceId: string) {
+    // 1. 카테고리 목록
+    const categoryRows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        parentId: categories.parentId,
+      })
+      .from(categories)
+      .where(eq(categories.workspaceId, workspaceId))
+      .orderBy(asc(categories.name));
+
+    // 2. 해당 워크스페이스의 활성 문서 (삭제되지 않은)
+    const docRows = await db
+      .select({
+        id: documents.id,
+        title: documents.title,
+        slug: documents.slug,
+        categoryId: documents.categoryId,
+        updatedAt: documents.updatedAt,
+      })
+      .from(documents)
+      .where(and(
+        eq(documents.workspaceId, workspaceId),
+        eq(documents.isDeleted, false),
+      ))
+      .orderBy(asc(documents.title));
+
+    // 3. 카테고리 → 트리 조립
+    const nodeMap = new Map<string, CategoryTreeNode>();
+    const roots: CategoryTreeNode[] = [];
+
+    for (const c of categoryRows) {
+      nodeMap.set(c.id, { id: c.id, name: c.name, parentId: c.parentId, children: [], documents: [] });
+    }
+
+    for (const c of categoryRows) {
+      const node = nodeMap.get(c.id)!;
+      if (c.parentId) {
+        const parent = nodeMap.get(c.parentId);
+        if (parent) { parent.children.push(node); continue; }
+      }
+      roots.push(node);
+    }
+
+    // 4. 문서를 카테고리에 배치
+    const uncategorized: CategoryTreeDocument[] = [];
+
+    for (const d of docRows) {
+      const doc: CategoryTreeDocument = { id: d.id, title: d.title, slug: d.slug, updatedAt: d.updatedAt };
+      if (d.categoryId) {
+        const node = nodeMap.get(d.categoryId);
+        if (node) { node.documents.push(doc); continue; }
+      }
+      uncategorized.push(doc);
+    }
+
+    return { categories: roots, uncategorized };
+  }
+
+  return { create, list, tree, rename, remove };
 }
