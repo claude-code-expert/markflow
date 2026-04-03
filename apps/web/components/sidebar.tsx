@@ -318,18 +318,20 @@ function FolderTreeSection({ slug }: { slug: string }) {
         padding: '8px 8px 4px', fontSize: '11px', fontWeight: 600,
         color: 'var(--text-3)', textTransform: 'uppercase' as const, letterSpacing: '0.05em',
       }}>
-        <span>문서</span>
+        <span>폴더</span>
         <button
-          onClick={() => setShowNewFolder(true)}
-          aria-label="새 폴더"
-          title="새 폴더"
+          onClick={() => setShowNewFolder((v) => !v)}
+          aria-label={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
+          title={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 22, height: 22, borderRadius: 'var(--radius-sm)',
             color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
+            transition: 'transform 0.15s ease',
+            transform: showNewFolder ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
         >
-          <Plus size={12} strokeWidth={2.5} />
+          {showNewFolder ? <ChevronDown size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
         </button>
       </div>
 

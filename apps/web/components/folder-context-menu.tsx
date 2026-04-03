@@ -8,6 +8,7 @@ import type { Category } from './category-tree';
 interface FolderContextMenuProps {
   category: Category;
   workspaceSlug: string;
+  workspaceId: string;
   position: { x: number; y: number };
   onClose: () => void;
   onNewDoc?: () => void;
@@ -18,6 +19,7 @@ interface FolderContextMenuProps {
 export function FolderContextMenu({
   category,
   workspaceSlug,
+  workspaceId,
   position,
   onClose,
   onNewDoc,
@@ -64,7 +66,7 @@ export function FolderContextMenu({
     setError('');
     try {
       await apiFetch(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/categories/${category.id}`,
+        `/workspaces/${workspaceId}/categories/${category.id}`,
         {
           method: 'PATCH',
           body: { name: renameValue.trim() },
@@ -81,7 +83,7 @@ export function FolderContextMenu({
     } finally {
       setIsRenaming(false);
     }
-  }, [renameValue, category.name, category.id, workspaceSlug, onRefresh, onClose]);
+  }, [renameValue, category.name, category.id, workspaceId, onRefresh, onClose]);
 
   const handleDelete = useCallback(async () => {
     if (deleteConfirmName !== category.name) return;
@@ -90,7 +92,7 @@ export function FolderContextMenu({
     setError('');
     try {
       await apiFetch(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/categories/${category.id}`,
+        `/workspaces/${workspaceId}/categories/${category.id}`,
         { method: 'DELETE' },
       );
       onRefresh?.();
@@ -105,7 +107,7 @@ export function FolderContextMenu({
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteConfirmName, category.name, category.id, workspaceSlug, onRefresh, onClose, router]);
+  }, [deleteConfirmName, category.name, category.id, workspaceId, workspaceSlug, onRefresh, onClose, router]);
 
   // Position the menu within viewport
   const menuStyle: React.CSSProperties = {

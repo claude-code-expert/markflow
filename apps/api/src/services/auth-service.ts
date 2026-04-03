@@ -10,7 +10,7 @@ import {
 import type { Db } from '@markflow/db';
 import { hashPassword, comparePassword, validatePassword } from '../utils/password.js';
 import { signTokenPair, signAccessToken, verifyRefreshToken, getRefreshTokenExpiry } from '../utils/jwt.js';
-import { badRequest, conflict, unauthorized, forbidden, gone } from '../utils/errors.js';
+import { AppError, badRequest, conflict, unauthorized, gone } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
 interface SafeUser {
@@ -150,15 +150,17 @@ export function createAuthService(db: Db) {
 
     const user = found[0];
     if (!user) {
-      throw unauthorized('Invalid email or password');
+      throw new AppError('INVALID_CREDENTIALS', '이메일 또는 비밀번호가 올바르지 않습니다.', 401);
     }
 
     if (!user.emailVerified) {
-      throw forbidden('Email not verified. Please check your inbox.');
+      throw new AppError('EMAIL_NOT_VERIFIED', '이메일 인증이 완료되지 않았습니다. 메일함을 확인해주세요.', 403);
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw unauthorized(`Account is locked until ${user.lockedUntil.toISOString()}`);
+      const remainingMs = user.lockedUntil.getTime() - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new AppError('ACCOUNT_LOCKED', `계정이 잠겼습니다. ${remainingMin}분 후에 다시 시도해주세요.`, 401);
     }
 
     const passwordMatch = await comparePassword(password, user.passwordHash);
@@ -183,7 +185,7 @@ export function createAuthService(db: Db) {
         .set(updates)
         .where(eq(users.id, user.id));
 
-      throw unauthorized('Invalid email or password');
+      throw new AppError('INVALID_CREDENTIALS', '이메일 또는 비밀번호가 올바르지 않습니다.', 401);
     }
 
     // Success — reset fail count and clear lock

@@ -27,6 +27,7 @@ interface ListOptions {
 interface UpdateData {
   content?: string;
   title?: string;
+  categoryId?: string | null;
 }
 
 export function createDocumentService(db: Db) {
@@ -172,6 +173,10 @@ export function createDocumentService(db: Db) {
       updates.title = data.title;
     }
 
+    if (data.categoryId !== undefined) {
+      updates.categoryId = data.categoryId;
+    }
+
     const contentChanged = data.content !== undefined && data.content !== existing.content;
 
     if (data.content !== undefined) {
@@ -238,6 +243,7 @@ export function createDocumentService(db: Db) {
       .select({
         id: documentVersions.id,
         version: documentVersions.version,
+        content: documentVersions.content,
         createdAt: documentVersions.createdAt,
       })
       .from(documentVersions)

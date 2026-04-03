@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
+import { useToastStore } from '../stores/toast-store';
 
 interface Tag {
   id: string;
@@ -27,7 +28,7 @@ export function TagInput({
   initialTags,
   disabled = false,
 }: TagInputProps) {
-  // API uses workspace ID, not slug
+  const addToast = useToastStore((s) => s.addToast);
   const wsKey = workspaceId ?? workspaceSlug;
   const [tags, setTags] = useState<Array<{ id: string; name: string }>>(initialTags);
   const [inputValue, setInputValue] = useState('');
@@ -43,10 +44,10 @@ export function TagInput({
 
   // Fetch workspace tags for autocomplete
   const workspaceTagsQuery = useQuery({
-    queryKey: ['workspace-tags', workspaceSlug],
+    queryKey: ['workspace-tags', wsKey],
     queryFn: () =>
       apiFetch<{ tags: Tag[] }>(
-        `/workspaces/${encodeURIComponent(wsKey)}/tags`,
+        `/workspaces/${wsKey}/tags`,
       ),
   });
 
@@ -75,21 +76,22 @@ export function TagInput({
       setSaving(true);
       try {
         const result = await apiFetch<{ tags: Array<{ id: string; name: string }> }>(
-          `/workspaces/${encodeURIComponent(wsKey)}/documents/${documentId}/tags`,
+          `/workspaces/${wsKey}/documents/${documentId}/tags`,
           {
             method: 'PUT',
             body: { tags: newTags.map((t) => t.name) },
           },
         );
         setTags(result.tags);
+        addToast({ message: '저장되었습니다', type: 'success' });
       } catch {
-        // Revert on failure
         setTags(tags);
+        addToast({ message: '태그 저장에 실패했습니다', type: 'error' });
       } finally {
         setSaving(false);
       }
     },
-    [workspaceSlug, documentId, tags],
+    [wsKey, documentId, tags],
   );
 
   function addTag(name: string) {
@@ -103,6 +105,7 @@ export function TagInput({
     setInputValue('');
     setShowSuggestions(false);
     void saveTags(newTags);
+    requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   function removeTag(name: string) {

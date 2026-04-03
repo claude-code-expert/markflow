@@ -8,7 +8,7 @@ import { flattenCategories } from '../lib/category-utils';
 interface NewFolderModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceSlug: string;
+  workspaceId: string;
   categories: Category[];
   defaultParentId?: string | null;
   onCreated?: () => void;
@@ -23,7 +23,7 @@ interface CreateCategoryResponse {
 export function NewFolderModal({
   open,
   onClose,
-  workspaceSlug,
+  workspaceId,
   categories,
   defaultParentId,
   onCreated,
@@ -70,7 +70,7 @@ export function NewFolderModal({
     setIsSubmitting(true);
     try {
       await apiFetch<CreateCategoryResponse>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/categories`,
+        `/workspaces/${workspaceId}/categories`,
         {
           method: 'POST',
           body: {
@@ -98,7 +98,7 @@ export function NewFolderModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0"
         onClick={onClose}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onClose();

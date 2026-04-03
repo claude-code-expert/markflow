@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { usePermissions } from '../hooks/use-permissions';
+import { useToastStore } from '../stores/toast-store';
 import { TagInput } from './tag-input';
 import { DocumentLinksModal } from './document-links-modal';
 import { MiniDagDiagram } from './mini-dag-diagram';
@@ -141,6 +142,7 @@ export function DocumentMetaPanel({
   onClose,
 }: DocumentMetaPanelProps) {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
   const permissions = usePermissions(role);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [showDagModal, setShowDagModal] = useState(false);
@@ -180,10 +182,11 @@ export function DocumentMetaPanel({
         body: { categoryId },
       });
       void queryClient.invalidateQueries({ queryKey: ['document'] });
+      addToast({ message: '저장되었습니다', type: 'success' });
     } catch {
-      // silently fail
+      addToast({ message: '저장에 실패했습니다', type: 'error' });
     }
-  }, [workspaceId, doc.id, queryClient]);
+  }, [workspaceId, doc.id, queryClient, addToast]);
 
   const relations = relationsQuery.data;
   const categories = categoriesQuery.data?.categories ?? [];

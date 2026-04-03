@@ -141,13 +141,13 @@ export default function DocsPage() {
   const categoryIdParam = searchParams.get('categoryId');
 
   // View & filter state
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(10);
 
   // Modal state
   const [showNewDocModal, setShowNewDocModal] = useState(false);
@@ -198,6 +198,7 @@ export default function DocsPage() {
       searchQuery,
       selectedTag,
       page,
+      pageSize,
     ],
     queryFn: () => {
       const qp = new URLSearchParams();
@@ -218,7 +219,7 @@ export default function DocsPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [categoryIdParam, sortField, sortOrder, searchQuery, selectedTag]);
+  }, [categoryIdParam, sortField, sortOrder, searchQuery, selectedTag, pageSize]);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -603,6 +604,22 @@ export default function DocsPage() {
                 </svg>
               </button>
             </div>
+
+            {/* Page size selector */}
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              style={{
+                padding: '5px 8px', fontSize: '12px', color: 'var(--text-2)',
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)', cursor: 'pointer', outline: 'none',
+                fontFamily: 'inherit',
+              }}
+            >
+              <option value={10}>10개</option>
+              <option value={20}>20개</option>
+              <option value={50}>50개</option>
+            </select>
           </div>
 
           {/* -------------------------------------------------------------- */}
@@ -1048,116 +1065,31 @@ export default function DocsPage() {
           {/* -------------------------------------------------------------- */}
           {/* Pagination                                                      */}
           {/* -------------------------------------------------------------- */}
-          {totalPages > 1 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginTop: 28,
-              }}
-            >
-              <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
-                총 {documentsQuery.data?.total ?? 0}건
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                {/* Prev */}
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    fontSize: 13,
-                    color: page <= 1 ? 'var(--text-3)' : 'var(--text-2)',
-                    cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                    opacity: page <= 1 ? 0.5 : 1,
-                    fontFamily: 'inherit',
-                    transition: 'all .12s',
-                  }}
-                >
-                  이전
-                </button>
-
-                {/* Page numbers */}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(
-                    (p) =>
-                      p === 1 ||
-                      p === totalPages ||
-                      (p >= page - 2 && p <= page + 2),
-                  )
-                  .map((p, idx, arr) => {
-                    const prev = arr[idx - 1];
-                    const showEllipsis = prev !== undefined && p - prev > 1;
-                    return (
-                      <span key={p} style={{ display: 'flex', alignItems: 'center' }}>
-                        {showEllipsis && (
-                          <span
-                            style={{
-                              padding: '0 4px',
-                              fontSize: 13,
-                              color: 'var(--text-3)',
-                            }}
-                          >
-                            ...
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setPage(p)}
-                          style={{
-                            minWidth: 34,
-                            padding: '7px 8px',
-                            borderRadius: 'var(--radius-sm)',
-                            border:
-                              p === page
-                                ? 'none'
-                                : '1px solid transparent',
-                            background:
-                              p === page ? 'var(--accent)' : 'transparent',
-                            color: p === page ? '#fff' : 'var(--text-2)',
-                            fontWeight: p === page ? 600 : 400,
-                            fontSize: 13,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            transition: 'all .12s',
-                          }}
-                        >
-                          {p}
-                        </button>
-                      </span>
-                    );
-                  })}
-
-                {/* Next */}
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    fontSize: 13,
-                    color:
-                      page >= totalPages ? 'var(--text-3)' : 'var(--text-2)',
-                    cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                    opacity: page >= totalPages ? 0.5 : 1,
-                    fontFamily: 'inherit',
-                    transition: 'all .12s',
-                  }}
-                >
-                  다음
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Footer: count + load more */}
+          <div
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 12, marginTop: 24,
+            }}
+          >
+            <p style={{ fontSize: 12, color: 'var(--text-3)' }}>
+              {documents.length} / {documentsQuery.data?.total ?? 0}건
+            </p>
+            {totalPages > 1 && page < totalPages && (
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                style={{
+                  padding: '9px 32px', fontSize: 13, fontWeight: 500,
+                  color: 'var(--text-2)', background: 'var(--surface)',
+                  border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s',
+                }}
+              >
+                더보기
+              </button>
+            )}
+          </div>
         </div>
       </main>
 
@@ -1168,6 +1100,7 @@ export default function DocsPage() {
         <FolderContextMenu
           category={contextMenu.category}
           workspaceSlug={workspaceSlug}
+          workspaceId={wsId ?? workspaceSlug}
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           onNewDoc={() => {
@@ -1195,7 +1128,7 @@ export default function DocsPage() {
       <NewFolderModal
         open={showNewFolderModal}
         onClose={() => setShowNewFolderModal(false)}
-        workspaceSlug={workspaceSlug}
+        workspaceId={wsId ?? workspaceSlug}
         categories={categories}
         defaultParentId={newFolderParentId}
         onCreated={() => void categoriesQuery.refetch()}

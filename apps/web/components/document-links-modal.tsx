@@ -58,8 +58,8 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
       await apiFetch(`/workspaces/${workspaceId}/documents/${documentId}/relations`, {
         method: 'PUT',
         body: {
-          prev: relations.prev?.id ?? null,
-          next: relations.next?.id ?? null,
+          prev: relations.prev?.id,
+          next: relations.next?.id,
           related: relations.related.map((r) => r.id),
         },
       });
@@ -111,7 +111,7 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-[1000] flex items-center justify-center p-5 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5" onClick={onClose}>
       <div className="bg-white rounded-[18px] shadow-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="font-[var(--font-sora)] text-[17px] font-semibold">문서 링크 관리</h2>

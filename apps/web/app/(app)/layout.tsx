@@ -3,20 +3,39 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/auth-store';
+import { useWorkspaceStore } from '../../stores/workspace-store';
 import { Sidebar } from '../../components/sidebar';
 import { AppHeader } from '../../components/app-header';
 import { SearchModal } from '../../components/search-modal';
 import { useSidebarStore } from '../../stores/sidebar-store';
+import { apiFetch } from '../../lib/api';
+import { useToastStore } from '../../stores/toast-store';
+import type { DocumentResponse } from '../../lib/types';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, fetchUser } = useAuthStore();
   const isSidebarOpen = useSidebarStore((s) => s.isSidebarOpen);
+  const { currentWorkspace } = useWorkspaceStore();
+  const addToast = useToastStore((s) => s.addToast);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSearchToggle = useCallback(() => {
     setIsSearchOpen((prev) => !prev);
   }, []);
+
+  const handleNewDoc = useCallback(async () => {
+    if (!currentWorkspace) return;
+    try {
+      const { document } = await apiFetch<DocumentResponse>(
+        `/workspaces/${currentWorkspace.id}/documents`,
+        { method: 'POST', body: { title: '제목 없음' } },
+      );
+      router.push(`/${currentWorkspace.slug}/docs/${document.id}`);
+    } catch {
+      addToast({ message: '문서 생성에 실패했습니다', type: 'error' });
+    }
+  }, [currentWorkspace, router, addToast]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,7 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         transition: 'grid-template-columns 0.2s ease',
       }}
     >
-      <AppHeader onSearchClick={handleSearchToggle} />
+      <AppHeader onSearchClick={handleSearchToggle} onNewDoc={() => void handleNewDoc()} />
       <Sidebar onSearchClick={handleSearchToggle} />
       <main className="overflow-y-auto" style={{ background: 'var(--bg)' }}>
         {children}

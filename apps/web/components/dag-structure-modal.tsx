@@ -84,7 +84,7 @@ export function DagStructureModal({
   const N = { w: 130, h: 50, rx: 8 };
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-[1000] flex items-center justify-center p-5 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5" onClick={onClose}>
       <div className="bg-white rounded-[18px] shadow-2xl w-full max-w-[1000px] max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5">

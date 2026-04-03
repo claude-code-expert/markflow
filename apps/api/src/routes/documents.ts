@@ -93,14 +93,14 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
   // PATCH /api/v1/workspaces/:wsId/documents/:id
   app.patch<{
     Params: { wsId: string; id: string };
-    Body: { content?: string; title?: string };
+    Body: { content?: string; title?: string; categoryId?: string | null };
   }>('/workspaces/:wsId/documents/:id', {
     preHandler: requireRole('editor'),
   }, async (request, reply) => {
-    const { content, title } = request.body;
+    const { content, title, categoryId } = request.body;
 
-    if (content === undefined && title === undefined) {
-      throw badRequest('MISSING_FIELDS', 'At least one field (content, title) is required');
+    if (content === undefined && title === undefined && categoryId === undefined) {
+      throw badRequest('MISSING_FIELDS', 'At least one field (content, title, categoryId) is required');
     }
 
     if (title !== undefined && title.length > 300) {
@@ -110,7 +110,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
     const document = await documentService.update(
       request.params.id,
       request.params.wsId,
-      { content, title },
+      { content, title, categoryId },
     );
 
     return reply.status(200).send({ document });

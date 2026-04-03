@@ -32,7 +32,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (open) {
@@ -145,7 +145,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/35 z-[1000] flex items-start justify-center pt-[15vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[1000] flex items-start justify-center pt-[15vh]"
       onClick={onClose}
     >
       <div

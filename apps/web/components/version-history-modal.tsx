@@ -84,7 +84,7 @@ export function VersionHistoryModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/35 z-[1000] flex items-center justify-center p-5 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5" onClick={onClose}>
       <div className="bg-white rounded-[18px] shadow-2xl w-full max-w-[800px] max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pt-5">
           <h2 className="font-[var(--font-sora)] text-[17px] font-semibold">버전 히스토리</h2>

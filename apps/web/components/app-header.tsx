@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronRight,
+  FilePlus,
   FileText,
   Link as LinkIcon,
   LogOut,
@@ -280,7 +281,7 @@ function ProfileMenu() {
   );
 }
 
-export function AppHeader({ onSearchClick }: { onSearchClick?: () => void } = {}) {
+export function AppHeader({ onSearchClick, onNewDoc }: { onSearchClick?: () => void; onNewDoc?: () => void } = {}) {
   const user = useAuthStore((s) => s.user);
   const toggleSidebar = useSidebarStore((s) => s.toggleSidebar);
 
@@ -338,6 +339,28 @@ export function AppHeader({ onSearchClick }: { onSearchClick?: () => void } = {}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
 
         <SettingsDropdown />
+
+        {onNewDoc && (
+          <button
+            aria-label="새 문서"
+            title="새 문서"
+            onClick={onNewDoc}
+            style={{
+              width: '34px',
+              height: '34px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              color: 'var(--text-3)',
+            }}
+          >
+            <FilePlus size={16} />
+          </button>
+        )}
 
         <button
           aria-label="검색 (⌘K)"

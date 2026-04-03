@@ -18,6 +18,16 @@ export async function tagsRoutes(app: FastifyInstance, opts: TagsRoutesOptions) 
 
   app.addHook('preHandler', authMiddleware);
 
+  // GET /api/v1/workspaces/:wsId/documents/:docId/tags
+  app.get<{
+    Params: { wsId: string; docId: string };
+  }>('/workspaces/:wsId/documents/:docId/tags', {
+    preHandler: requireRole('viewer'),
+  }, async (request, reply) => {
+    const result = await tagService.getDocumentTags(request.params.docId);
+    return reply.status(200).send({ tags: result });
+  });
+
   // PUT /api/v1/workspaces/:wsId/documents/:docId/tags
   app.put<{
     Params: { wsId: string; docId: string };

@@ -9,16 +9,19 @@ import { apiFetch, ApiError } from '../../../../../lib/api';
 import { useEditorStore } from '../../../../../stores/editor-store';
 import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
-import type { DocumentResponse } from '../../../../../lib/types';
+import type { DocumentResponse, Category } from '../../../../../lib/types';
 import Link from 'next/link';
+import { History, PanelRight, Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, Presentation } from 'lucide-react';
 import { DocumentMetaPanel } from '../../../../../components/document-meta-panel';
 import { VersionHistoryPanel } from '../../../../../components/version-history-panel';
 import { VersionHistoryModal } from '../../../../../components/version-history-modal';
+import { useToastStore } from '../../../../../stores/toast-store';
 
 export default function DocEditorPage() {
   const { workspaceSlug, docId } = useParams<{ workspaceSlug: string; docId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   const { currentWorkspace } = useWorkspaceStore();
   const wsId = currentWorkspace?.id;
@@ -33,6 +36,8 @@ export default function DocEditorPage() {
   const [showMetaPanel, setShowMetaPanel] = useState(true);
   const [showVersionPanel, setShowVersionPanel] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [editorLayout, setEditorLayout] = useState<'editor' | 'split' | 'preview'>('split');
+  const [editorTheme, setEditorTheme] = useState<'light' | 'dark'>('light');
   const isMountedRef = useRef(true);
   const wsIdRef = useRef(wsId);
   wsIdRef.current = wsId;
@@ -48,6 +53,26 @@ export default function DocEditorPage() {
     },
     enabled: !!wsId,
   });
+
+  // Fetch categories for inline selector
+  const categoriesQuery = useQuery({
+    queryKey: ['categories', wsId],
+    queryFn: () => apiFetch<{ categories: Category[] }>(`/workspaces/${wsId}/categories`),
+    enabled: !!wsId,
+  });
+  const categoryList = categoriesQuery.data?.categories ?? [];
+
+  // Category change handler
+  const handleCategoryChange = useCallback(async (categoryId: string | null) => {
+    const currentWsId = wsIdRef.current;
+    if (!currentWsId) return;
+    try {
+      await apiFetch(`/workspaces/${currentWsId}/documents/${docId}`, {
+        method: 'PATCH', body: { categoryId },
+      });
+      void queryClient.invalidateQueries({ queryKey: ['document', currentWsId, docId] });
+    } catch { /* handled by meta panel */ }
+  }, [docId, queryClient]);
 
   // Fetch relations for Prev/Next navigation
   const relationsQuery = useQuery({
@@ -96,17 +121,19 @@ export default function DocEditorPage() {
       if (isMountedRef.current) {
         setSaveStatus('saved');
         void queryClient.invalidateQueries({ queryKey: ['documents', currentWsId] });
+        addToast({ message: '저장되었습니다', type: 'success' });
       }
     } catch (err) {
       if (!isMountedRef.current) return;
       setSaveStatus('error');
+      addToast({ message: '저장에 실패했습니다', type: 'error' });
       if (err instanceof ApiError) {
         setError(err.message);
       } else if (err instanceof Error) {
         setError(err.message);
       }
     }
-  }, [docId, setSaveStatus, queryClient]);
+  }, [docId, setSaveStatus, queryClient, addToast]);
 
   // Ctrl+S / Cmd+S 단축키 저장
   useEffect(() => {
@@ -201,8 +228,31 @@ export default function DocEditorPage() {
       )}
 
       {/* Title + Save button */}
-      <div style={{ padding: '20px 28px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ padding: '16px 28px 10px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <select
+              value={doc.categoryId ?? ''}
+              onChange={(e) => void handleCategoryChange(e.target.value || null)}
+              disabled={isReadOnly}
+              aria-label="카테고리 선택"
+              style={{
+                appearance: 'none', padding: '5px 24px 5px 28px',
+                fontSize: '12px', fontWeight: 500, color: 'var(--text-2)',
+                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)', cursor: 'pointer', outline: 'none',
+                fontFamily: 'inherit', maxWidth: '160px',
+              }}
+            >
+              <option value="">루트</option>
+              {categoryList.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+            <FolderOpen size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-3)' }} />
+            <ChevronDown size={12} style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-3)' }} />
+          </div>
+          <span style={{ color: 'var(--border-2)', fontSize: '18px', fontWeight: 300, lineHeight: 1 }}>/</span>
           <input
             type="text"
             value={title}
@@ -216,105 +266,135 @@ export default function DocEditorPage() {
               fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em',
             }}
           />
-          {!isReadOnly && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
             <button
               type="button"
-              onClick={() => void handleSave()}
-              disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+              onClick={() => setShowVersionModal(!showVersionModal)}
+              title="버전 기록"
               style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '7px 16px', borderRadius: 'var(--radius-sm)',
-                border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
-                flexShrink: 0, transition: 'background 0.15s, opacity 0.15s',
-                ...(saveStatus === 'saved'
-                  ? { background: 'var(--green-lt)', color: 'var(--green)' }
-                  : saveStatus === 'saving'
-                    ? { background: 'var(--surface-2)', color: 'var(--text-3)' }
-                    : saveStatus === 'error'
-                      ? { background: 'var(--red-lt)', color: 'var(--red)' }
-                      : { background: 'var(--accent)', color: '#fff' }),
-                ...((saveStatus === 'saving' || saveStatus === 'saved') ? { opacity: 0.7, cursor: 'default' } : {}),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '32px', height: '32px', borderRadius: 'var(--radius-sm)',
+                border: 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                background: showVersionModal ? 'var(--accent-2)' : 'transparent',
+                color: showVersionModal ? 'var(--accent)' : 'var(--text-3)',
               }}
             >
-              {saveStatus === 'saving' ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                    <path d="M21 12a9 9 0 11-6.219-8.56" />
-                  </svg>
-                  저장 중...
-                </>
-              ) : saveStatus === 'saved' ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  저장됨
-                </>
-              ) : saveStatus === 'error' ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 9v2m0 4h.01" />
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                  재시도
-                </>
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
-                  저장
-                </>
-              )}
+              <History size={16} />
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setShowMetaPanel(!showMetaPanel)}
+              title="문서 속성"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '32px', height: '32px', borderRadius: 'var(--radius-sm)',
+                border: 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                background: showMetaPanel ? 'var(--accent-2)' : 'transparent',
+                color: showMetaPanel ? 'var(--accent)' : 'var(--text-3)',
+              }}
+            >
+              <PanelRight size={16} />
+            </button>
+            {isReadOnly && (
+              <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px', marginLeft: '4px' }}>
+                읽기 전용
+              </span>
+            )}
+            {!isReadOnly && (
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px',
+                  padding: '7px 16px', borderRadius: 'var(--radius-sm)',
+                  border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500,
+                  flexShrink: 0, transition: 'background 0.15s, opacity 0.15s',
+                  ...(saveStatus === 'saved'
+                    ? { background: 'var(--green-lt)', color: 'var(--green)' }
+                    : saveStatus === 'saving'
+                      ? { background: 'var(--surface-2)', color: 'var(--text-3)' }
+                      : saveStatus === 'error'
+                        ? { background: 'var(--red-lt)', color: 'var(--red)' }
+                        : { background: 'var(--accent)', color: '#fff' }),
+                  ...((saveStatus === 'saving' || saveStatus === 'saved') ? { opacity: 0.7, cursor: 'default' } : {}),
+                }}
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                      <path d="M21 12a9 9 0 11-6.219-8.56" />
+                    </svg>
+                    저장 중...
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    저장됨
+                  </>
+                ) : saveStatus === 'error' ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 9v2m0 4h.01" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                    재시도
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    저장
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
-        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: 'var(--text-3)' }}>
+        <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', fontSize: '12px', color: 'var(--text-3)' }}>
           <span>
             마지막 수정: {new Date(doc.updatedAt).toLocaleDateString('ko-KR', {
               year: 'numeric', month: 'short', day: 'numeric',
               hour: '2-digit', minute: '2-digit',
             })}
           </span>
-          <span style={{ marginLeft: 'auto' }} />
-          <button
-            onClick={() => setShowVersionModal(!showVersionModal)}
-            style={{
-              padding: '2px 8px', background: showVersionModal ? 'var(--accent-2)' : 'var(--surface-2)',
-              color: showVersionModal ? 'var(--accent)' : 'var(--text-3)',
-              borderRadius: '100px', fontSize: '11px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            버전 기록
-          </button>
-          <button
-            onClick={() => setShowMetaPanel(!showMetaPanel)}
-            style={{
-              padding: '2px 8px', background: showMetaPanel ? 'var(--accent-2)' : 'var(--surface-2)',
-              color: showMetaPanel ? 'var(--accent)' : 'var(--text-3)',
-              borderRadius: '100px', fontSize: '11px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            문서 속성
-          </button>
-          {isReadOnly && (
-            <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px' }}>
-              읽기 전용
-            </span>
-          )}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '2px' }}>
+            <button type="button" title={editorTheme === 'light' ? '다크 모드' : '라이트 모드'} onClick={() => setEditorTheme(editorTheme === 'light' ? 'dark' : 'light')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--text-3)' }}>
+              {editorTheme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
+            <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 4px' }} />
+            <button type="button" title="에디터만" onClick={() => setEditorLayout('editor')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: editorLayout === 'editor' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: editorLayout === 'editor' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <PenLine size={14} />
+            </button>
+            <button type="button" title="분할 보기" onClick={() => setEditorLayout('split')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: editorLayout === 'split' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: editorLayout === 'split' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <Columns2 size={14} />
+            </button>
+            <button type="button" title="미리보기만" onClick={() => setEditorLayout('preview')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: editorLayout === 'preview' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: editorLayout === 'preview' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <Eye size={14} />
+            </button>
+            <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 4px' }} />
+            <button type="button" title="프리젠테이션" onClick={() => window.open(`/present/${workspaceSlug}/${docId}`, '_blank', 'noopener')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--text-3)' }}>
+              <Presentation size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Editor + Meta Panel */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+        <style>{`.mf-toolbar-spacer { display: none !important; }`}</style>
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <MarkdownEditor
             value={content}
             onChange={setContent}
             height="100%"
-            layout="split"
+            layout={editorLayout}
+            theme={editorTheme}
             readOnly={isReadOnly}
           />
         </div>
@@ -363,41 +443,41 @@ export default function DocEditorPage() {
 
       {/* Prev/Next Navigation */}
       {relationsQuery.data && (relationsQuery.data.prev || relationsQuery.data.next) && (
-        <div style={{ display: 'flex', gap: '16px', padding: '16px 24px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '50px', padding: '0 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           {relationsQuery.data.prev ? (
             <Link
               href={`/${workspaceSlug}/docs/${relationsQuery.data.prev.id}`}
+              title={`이전 문서: ${relationsQuery.data.prev.title}`}
               style={{
-                flex: 1, padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)',
+                maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '0 12px', background: '#FFFFFF', borderRadius: 'var(--radius-sm)',
                 border: '1px solid var(--border)', textDecoration: 'none', color: 'inherit',
-                transition: 'border-color 0.15s',
+                fontSize: '12px', transition: 'border-color 0.15s',
               }}
             >
-              <div style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
-                ← 이전 문서
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+              <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>←</span>
+              <span style={{ fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {relationsQuery.data.prev.title}
-              </div>
+              </span>
             </Link>
-          ) : <div style={{ flex: 1 }} />}
+          ) : <div />}
           {relationsQuery.data.next ? (
             <Link
               href={`/${workspaceSlug}/docs/${relationsQuery.data.next.id}`}
+              title={`다음 문서: ${relationsQuery.data.next.title}`}
               style={{
-                flex: 1, padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border)', textAlign: 'right', textDecoration: 'none', color: 'inherit',
-                transition: 'border-color 0.15s',
+                maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px',
+                padding: '0 12px', background: '#FFFFFF', borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)', textDecoration: 'none', color: 'inherit',
+                fontSize: '12px', transition: 'border-color 0.15s', marginLeft: 'auto',
               }}
             >
-              <div style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
-                다음 문서 →
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>
+              <span style={{ fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {relationsQuery.data.next.title}
-              </div>
+              </span>
+              <span style={{ color: 'var(--text-3)', flexShrink: 0 }}>→</span>
             </Link>
-          ) : <div style={{ flex: 1 }} />}
+          ) : <div />}
         </div>
       )}
 
