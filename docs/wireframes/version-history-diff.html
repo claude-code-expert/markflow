@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=375, initial-scale=1">
+  <title>Version History Diff - Wireframe</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E0D8; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+
+    .modal-overlay { width: 800px; background: white; border-radius: 18px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); overflow: hidden; }
+
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; }
+    .modal-header h2 { font-size: 17px; font-weight: 600; color: #1A1916; }
+    .close-btn { background: none; border: none; color: #9A9890; font-size: 18px; cursor: pointer; }
+
+    .modal-body { padding: 16px 24px; }
+    .version-count { font-size: 13px; color: #57564F; margin-bottom: 16px; }
+
+    .content-grid { display: grid; grid-template-columns: 260px 1fr; gap: 20px; height: 420px; }
+
+    /* Version list panel */
+    .version-list { border: 1px solid #E2E0D8; border-radius: 8px; overflow-y: auto; padding: 6px; }
+    .version-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; }
+    .version-item:hover { background: #F1F0EC; }
+    .version-item.selected { background: #EEF3FF; }
+    .version-item .version-header { display: flex; align-items: center; justify-content: space-between; }
+    .version-item .version-num { font-size: 13px; font-weight: 500; color: #1A1916; }
+    .version-item.selected .version-num { color: #1A56DB; font-weight: 600; }
+    .version-item .badge { font-size: 10px; padding: 2px 6px; border-radius: 99px; background: #EEF3FF; color: #1343B0; font-weight: 600; }
+    .version-item .meta { font-size: 11px; color: #9A9890; margin-top: 2px; }
+
+    /* Compare mode selector */
+    .compare-mode { display: flex; gap: 4px; margin-bottom: 10px; border: 1px solid #E2E0D8; border-radius: 6px; padding: 3px; background: #F8F7F4; }
+    .compare-mode button { flex: 1; font-size: 11px; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; background: transparent; color: #57564F; font-weight: 500; }
+    .compare-mode button.active { background: white; color: #1A56DB; box-shadow: 0 1px 2px rgba(0,0,0,0.06); font-weight: 600; }
+
+    /* Diff panel */
+    .diff-panel { border: 1px solid #E2E0D8; border-radius: 8px; overflow-y: auto; background: #F8F7F4; display: flex; flex-direction: column; }
+    .diff-header { padding: 12px 16px 8px; border-bottom: 1px solid #E2E0D8; background: #F8F7F4; position: sticky; top: 0; z-index: 1; }
+    .diff-label { font-size: 12px; font-weight: 600; color: #9A9890; text-transform: uppercase; letter-spacing: 0.5px; }
+    .diff-stats { display: flex; gap: 12px; margin-top: 6px; }
+    .diff-stats .stat { font-size: 11px; font-weight: 500; }
+    .stat.added { color: #16A34A; }
+    .stat.removed { color: #DC2626; }
+
+    .diff-body { padding: 12px 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.8; flex: 1; }
+
+    .diff-line { display: flex; align-items: flex-start; }
+    .line-num { width: 36px; text-align: right; padding-right: 8px; color: #CBC9C0; user-select: none; flex-shrink: 0; font-size: 11px; }
+    .line-content { flex: 1; padding: 0 4px; border-radius: 2px; }
+
+    .diff-line.added .line-content { color: #16A34A; background: #F0FDF4; }
+    .diff-line.added .line-num { color: #16A34A; }
+    .diff-line.removed .line-content { color: #DC2626; background: #FFF1F2; }
+    .diff-line.removed .line-num { color: #DC2626; }
+    .diff-line.unchanged .line-content { color: #9A9890; }
+    .diff-line.collapsed { justify-content: center; }
+    .collapsed-text { font-size: 10px; color: #9A9890; background: #E2E0D8; padding: 2px 10px; border-radius: 3px; cursor: pointer; }
+
+    .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #9A9890; font-size: 13px; }
+
+    /* Footer */
+    .modal-footer { display: flex; justify-content: end; gap: 10px; padding: 16px 24px; border-top: 1px solid #E2E0D8; }
+    .btn { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; border: none; }
+    .btn-secondary { background: white; border: 1.5px solid #CBC9C0; color: #57564F; }
+    .btn-primary { background: #1A56DB; color: white; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Annotations */
+    .annotation { position: absolute; font-size: 10px; color: #DC2626; font-weight: 600; background: #FFF1F2; padding: 2px 6px; border-radius: 3px; border: 1px solid #FECDD3; }
+  </style>
+</head>
+<body>
+  <div class="modal-overlay">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>버전 히스토리</h2>
+      <button class="close-btn">x</button>
+    </div>
+
+    <div class="modal-body">
+      <p class="version-count">총 4개 버전</p>
+
+      <div class="content-grid">
+        <!-- Left: Version list -->
+        <div>
+          <!-- NEW: Compare mode toggle -->
+          <div class="compare-mode">
+            <button class="active">현재와 비교</button>
+            <button>버전끼리 비교</button>
+          </div>
+
+          <div class="version-list">
+            <div class="version-item">
+              <div class="version-header">
+                <span class="version-num">v4 (현재)</span>
+                <span class="badge">현재</span>
+              </div>
+              <div class="meta">3분 전 &middot; 홍길동</div>
+            </div>
+            <div class="version-item selected">
+              <div class="version-header">
+                <span class="version-num">v3</span>
+              </div>
+              <div class="meta">1시간 전 &middot; 홍길동</div>
+            </div>
+            <div class="version-item">
+              <div class="version-header">
+                <span class="version-num">v2</span>
+              </div>
+              <div class="meta">3시간 전 &middot; 김철수</div>
+            </div>
+            <div class="version-item">
+              <div class="version-header">
+                <span class="version-num">v1</span>
+              </div>
+              <div class="meta">2일 전 &middot; 홍길동</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Diff preview -->
+        <div class="diff-panel">
+          <div class="diff-header">
+            <div class="diff-label">v3 vs 현재 (v4)</div>
+            <!-- NEW: diff statistics -->
+            <div class="diff-stats">
+              <span class="stat added">+12 줄 추가</span>
+              <span class="stat removed">-3 줄 삭제</span>
+            </div>
+          </div>
+          <div class="diff-body">
+            <!-- NEW: Line numbers on each line -->
+            <div class="diff-line unchanged">
+              <span class="line-num">1</span>
+              <span class="line-content">  # Squad Agent</span>
+            </div>
+            <div class="diff-line unchanged">
+              <span class="line-num">2</span>
+              <span class="line-content">  </span>
+            </div>
+            <div class="diff-line removed">
+              <span class="line-num">3</span>
+              <span class="line-content">- **Claude Code sub-agent system**</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">3</span>
+              <span class="line-content">+ **Claude Code sub-agent system with 8 specialized agents**</span>
+            </div>
+            <div class="diff-line unchanged">
+              <span class="line-num">4</span>
+              <span class="line-content">  </span>
+            </div>
+            <!-- Collapsed unchanged lines -->
+            <div class="diff-line collapsed">
+              <span class="collapsed-text">... 15줄 동일 ...</span>
+            </div>
+            <div class="diff-line unchanged">
+              <span class="line-num">20</span>
+              <span class="line-content">  ## Quick Start</span>
+            </div>
+            <div class="diff-line removed">
+              <span class="line-num">21</span>
+              <span class="line-content">- ```bash</span>
+            </div>
+            <div class="diff-line removed">
+              <span class="line-num">22</span>
+              <span class="line-content">- npm install</span>
+            </div>
+            <div class="diff-line removed">
+              <span class="line-num">23</span>
+              <span class="line-content">- ```</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">21</span>
+              <span class="line-content">+ ### Option 1: One-line Install</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">22</span>
+              <span class="line-content">+ ```bash</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">23</span>
+              <span class="line-content">+ curl -sL https://raw... | bash</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">24</span>
+              <span class="line-content">+ ```</span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">25</span>
+              <span class="line-content">+ </span>
+            </div>
+            <div class="diff-line added">
+              <span class="line-num">26</span>
+              <span class="line-content">+ ### Option 2: Clone &amp; Install</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn btn-secondary">닫기</button>
+      <button class="btn btn-primary">이 버전으로 복원</button>
+    </div>
+  </div>
+</body>
+</html>

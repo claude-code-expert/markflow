@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹 프리젠테이션 모드 - 버그 수정 버전</title>
+    <style>
+        :root {
+            --font-size: 16px;
+            --pointer-color: #ff5500;
+            --pointer-size: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            font-size: var(--font-size);
+            overflow: auto;
+            transition: font-size 0.3s ease;
+            background-color: #f5f5f7;
+            color: #333;
+            position: relative;
+            height: 100vh;
+            cursor: none;
+            scroll-behavior: smooth;
+        }
+
+        .presentation-wrapper {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .slide {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+            margin-bottom: 40px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            color: #1d1d1f;
+        }
+
+        h2 {
+            font-size: 2em;
+            margin-bottom: 0.5em;
+            color: #1d1d1f;
+        }
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 1em;
+        }
+
+        .dock-container {
+            position: fixed;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 10px 15px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            transition: bottom 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .dock-container:hover, .dock-container.visible {
+            bottom: 20px;
+        }
+
+        .dock-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+
+        .dock-item:hover {
+            transform: translateY(-10px) scale(1.1);
+        }
+
+        .dock-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+
+        .dock-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .dock-label {
+            font-size: 0.7em;
+            opacity: 0.8;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: var(--pointer-size);
+            height: var(--pointer-size);
+            border-radius: 50%;
+            background-color: var(--pointer-color);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            mix-blend-mode: difference;
+            opacity: 0.7;
+            transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
+        }
+
+        .drawing-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .color-palette {
+            position: fixed;
+            top: 20px;
+            right: -200px;
+            background-color: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1001;
+            transition: right 0.3s ease;
+        }
+
+        .color-palette.visible {
+            right: 20px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+
+        .color-option.active {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        body.horizontal-scroll {
+            height: 100vh;
+            overflow-y: hidden;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        body.horizontal-scroll .presentation-wrapper {
+            display: inline-flex;
+            white-space: normal;
+        }
+
+        body.horizontal-scroll .slide {
+            min-width: 90vw;
+            height: 85vh;
+            display: inline-flex;
+            margin-right: 20px;
+        }
+
+        .tooltip {
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 1002;
+            max-width: 300px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+<div class="custom-cursor"></div>
+<canvas class="drawing-canvas"></canvas>
+
+<div class="presentation-wrapper">
+    <div class="slide" id="slide1">
+        <h1>AI 커뮤니티 프로젝트</h1>
+        <p>일반인들도 쉽게 AI를 활용할 수 있는 방법을 소개합니다</p>
+    </div>
+
+    <div class="slide" id="slide2">
+        <h2>AI 도구 카테고리</h2>
+        <p>콘텐츠 제작, 업무 자동화, 데이터 분석 등 다양한 분야별 AI 도구를 소개합니다.</p>
+    </div>
+
+    <div class="slide" id="slide3">
+        <h2>핵심 기능</h2>
+        <p>AI 입문자를 위한 튜토리얼부터 고급 사용자를 위한 팁까지 다양한 콘텐츠를 제공합니다.</p>
+    </div>
+
+    <div class="slide" id="slide4">
+        <h2>커뮤니티 참여 방법</h2>
+        <p>질문하기, 프로젝트 공유하기, 멘토링 등 다양한 방법으로 커뮤니티에 참여할 수 있습니다.</p>
+    </div>
+
+    <div class="slide" id="slide5">
+        <h2>함께 성장하는 AI 커뮤니티</h2>
+        <p>여러분의 참여로 더욱 풍부해지는 지식 공유의 장을 만들어갑니다.</p>
+    </div>
+</div>
+
+<div class="color-palette">
+    <div class="color-option active" style="background-color: #ff5500" data-color="#ff5500"></div>
+    <div class="color-option" style="background-color: #3498db" data-color="#3498db"></div>
+    <div class="color-option" style="background-color: #2ecc71" data-color="#2ecc71"></div>
+    <div class="color-option" style="background-color: #f1c40f" data-color="#f1c40f"></div>
+    <div class="color-option" style="background-color: #9b59b6" data-color="#9b59b6"></div>
+    <div class="color-option" style="background-color: #ffffff" data-color="#ffffff"></div>
+    <div class="color-option" style="background-color: #000000" data-color="#000000"></div>
+</div>
+
+<div class="tooltip"></div>
+
+<div class="dock-container">
+    <div class="dock-item" id="fullscreen-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+            </svg>
+        </div>
+        <span class="dock-label">전체화면</span>
+    </div>
+
+    <div class="dock-item" id="font-size-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </div>
+        <span class="dock-label">폰트 크기</span>
+    </div>
+
+    <div class="dock-item" id="horizontal-scroll-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </div>
+        <span class="dock-label">가로 스크롤</span>
+    </div>
+
+    <div class="dock-item" id="vertical-scroll-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
+        <span class="dock-label">세로 스크롤</span>
+    </div>
+
+    <div class="dock-item" id="cursor-color-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+        </div>
+        <span class="dock-label">커서 색상</span>
+    </div>
+
+    <div class="dock-item" id="cursor-size-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+            </svg>
+        </div>
+        <span class="dock-label">커서 크기</span>
+    </div>
+
+    <div class="dock-item" id="pen-mode-toggle">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+        </div>
+        <span class="dock-label">펜 모드</span>
+    </div>
+
+    <div class="dock-item" id="clear-drawing">
+        <div class="dock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </div>
+        <span class="dock-label">지우기</span>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 요소 참조
+        const body = document.body;
+        const cursor = document.querySelector('.custom-cursor');
+        const canvas = document.querySelector('.drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        const dock = document.querySelector('.dock-container');
+        const colorPalette = document.querySelector('.color-palette');
+        const tooltip = document.querySelector('.tooltip');
+
+        // 🔧 Bug Fix #1: Canvas 크기 조정 시 드로잉 보존
+        function resizeCanvas() {
+            // 기존 드로잉 저장
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // Canvas 크기 변경
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 드로잉 복원
+            ctx.drawImage(tempCanvas, 0, 0);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 상태 변수
+        let isFullscreen = false;
+        let isDrawing = false;
+        let isPenMode = false;
+        let currentCursorSize = 20;
+        let currentCursorColor = '#ff5500';
+        let lastX = 0;
+        let lastY = 0;
+
+        // 커스텀 커서 움직임
+        document.addEventListener('mousemove', function(e) {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+
+            // 🔧 Bug Fix #2: Dock 영역에서 드로잉 비활성화
+            const dockRect = dock.getBoundingClientRect();
+            const isOverDock = (
+                e.clientX >= dockRect.left &&
+                e.clientX <= dockRect.right &&
+                e.clientY >= dockRect.top &&
+                e.clientY <= dockRect.bottom
+            );
+
+            // 하단 Dock 메뉴 표시/숨김 로직
+            if (e.clientY > window.innerHeight - 100) {
+                dock.classList.add('visible');
+            } else {
+                dock.classList.remove('visible');
+            }
+
+            // 드로잉 모드일 때 그리기 (Dock 영역 제외)
+            if (isPenMode && isDrawing && !isOverDock) {
+                drawLine(lastX, lastY, e.clientX, e.clientY);
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+
+        // 🔧 Bug Fix #4: 툴팁 위치 화면 경계 체크
+        function showTooltip(text, x, y) {
+            tooltip.textContent = text;
+
+            // 툴팁 위치 계산
+            let tooltipX = x + 15;
+            let tooltipY = y + 15;
+
+            // 임시로 표시해서 크기 측정
+            tooltip.style.opacity = '0';
+            tooltip.style.left = tooltipX + 'px';
+            tooltip.style.top = tooltipY + 'px';
+            tooltip.style.display = 'block';
+
+            const tooltipRect = tooltip.getBoundingClientRect();
+
+            // 오른쪽 경계 체크
+            if (tooltipX + tooltipRect.width > window.innerWidth) {
+                tooltipX = x - tooltipRect.width - 15;
+            }
+
+            // 하단 경계 체크
+            if (tooltipY + tooltipRect.height > window.innerHeight) {
+                tooltipY = y - tooltipRect.height - 15;
+            }
+
+            // 왼쪽 경계 체크
+            if (tooltipX < 0) {
+                tooltipX = 15;
+            }
+
+            // 상단 경계 체크
+            if (tooltipY < 0) {
+                tooltipY = 15;
+            }
+
+            tooltip.style.left = tooltipX + 'px';
+            tooltip.style.top = tooltipY + 'px';
+            tooltip.style.opacity = '1';
+
+            // 2초 후 툴팁 숨김
+            setTimeout(() => {
+                tooltip.style.opacity = '0';
+            }, 2000);
+        }
+
+        // 드로잉 기능
+        function drawLine(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = currentCursorColor;
+            ctx.lineWidth = currentCursorSize / 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+
+        document.addEventListener('mousedown', function(e) {
+            // 🔧 Bug Fix #2: Dock 영역에서 드로잉 시작 방지
+            const dockRect = dock.getBoundingClientRect();
+            const isOverDock = (
+                e.clientX >= dockRect.left &&
+                e.clientX <= dockRect.right &&
+                e.clientY >= dockRect.top &&
+                e.clientY <= dockRect.bottom
+            );
+
+            if (isPenMode && !isOverDock) {
+                isDrawing = true;
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            isDrawing = false;
+        });
+
+        document.addEventListener('mouseleave', function() {
+            isDrawing = false;
+        });
+
+        // Dock 아이템 기능 구현
+        document.getElementById('fullscreen-toggle').addEventListener('click', function(event) {
+            if (!isFullscreen) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                }
+                showTooltip('전체화면 모드 켜짐', event.clientX, event.clientY);
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                showTooltip('전체화면 모드 꺼짐', event.clientX, event.clientY);
+            }
+            isFullscreen = !isFullscreen;
+        });
+
+        document.getElementById('font-size-toggle').addEventListener('click', function(event) {
+            const currentSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size'));
+            const newSize = currentSize >= 24 ? 16 : currentSize + 4;
+            document.documentElement.style.setProperty('--font-size', newSize + 'px');
+            showTooltip(`폰트 크기: ${newSize}px`, event.clientX, event.clientY);
+        });
+
+        // 🔧 Bug Fix #3: 스크롤 모드 변경 시 Canvas 재조정
+        document.getElementById('horizontal-scroll-toggle').addEventListener('click', function(event) {
+            body.classList.add('horizontal-scroll');
+            setTimeout(() => {
+                resizeCanvas();
+            }, 100);
+            showTooltip('가로 스크롤 모드', event.clientX, event.clientY);
+        });
+
+        document.getElementById('vertical-scroll-toggle').addEventListener('click', function(event) {
+            body.classList.remove('horizontal-scroll');
+            setTimeout(() => {
+                resizeCanvas();
+            }, 100);
+            showTooltip('세로 스크롤 모드', event.clientX, event.clientY);
+        });
+
+        document.getElementById('cursor-color-toggle').addEventListener('click', function(event) {
+            colorPalette.classList.toggle('visible');
+            showTooltip('커서 색상 선택', event.clientX, event.clientY);
+        });
+
+        document.getElementById('cursor-size-toggle').addEventListener('click', function(event) {
+            currentCursorSize = currentCursorSize >= 40 ? 10 : currentCursorSize + 10;
+            document.documentElement.style.setProperty('--pointer-size', currentCursorSize + 'px');
+            showTooltip(`커서 크기: ${currentCursorSize}px`, event.clientX, event.clientY);
+        });
+
+        document.getElementById('pen-mode-toggle').addEventListener('click', function(event) {
+            isPenMode = !isPenMode;
+            if (isPenMode) {
+                cursor.style.mixBlendMode = 'normal';
+                cursor.style.opacity = '1';
+                showTooltip('펜 모드 켜짐 (클릭하고 드래그하여 그리기)', event.clientX, event.clientY);
+            } else {
+                cursor.style.mixBlendMode = 'difference';
+                cursor.style.opacity = '0.7';
+                showTooltip('펜 모드 꺼짐', event.clientX, event.clientY);
+            }
+        });
+
+        document.getElementById('clear-drawing').addEventListener('click', function(event) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            showTooltip('모든 드로잉 지우기 완료', event.clientX, event.clientY);
+        });
+
+        // 🔧 Bug Fix #5: 컬러 팔레트 이벤트 객체 명시적 전달
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function(event) {
+                // 이전 active 클래스 제거
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+
+                // 현재 선택된 색상에 active 클래스 추가
+                this.classList.add('active');
+
+                currentCursorColor = this.dataset.color;
+                document.documentElement.style.setProperty('--pointer-color', currentCursorColor);
+                colorPalette.classList.remove('visible');
+                showTooltip(`색상 변경: ${currentCursorColor}`, event.clientX, event.clientY);
+            });
+        });
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // ESC: 전체화면 종료 또는 컬러 팔레트 닫기
+            if (e.key === 'Escape') {
+                if (isFullscreen && document.exitFullscreen) {
+                    document.exitFullscreen();
+                    isFullscreen = false;
+                }
+                if (colorPalette.classList.contains('visible')) {
+                    colorPalette.classList.remove('visible');
+                }
+            }
+
+            // F: 전체화면 토글
+            if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                document.getElementById('fullscreen-toggle').click();
+            }
+
+            // P: 펜 모드 토글
+            if (e.key === 'p' || e.key === 'P') {
+                e.preventDefault();
+                document.getElementById('pen-mode-toggle').click();
+            }
+
+            // C: 그림 지우기
+            if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                document.getElementById('clear-drawing').click();
+            }
+
+            // H: 가로 스크롤
+            if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                document.getElementById('horizontal-scroll-toggle').click();
+            }
+
+            // V: 세로 스크롤
+            if (e.key === 'v' || e.key === 'V') {
+                e.preventDefault();
+                document.getElementById('vertical-scroll-toggle').click();
+            }
+
+            // +/=: 폰트 크기 증가
+            if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                document.getElementById('font-size-toggle').click();
+            }
+
+            // -: 폰트 크기 감소
+            if (e.key === '-') {
+                e.preventDefault();
+                const currentSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--font-size'));
+                const newSize = currentSize <= 16 ? 24 : currentSize - 4;
+                document.documentElement.style.setProperty('--font-size', newSize + 'px');
+                showTooltip(`폰트 크기: ${newSize}px`, window.innerWidth / 2, window.innerHeight / 2);
+            }
+        });
+
+        // 화면 방향에 따른 스크롤 모드 자동 설정
+        function checkOrientation() {
+            if (window.innerWidth < window.innerHeight && body.classList.contains('horizontal-scroll')) {
+                // 세로 모드일 때 가로 스크롤 해제 (선택 사항)
+            }
+        }
+
+        window.addEventListener('resize', checkOrientation);
+        checkOrientation();
+
+        // 페이지 로드시 안내 툴팁 표시
+        setTimeout(() => {
+            showTooltip('💡 화면 하단으로 마우스를 이동하면 메뉴가 나타납니다. 단축키: F(전체화면), P(펜), C(지우기)', window.innerWidth / 2, 100);
+        }, 1000);
+
+        // 추가 안내 (키보드 단축키)
+        setTimeout(() => {
+            showTooltip('⌨️ 키보드 단축키: H(가로 스크롤), V(세로 스크롤), +/-(폰트 크기)', window.innerWidth / 2, 150);
+        }, 4000);
+    });
+</script>
+</body>
+</html>
