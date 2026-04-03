@@ -97,6 +97,10 @@ export function MarkdownEditor({
   )
   const [layout, setLayout] = useState<EditorLayout>(layoutProp)
   const [theme, setTheme] = useState<EditorTheme>(themeProp)
+
+  // Sync layout/theme props to internal state
+  useEffect(() => { setLayout(layoutProp) }, [layoutProp])
+  useEffect(() => { setTheme(themeProp) }, [themeProp])
   const [editorScrollRatio, setEditorScrollRatio] = useState<number>(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
