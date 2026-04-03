@@ -299,8 +299,8 @@ CREATE INDEX idx_doc_trgm_title ON documents USING gin(title gin_trgm_ops);
 
 -- Closure Table (카테고리 계층 조회)
 CREATE TABLE category_closure (
-    ancestor_id   UUID NOT NULL REFERENCES categories(id),
-    descendant_id UUID NOT NULL REFERENCES categories(id),
+    ancestor_id   BIGINT NOT NULL REFERENCES categories(id),
+    descendant_id BIGINT NOT NULL REFERENCES categories(id),
     depth         INTEGER NOT NULL,
     PRIMARY KEY (ancestor_id, descendant_id)
 );

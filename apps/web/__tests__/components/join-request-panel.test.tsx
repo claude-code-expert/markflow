@@ -7,12 +7,12 @@ describe('JoinRequestPanel', () => {
   });
 
   it('renders public workspace search input', () => {
-    // Search input to filter public workspaces by name or slug
+    // Search input to filter public workspaces by name
     expect(true).toBe(true);
   });
 
   it('displays public workspace results with member count', () => {
-    // Each result shows: icon, name, slug, member count
+    // Each result shows: icon, name, member count
     expect(true).toBe(true);
   });
 

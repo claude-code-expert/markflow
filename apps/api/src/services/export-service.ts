@@ -39,8 +39,8 @@ export function createExportService(db: Db) {
       })
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, Number(documentId)),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
       ))
       .limit(1);
@@ -61,13 +61,15 @@ export function createExportService(db: Db) {
    * Preserves folder structure.
    */
   async function exportCategory(categoryId: string, workspaceId: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
     // Verify category exists
     const [category] = await db
       .select({ id: categories.id, name: categories.name })
       .from(categories)
       .where(and(
-        eq(categories.id, categoryId),
-        eq(categories.workspaceId, workspaceId),
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
       ))
       .limit(1);
 
@@ -84,24 +86,24 @@ export function createExportService(db: Db) {
       })
       .from(categoryClosure)
       .innerJoin(categories, eq(categories.id, categoryClosure.descendantId))
-      .where(eq(categoryClosure.ancestorId, categoryId));
+      .where(eq(categoryClosure.ancestorId, numCategoryId));
 
     // Build a map of category ID -> full path
-    const categoryMap = new Map<string, { name: string; parentId: string | null }>();
+    const categoryMap = new Map<number, { name: string; parentId: number | null }>();
     for (const desc of descendants) {
       categoryMap.set(desc.id, { name: desc.name, parentId: desc.parentId });
     }
 
-    function buildPath(catId: string): string {
+    function buildPath(catId: number): string {
       const parts: string[] = [];
-      let currentId: string | null = catId;
+      let currentId: number | null = catId;
 
       while (currentId) {
         const cat = categoryMap.get(currentId);
         if (!cat) break;
         parts.unshift(cat.name);
         // Stop traversal at the root category being exported
-        if (currentId === categoryId) break;
+        if (currentId === numCategoryId) break;
         currentId = cat.parentId;
       }
 
@@ -121,7 +123,7 @@ export function createExportService(db: Db) {
           })
           .from(documents)
           .where(and(
-            eq(documents.workspaceId, workspaceId),
+            eq(documents.workspaceId, numWorkspaceId),
             eq(documents.isDeleted, false),
             sql`${documents.categoryId} IN (${sql.join(categoryIds.map((id) => sql`${id}`), sql`, `)})`,
           ))
@@ -174,8 +176,8 @@ export function createExportService(db: Db) {
       })
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, Number(documentId)),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
       ))
       .limit(1);

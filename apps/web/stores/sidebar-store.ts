@@ -1,17 +1,50 @@
 import { create } from 'zustand';
 
+const STORAGE_KEY = 'mf-sidebar-expanded';
+const SIDEBAR_OPEN_KEY = 'mf-sidebar-open';
+
+function loadExpanded(): Set<number> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return new Set(JSON.parse(raw) as number[]);
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function saveExpanded(ids: Set<number>) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {
+    // ignore
+  }
+}
+
+function loadSidebarOpen(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = localStorage.getItem(SIDEBAR_OPEN_KEY);
+    if (raw !== null) return raw === 'true';
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
 interface SidebarState {
-  expandedCategoryIds: Set<string>;
+  expandedCategoryIds: Set<number>;
   isSidebarOpen: boolean;
-  toggleCategory: (id: string) => void;
+  toggleCategory: (id: number) => void;
   toggleSidebar: () => void;
-  expandCategory: (id: string) => void;
-  collapseCategory: (id: string) => void;
+  expandCategory: (id: number) => void;
+  collapseCategory: (id: number) => void;
 }
 
 export const useSidebarStore = create<SidebarState>((set) => ({
-  expandedCategoryIds: new Set<string>(),
-  isSidebarOpen: true,
+  expandedCategoryIds: loadExpanded(),
+  isSidebarOpen: loadSidebarOpen(),
 
   toggleCategory: (id) =>
     set((state) => {
@@ -21,6 +54,7 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       } else {
         next.add(id);
       }
+      saveExpanded(next);
       return { expandedCategoryIds: next };
     }),
 
@@ -29,6 +63,7 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       if (state.expandedCategoryIds.has(id)) return state;
       const next = new Set(state.expandedCategoryIds);
       next.add(id);
+      saveExpanded(next);
       return { expandedCategoryIds: next };
     }),
 
@@ -37,9 +72,18 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       if (!state.expandedCategoryIds.has(id)) return state;
       const next = new Set(state.expandedCategoryIds);
       next.delete(id);
+      saveExpanded(next);
       return { expandedCategoryIds: next };
     }),
 
   toggleSidebar: () =>
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+    set((state) => {
+      const next = !state.isSidebarOpen;
+      try {
+        localStorage.setItem(SIDEBAR_OPEN_KEY, String(next));
+      } catch {
+        // ignore
+      }
+      return { isSidebarOpen: next };
+    }),
 }));

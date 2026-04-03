@@ -22,6 +22,7 @@ import { tagsRoutes } from './routes/tags.js';
 import { importExportRoutes } from './routes/import-export.js';
 import { themeRoutes } from './routes/theme.js';
 import { embedTokenRoutes } from './routes/embed-tokens.js';
+import { commentsRoutes } from './routes/comments.js';
 
 const HOST = process.env.HOST ?? '0.0.0.0';
 const PORT = Number(process.env.PORT ?? 4000);
@@ -101,6 +102,7 @@ export async function buildApp() {
   await app.register(importExportRoutes, { prefix: '/api/v1', db });
   await app.register(themeRoutes, { prefix: '/api/v1', db });
   await app.register(embedTokenRoutes, { prefix: '/api/v1', db });
+  await app.register(commentsRoutes, { prefix: '/api/v1', db });
 
   // --- Scheduled Jobs ---
   const cleanupIntervalHandle = startCleanupInterval(db);

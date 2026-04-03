@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { DM_Sans, Sora, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import { ToastProvider } from '../components/toast-provider';
+import { DevAgentation } from '../components/dev-agentation';
 import './globals.css';
-import 'react-grab/styles.css';
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
@@ -35,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {children}
           <ToastProvider />
+          <DevAgentation />
         </Providers>
       </body>
     </html>

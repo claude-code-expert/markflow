@@ -8,16 +8,16 @@ import { flattenCategories } from '../lib/category-utils';
 interface NewFolderModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceId: string;
+  workspaceId: number;
   categories: Category[];
-  defaultParentId?: string | null;
+  defaultParentId?: number | null;
   onCreated?: () => void;
 }
 
 interface CreateCategoryResponse {
-  id: string;
+  id: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
 }
 
 export function NewFolderModal({
@@ -29,7 +29,7 @@ export function NewFolderModal({
   onCreated,
 }: NewFolderModalProps) {
   const [name, setName] = useState('');
-  const [parentId, setParentId] = useState<string>(defaultParentId ?? '');
+  const [parentId, setParentId] = useState<number | null>(defaultParentId ?? null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +41,7 @@ export function NewFolderModal({
   // Compute preview path
   const previewPath = useMemo(() => {
     if (!name.trim()) return '';
-    const parent = flatCategories.find((c) => c.id === parentId);
+    const parent = parentId != null ? flatCategories.find((c) => c.id === parentId) : undefined;
     if (parent) {
       return `${parent.path} > ${name.trim()}`;
     }
@@ -52,7 +52,7 @@ export function NewFolderModal({
   useEffect(() => {
     if (!open) {
       setName('');
-      setParentId(defaultParentId ?? '');
+      setParentId(defaultParentId ?? null);
       setError('');
       setIsSubmitting(false);
     }
@@ -160,8 +160,8 @@ export function NewFolderModal({
             </label>
             <select
               id="folderParent"
-              value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
+              value={parentId ?? ''}
+              onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}
               className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">최상위 (루트)</option>

@@ -16,11 +16,14 @@ type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
 
 export function createJoinRequestService(db: Db) {
   async function create(workspaceId: string, userId: string, message?: string) {
+    const numWorkspaceId = Number(workspaceId);
+    const numUserId = Number(userId);
+
     // Check workspace is public
     const [workspace] = await db
       .select({ isPublic: workspaces.isPublic })
       .from(workspaces)
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, numWorkspaceId))
       .limit(1);
 
     if (!workspace) {
@@ -37,8 +40,8 @@ export function createJoinRequestService(db: Db) {
       .from(workspaceMembers)
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, userId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numUserId),
         ),
       )
       .limit(1);
@@ -54,8 +57,8 @@ export function createJoinRequestService(db: Db) {
       .from(joinRequests)
       .where(
         and(
-          eq(joinRequests.workspaceId, workspaceId),
-          eq(joinRequests.userId, userId),
+          eq(joinRequests.workspaceId, numWorkspaceId),
+          eq(joinRequests.userId, numUserId),
           eq(joinRequests.status, statusPending),
         ),
       )
@@ -68,8 +71,8 @@ export function createJoinRequestService(db: Db) {
     const inserted = await db
       .insert(joinRequests)
       .values({
-        workspaceId,
-        userId,
+        workspaceId: numWorkspaceId,
+        userId: numUserId,
         message: message ?? null,
       })
       .returning();
@@ -83,7 +86,7 @@ export function createJoinRequestService(db: Db) {
   }
 
   async function list(workspaceId: string, status?: string) {
-    const conditions = [eq(joinRequests.workspaceId, workspaceId)];
+    const conditions = [eq(joinRequests.workspaceId, Number(workspaceId))];
 
     if (status) {
       conditions.push(eq(joinRequests.status, status as JoinRequestStatus));
@@ -115,7 +118,7 @@ export function createJoinRequestService(db: Db) {
     const [request] = await db
       .select()
       .from(joinRequests)
-      .where(eq(joinRequests.id, requestId))
+      .where(eq(joinRequests.id, Number(requestId)))
       .limit(1);
 
     if (!request) {
@@ -134,10 +137,10 @@ export function createJoinRequestService(db: Db) {
       .set({
         status: 'approved' as JoinRequestStatus,
         assignedRole,
-        reviewedBy: reviewerId,
+        reviewedBy: Number(reviewerId),
         updatedAt: new Date(),
       })
-      .where(eq(joinRequests.id, requestId));
+      .where(eq(joinRequests.id, Number(requestId)));
 
     // Add user as member
     await db.insert(workspaceMembers).values({
@@ -151,7 +154,7 @@ export function createJoinRequestService(db: Db) {
     const [request] = await db
       .select()
       .from(joinRequests)
-      .where(eq(joinRequests.id, requestId))
+      .where(eq(joinRequests.id, Number(requestId)))
       .limit(1);
 
     if (!request) {
@@ -166,22 +169,23 @@ export function createJoinRequestService(db: Db) {
       .update(joinRequests)
       .set({
         status: 'rejected' as JoinRequestStatus,
-        reviewedBy: reviewerId,
+        reviewedBy: Number(reviewerId),
         updatedAt: new Date(),
       })
-      .where(eq(joinRequests.id, requestId));
+      .where(eq(joinRequests.id, Number(requestId)));
   }
 
   async function batchApprove(requestIds: string[], reviewerId: string, role: MemberRole) {
     let approvedCount = 0;
 
     const statusPending: JoinRequestStatus = 'pending';
+    const numRequestIds = requestIds.map(Number);
     const requests = await db
       .select()
       .from(joinRequests)
       .where(
         and(
-          inArray(joinRequests.id, requestIds),
+          inArray(joinRequests.id, numRequestIds),
           eq(joinRequests.status, statusPending),
         ),
       );
@@ -195,7 +199,7 @@ export function createJoinRequestService(db: Db) {
         .set({
           status: 'approved' as JoinRequestStatus,
           assignedRole,
-          reviewedBy: reviewerId,
+          reviewedBy: Number(reviewerId),
           updatedAt: new Date(),
         })
         .where(eq(joinRequests.id, request.id));

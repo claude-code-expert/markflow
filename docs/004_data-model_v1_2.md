@@ -15,7 +15,7 @@
 ```mermaid
 erDiagram
     USERS {
-        uuid id PK
+        bigserial id PK
         text email UK
         text name
         text password_hash
@@ -27,16 +27,16 @@ erDiagram
     }
 
     OAUTH_ACCOUNTS {
-        uuid id PK
-        uuid user_id FK
+        bigserial id PK
+        bigint user_id FK
         text provider
         text provider_account_id
         timestamp created_at
     }
 
     REFRESH_TOKENS {
-        uuid id PK
-        uuid user_id FK
+        bigserial id PK
+        bigint user_id FK
         text token_hash UK
         timestamp expires_at
         boolean revoked
@@ -44,11 +44,10 @@ erDiagram
     }
 
     WORKSPACES {
-        uuid id PK
-        text name
-        text slug UK
+        bigserial id PK
+        text name UK
         text description
-        uuid owner_id FK
+        bigint owner_id FK
         text theme_css
         boolean is_public
         boolean is_root
@@ -57,16 +56,16 @@ erDiagram
     }
 
     WORKSPACE_MEMBERS {
-        uuid workspace_id FK
-        uuid user_id FK
+        bigint workspace_id FK
+        bigint user_id FK
         text role
         timestamp joined_at
     }
 
     INVITATIONS {
-        uuid id PK
-        uuid workspace_id FK
-        uuid inviter_id FK
+        bigserial id PK
+        bigint workspace_id FK
+        bigint inviter_id FK
         text email
         text role
         text token UK
@@ -76,22 +75,22 @@ erDiagram
     }
 
     WORKSPACE_JOIN_REQUESTS {
-        uuid id PK
-        uuid workspace_id FK
-        uuid requester_id FK
+        bigserial id PK
+        bigint workspace_id FK
+        bigint requester_id FK
         text message
         text status
         text assigned_role
-        uuid reviewed_by FK
+        bigint reviewed_by FK
         timestamp reviewed_at
         timestamp created_at
         timestamp updated_at
     }
 
     CATEGORIES {
-        uuid id PK
-        uuid workspace_id FK
-        uuid parent_id FK
+        bigserial id PK
+        bigint workspace_id FK
+        bigint parent_id FK
         text name
         text slug
         real order_index
@@ -100,16 +99,16 @@ erDiagram
     }
 
     CATEGORY_CLOSURE {
-        uuid ancestor_id FK
-        uuid descendant_id FK
+        bigint ancestor_id FK
+        bigint descendant_id FK
         integer depth
     }
 
     DOCUMENTS {
-        uuid id PK
-        uuid workspace_id FK
-        uuid category_id FK
-        uuid author_id FK
+        bigserial id PK
+        bigint workspace_id FK
+        bigint category_id FK
+        bigint author_id FK
         text title
         text slug
         text content
@@ -121,24 +120,24 @@ erDiagram
     }
 
     DOCUMENT_RELATIONS {
-        uuid id PK
-        uuid doc_id FK
-        uuid related_doc_id FK
+        bigserial id PK
+        bigint doc_id FK
+        bigint related_doc_id FK
         text rel_type
         timestamp created_at
     }
 
     DOCUMENT_VERSIONS {
-        uuid id PK
-        uuid doc_id FK
+        bigserial id PK
+        bigint doc_id FK
         integer version_num
         text content
-        uuid author_id FK
+        bigint author_id FK
         timestamp created_at
     }
 
     DOCUMENT_TAGS {
-        uuid doc_id FK
+        bigint doc_id FK
         text tag
     }
 
@@ -155,28 +154,28 @@ erDiagram
     }
 
     ACTIVITY_LOGS {
-        uuid id PK
-        uuid workspace_id FK
-        uuid actor_id FK
-        uuid doc_id FK
+        bigserial id PK
+        bigint workspace_id FK
+        bigint actor_id FK
+        bigint doc_id FK
         text action
         jsonb meta
         timestamp created_at
     }
 
     NOTIFICATIONS {
-        uuid id PK
-        uuid user_id FK
-        uuid activity_id FK
+        bigserial id PK
+        bigint user_id FK
+        bigint activity_id FK
         boolean is_read
         timestamp created_at
     }
 
     COMMENTS {
-        uuid id PK
-        uuid doc_id FK
-        uuid author_id FK
-        uuid parent_id FK
+        bigserial id PK
+        bigint doc_id FK
+        bigint author_id FK
+        bigint parent_id FK
         jsonb selection
         text content
         boolean resolved
@@ -215,7 +214,7 @@ erDiagram
 
 ```sql
 CREATE TABLE users (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              BIGSERIAL   PRIMARY KEY,
     email           TEXT        NOT NULL UNIQUE,
     name            TEXT        NOT NULL,
     password_hash   TEXT,                           -- NULL if OAuth-only
@@ -233,27 +232,25 @@ CREATE INDEX idx_users_email ON users(email);
 
 ```sql
 CREATE TABLE workspaces (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        TEXT        NOT NULL CHECK (char_length(name) BETWEEN 2 AND 50),
-    slug        TEXT        NOT NULL UNIQUE
-                            CHECK (slug ~ '^[a-z0-9-]{3,30}$'),
+    id          BIGSERIAL   PRIMARY KEY,
+    name        TEXT        NOT NULL UNIQUE CHECK (char_length(name) BETWEEN 2 AND 50),
     description TEXT,
-    owner_id    UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    owner_id    BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     theme_css   TEXT        DEFAULT '',
     is_public   BOOLEAN     NOT NULL DEFAULT FALSE,
     -- Root 워크스페이스 여부. 회원가입 시 자동 생성되는 개인 워크스페이스.
-    -- slug = 'personal-{userId 앞 8자리}', name = 'My Notes', is_root = TRUE
+    -- name = 'My Notes', is_root = TRUE
     is_root     BOOLEAN     NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_workspaces_owner  ON workspaces(owner_id);
-CREATE INDEX idx_workspaces_slug   ON workspaces(slug);
+CREATE INDEX idx_workspaces_name   ON workspaces(name);
 CREATE INDEX idx_workspaces_public ON workspaces(is_public) WHERE is_public = TRUE;
 ```
 
-> **Root 워크스페이스 생성 규칙:** 회원가입 완료(이메일 인증 후) 시점에 서버가 자동으로 `is_root = TRUE` 워크스페이스를 1개 생성한다. 사용자는 이 워크스페이스를 삭제할 수 없고, 이름은 변경 가능하다.
+> **Root 워크스페이스 생성 규칙:** 회원가입 완료(이메일 인증 후) 시점에 서버가 자동으로 `is_root = TRUE` 워크스페이스를 1개 생성한다. `name`은 UNIQUE이며 URL에 사용된다. 사용자는 이 워크스페이스를 삭제할 수 없고, 이름은 변경 가능하다.
 
 ### 2.3 workspace_members
 
@@ -261,8 +258,8 @@ CREATE INDEX idx_workspaces_public ON workspaces(is_public) WHERE is_public = TR
 CREATE TYPE workspace_role AS ENUM ('owner', 'admin', 'editor', 'viewer');
 
 CREATE TABLE workspace_members (
-    workspace_id  UUID            NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    user_id       UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    workspace_id  BIGINT          NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    user_id       BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role          workspace_role  NOT NULL DEFAULT 'editor',
     joined_at     TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     PRIMARY KEY (workspace_id, user_id)
@@ -276,9 +273,9 @@ CREATE INDEX idx_wm_workspace_id ON workspace_members(workspace_id);
 
 ```sql
 CREATE TABLE invitations (
-    id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    workspace_id  UUID            NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    inviter_id    UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id            BIGSERIAL       PRIMARY KEY,
+    workspace_id  BIGINT          NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    inviter_id    BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     email         TEXT            NOT NULL,
     role          workspace_role  NOT NULL DEFAULT 'editor',
     token         TEXT            NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
@@ -301,13 +298,13 @@ CREATE INDEX idx_inv_email     ON invitations(email);
 CREATE TYPE join_request_status AS ENUM ('pending', 'approved', 'rejected');
 
 CREATE TABLE workspace_join_requests (
-    id             UUID                 PRIMARY KEY DEFAULT gen_random_uuid(),
-    workspace_id   UUID                 NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    requester_id   UUID                 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id             BIGSERIAL            PRIMARY KEY,
+    workspace_id   BIGINT               NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    requester_id   BIGINT               NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     message        TEXT                 CHECK (char_length(message) <= 500),  -- 신청 메시지 (선택)
     status         join_request_status  NOT NULL DEFAULT 'pending',
     assigned_role  workspace_role,      -- 승인 시 부여할 역할 (NULL until approved)
-    reviewed_by    UUID                 REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_by    BIGINT               REFERENCES users(id) ON DELETE SET NULL,
     reviewed_at    TIMESTAMPTZ,
     created_at     TIMESTAMPTZ          NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMPTZ          NOT NULL DEFAULT NOW(),
@@ -343,9 +340,9 @@ GET    /me/join-requests                      내 신청 현황 조회 (requeste
 
 ```sql
 CREATE TABLE categories (
-    id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    workspace_id  UUID        NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    parent_id     UUID        REFERENCES categories(id) ON DELETE SET NULL,
+    id            BIGSERIAL   PRIMARY KEY,
+    workspace_id  BIGINT      NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    parent_id     BIGINT      REFERENCES categories(id) ON DELETE SET NULL,
     name          TEXT        NOT NULL CHECK (char_length(name) BETWEEN 1 AND 100),
     slug          TEXT        NOT NULL,
     order_index   REAL        NOT NULL DEFAULT 0,  -- Fractional Indexing
@@ -366,8 +363,8 @@ CREATE INDEX idx_categories_parent    ON categories(parent_id);
 
 ```sql
 CREATE TABLE category_closure (
-    ancestor_id   UUID    NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-    descendant_id UUID    NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    ancestor_id   BIGINT  NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    descendant_id BIGINT  NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     depth         INTEGER NOT NULL,  -- 0 = 자기 자신
     PRIMARY KEY (ancestor_id, descendant_id)
 );
@@ -401,10 +398,10 @@ ORDER BY cc.depth DESC;
 
 ```sql
 CREATE TABLE documents (
-    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    workspace_id     UUID        NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    category_id      UUID        REFERENCES categories(id) ON DELETE SET NULL,
-    author_id        UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    id               BIGSERIAL   PRIMARY KEY,
+    workspace_id     BIGINT      NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    category_id      BIGINT      REFERENCES categories(id) ON DELETE SET NULL,
+    author_id        BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     title            TEXT        NOT NULL DEFAULT 'Untitled',
     slug             TEXT        NOT NULL,
     content          TEXT        NOT NULL DEFAULT '',
@@ -436,11 +433,11 @@ CREATE INDEX idx_doc_deleted ON documents(is_deleted);
 
 ```sql
 CREATE TABLE document_versions (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    doc_id      UUID        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    id          BIGSERIAL   PRIMARY KEY,
+    doc_id      BIGINT      NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     version_num INTEGER     NOT NULL,
     content     TEXT        NOT NULL,
-    author_id   UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    author_id   BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (doc_id, version_num)
 );
@@ -454,9 +451,9 @@ CREATE INDEX idx_dv_doc_id ON document_versions(doc_id, version_num DESC);
 CREATE TYPE relation_type AS ENUM ('related', 'prev', 'next');
 
 CREATE TABLE document_relations (
-    id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    doc_id         UUID          NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    related_doc_id UUID          NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    id             BIGSERIAL     PRIMARY KEY,
+    doc_id         BIGINT        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    related_doc_id BIGINT        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     rel_type       relation_type NOT NULL,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     UNIQUE (doc_id, related_doc_id, rel_type)
@@ -493,10 +490,10 @@ CREATE INDEX idx_lp_expires ON link_previews(expires_at);
 
 ```sql
 CREATE TABLE comments (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    doc_id      UUID        NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    author_id   UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    parent_id   UUID        REFERENCES comments(id) ON DELETE CASCADE,
+    id          BIGSERIAL   PRIMARY KEY,
+    doc_id      BIGINT      NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    author_id   BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id   BIGINT      REFERENCES comments(id) ON DELETE CASCADE,
     selection   JSONB,      -- { from: number, to: number, text: string }
     content     TEXT        NOT NULL CHECK (char_length(content) BETWEEN 1 AND 5000),
     resolved    BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -519,10 +516,10 @@ CREATE TYPE activity_action AS ENUM (
 );
 
 CREATE TABLE activity_logs (
-    id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    workspace_id  UUID            NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    actor_id      UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    doc_id        UUID            REFERENCES documents(id) ON DELETE SET NULL,
+    id            BIGSERIAL       PRIMARY KEY,
+    workspace_id  BIGINT          NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    actor_id      BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    doc_id        BIGINT          REFERENCES documents(id) ON DELETE SET NULL,
     action        activity_action NOT NULL,
     meta          JSONB           DEFAULT '{}',
     created_at    TIMESTAMPTZ     NOT NULL DEFAULT NOW()
@@ -532,9 +529,9 @@ CREATE INDEX idx_activity_ws    ON activity_logs(workspace_id, created_at DESC);
 CREATE INDEX idx_activity_actor ON activity_logs(actor_id);
 
 CREATE TABLE notifications (
-    id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id      UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    activity_id  UUID        NOT NULL REFERENCES activity_logs(id) ON DELETE CASCADE,
+    id           BIGSERIAL   PRIMARY KEY,
+    user_id      BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    activity_id  BIGINT      NOT NULL REFERENCES activity_logs(id) ON DELETE CASCADE,
     is_read      BOOLEAN     NOT NULL DEFAULT FALSE,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -555,7 +552,7 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 | 카테고리 이동 순환 방지 | 자기 자신의 자손으로 이동 시 400 + CIRCULAR_CATEGORY — 앱 레이어 |
 | Closure Table 정합성 | 카테고리 생성·이동·삭제 시 트랜잭션으로 closure 행 동기화 |
 | 버전 최대 보관 (Phase별) | Phase 1: 20개 / Phase 2+: 100개 — 앱 레이어 또는 트리거 정리 |
-| Soft Delete 후 slug 재사용 | 삭제 시 slug에 timestamp 접미사 추가 |
+| Soft Delete 후 문서 slug 재사용 | 삭제 시 slug에 timestamp 접미사 추가 |
 | Root 워크스페이스 삭제 방지 | `is_root = TRUE` 워크스페이스 DELETE API 403 반환 |
 | 연관 문서 최대 20개 | 애플리케이션 레이어 검증, `rel_type='related'` COUNT > 20 → 400 반환 |
 | 가입 신청 중복 방지 | `UNIQUE (workspace_id, requester_id)` 제약 → 409 반환 |

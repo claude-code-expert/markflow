@@ -13,16 +13,16 @@ import { badRequest, conflict, notFound } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
 export interface CategoryTreeDocument {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   updatedAt: Date;
 }
 
 export interface CategoryTreeNode {
-  id: string;
+  id: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
   children: CategoryTreeNode[];
   documents: CategoryTreeDocument[];
 }
@@ -35,8 +35,8 @@ export function createCategoryService(db: Db) {
         .select({ id: categories.id })
         .from(categories)
         .where(and(
-          eq(categories.id, parentId),
-          eq(categories.workspaceId, workspaceId),
+          eq(categories.id, Number(parentId)),
+          eq(categories.workspaceId, Number(workspaceId)),
         ))
         .limit(1);
 
@@ -46,14 +46,17 @@ export function createCategoryService(db: Db) {
     }
 
     // Check duplicate name under same parent
-    const duplicateWhere = parentId
+    const numWorkspaceId = Number(workspaceId);
+    const numParentId = parentId ? Number(parentId) : null;
+
+    const duplicateWhere = numParentId
       ? and(
-          eq(categories.workspaceId, workspaceId),
-          eq(categories.parentId, parentId),
+          eq(categories.workspaceId, numWorkspaceId),
+          eq(categories.parentId, numParentId),
           eq(categories.name, name),
         )
       : and(
-          eq(categories.workspaceId, workspaceId),
+          eq(categories.workspaceId, numWorkspaceId),
           isNull(categories.parentId),
           eq(categories.name, name),
         );
@@ -72,9 +75,9 @@ export function createCategoryService(db: Db) {
     const [category] = await db
       .insert(categories)
       .values({
-        workspaceId,
+        workspaceId: numWorkspaceId,
         name,
-        parentId: parentId ?? null,
+        parentId: numParentId,
       })
       .returning();
 
@@ -90,12 +93,12 @@ export function createCategoryService(db: Db) {
     });
 
     // If parentId, copy ancestor rows with depth+1
-    if (parentId) {
+    if (numParentId) {
       await db.execute(sql`
         INSERT INTO category_closure (ancestor_id, descendant_id, depth)
         SELECT ancestor_id, ${category.id}, depth + 1
         FROM category_closure
-        WHERE descendant_id = ${parentId}
+        WHERE descendant_id = ${numParentId}
       `);
     }
 
@@ -123,7 +126,7 @@ export function createCategoryService(db: Db) {
           eq(categoryClosure.ancestorId, categories.id),
         ),
       )
-      .where(eq(categories.workspaceId, workspaceId))
+      .where(eq(categories.workspaceId, Number(workspaceId)))
       .orderBy(categories.name);
 
     // The self-reference join gives depth=0 for all. We need actual depth from root.
@@ -135,10 +138,10 @@ export function createCategoryService(db: Db) {
       })
       .from(categoryClosure)
       .innerJoin(categories, eq(categoryClosure.descendantId, categories.id))
-      .where(eq(categories.workspaceId, workspaceId))
+      .where(eq(categories.workspaceId, Number(workspaceId)))
       .groupBy(categoryClosure.descendantId);
 
-    const depthMap = new Map<string, number>();
+    const depthMap = new Map<number, number>();
     for (const row of depthRows) {
       depthMap.set(row.descendantId, Number(row.maxDepth));
     }
@@ -154,12 +157,15 @@ export function createCategoryService(db: Db) {
   }
 
   async function rename(categoryId: string, workspaceId: string, newName: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
+
     const [category] = await db
       .select()
       .from(categories)
       .where(and(
-        eq(categories.id, categoryId),
-        eq(categories.workspaceId, workspaceId),
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
       ))
       .limit(1);
 
@@ -170,12 +176,12 @@ export function createCategoryService(db: Db) {
     // Check duplicate under same parent
     const duplicateWhere = category.parentId
       ? and(
-          eq(categories.workspaceId, workspaceId),
+          eq(categories.workspaceId, numWorkspaceId),
           eq(categories.parentId, category.parentId),
           eq(categories.name, newName),
         )
       : and(
-          eq(categories.workspaceId, workspaceId),
+          eq(categories.workspaceId, numWorkspaceId),
           isNull(categories.parentId),
           eq(categories.name, newName),
         );
@@ -186,14 +192,14 @@ export function createCategoryService(db: Db) {
       .where(duplicateWhere)
       .limit(1);
 
-    if (existing && existing.id !== categoryId) {
+    if (existing && existing.id !== numCategoryId) {
       throw conflict('DUPLICATE_NAME', 'A category with this name already exists under the same parent');
     }
 
     const [updated] = await db
       .update(categories)
       .set({ name: newName })
-      .where(eq(categories.id, categoryId))
+      .where(eq(categories.id, numCategoryId))
       .returning();
 
     logger.info('Category renamed', { categoryId, newName });
@@ -202,12 +208,15 @@ export function createCategoryService(db: Db) {
   }
 
   async function remove(categoryId: string, workspaceId: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
+
     const [category] = await db
       .select()
       .from(categories)
       .where(and(
-        eq(categories.id, categoryId),
-        eq(categories.workspaceId, workspaceId),
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
       ))
       .limit(1);
 
@@ -220,8 +229,8 @@ export function createCategoryService(db: Db) {
       .select({ id: categories.id })
       .from(categories)
       .where(and(
-        eq(categories.parentId, categoryId),
-        eq(categories.workspaceId, workspaceId),
+        eq(categories.parentId, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
       ))
       .limit(1);
 
@@ -234,23 +243,23 @@ export function createCategoryService(db: Db) {
       .update(documents)
       .set({ categoryId: null })
       .where(and(
-        eq(documents.categoryId, categoryId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.categoryId, numCategoryId),
+        eq(documents.workspaceId, numWorkspaceId),
       ));
 
     // Delete closure entries for this category
     await db
       .delete(categoryClosure)
-      .where(eq(categoryClosure.descendantId, categoryId));
+      .where(eq(categoryClosure.descendantId, numCategoryId));
 
     await db
       .delete(categoryClosure)
-      .where(eq(categoryClosure.ancestorId, categoryId));
+      .where(eq(categoryClosure.ancestorId, numCategoryId));
 
     // Delete category
     await db
       .delete(categories)
-      .where(eq(categories.id, categoryId));
+      .where(eq(categories.id, numCategoryId));
 
     logger.info('Category deleted', { categoryId, workspaceId });
   }
@@ -264,8 +273,8 @@ export function createCategoryService(db: Db) {
         parentId: categories.parentId,
       })
       .from(categories)
-      .where(eq(categories.workspaceId, workspaceId))
-      .orderBy(asc(categories.name));
+      .where(eq(categories.workspaceId, Number(workspaceId)))
+      .orderBy(asc(categories.orderIndex), asc(categories.name));
 
     // 2. 해당 워크스페이스의 활성 문서 (삭제되지 않은)
     const docRows = await db
@@ -278,13 +287,13 @@ export function createCategoryService(db: Db) {
       })
       .from(documents)
       .where(and(
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
       ))
       .orderBy(asc(documents.title));
 
     // 3. 카테고리 → 트리 조립
-    const nodeMap = new Map<string, CategoryTreeNode>();
+    const nodeMap = new Map<number, CategoryTreeNode>();
     const roots: CategoryTreeNode[] = [];
 
     for (const c of categoryRows) {
@@ -315,5 +324,20 @@ export function createCategoryService(db: Db) {
     return { categories: roots, uncategorized };
   }
 
-  return { create, list, tree, rename, remove };
+  async function reorder(workspaceId: string, orderedIds: number[]) {
+    const numWorkspaceId = Number(workspaceId);
+
+    // Update orderIndex for each category based on array position
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db
+        .update(categories)
+        .set({ orderIndex: i })
+        .where(and(
+          eq(categories.id, orderedIds[i]!),
+          eq(categories.workspaceId, numWorkspaceId),
+        ));
+    }
+  }
+
+  return { create, list, tree, rename, remove, reorder };
 }

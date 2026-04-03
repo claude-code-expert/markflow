@@ -6,7 +6,7 @@ import { apiFetch } from '../../../../../lib/api';
 import { useToastStore } from '../../../../../stores/toast-store';
 
 interface EmbedToken {
-  id: string;
+  id: number;
   label: string;
   tokenPreview: string;
   scope: string;
@@ -66,7 +66,7 @@ export default function EmbedSettingsPage() {
     addToast({ message: '클립보드에 복사됨', type: 'success' });
   };
 
-  const handleRevoke = async (tokenId: string) => {
+  const handleRevoke = async (tokenId: number) => {
     if (!currentWorkspace) return;
     try {
       await apiFetch(`/workspaces/${currentWorkspace.id}/embed-tokens/${tokenId}`, { method: 'DELETE' });

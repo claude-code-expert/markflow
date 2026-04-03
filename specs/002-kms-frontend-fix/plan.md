@@ -65,9 +65,9 @@ apps/web/
 │   └── (app)/
 │       ├── layout.tsx                 # 앱 셸 (헤더 + 사이드바 + 콘텐츠)
 │       ├── page.tsx                   # 워크스페이스 목록
-│       └── [workspaceSlug]/
+│       └── [workspaceSlug]/            # URL에는 URL-encoded workspace name 사용
 │           ├── page.tsx               # 워크스페이스 홈 → 문서 목록 리다이렉트
-│           ├── docs/
+│           ├── doc/
 │           │   ├── page.tsx           # 문서 목록
 │           │   └── [docId]/page.tsx   # 문서 에디터
 │           ├── settings/

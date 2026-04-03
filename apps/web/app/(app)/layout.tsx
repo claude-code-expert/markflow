@@ -31,7 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         `/workspaces/${currentWorkspace.id}/documents`,
         { method: 'POST', body: { title: '제목 없음' } },
       );
-      router.push(`/${currentWorkspace.slug}/docs/${document.id}`);
+      router.push(`/${encodeURIComponent(currentWorkspace.name)}/doc/${document.id}`);
     } catch {
       addToast({ message: '문서 생성에 실패했습니다', type: 'error' });
     }

@@ -337,8 +337,8 @@ export default function LoginPage() {
       const { fetchWorkspaces } = useWorkspaceStore.getState();
       await fetchWorkspaces();
       const { workspaces } = useWorkspaceStore.getState();
-      if (workspaces.length === 1 && workspaces[0]?.slug) {
-        router.push(`/${workspaces[0].slug}/docs`);
+      if (workspaces.length === 1 && workspaces[0]?.name) {
+        router.push(`/${encodeURIComponent(workspaces[0].name)}/doc`);
       } else {
         router.push('/workspaces');
       }

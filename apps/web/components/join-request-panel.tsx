@@ -7,7 +7,6 @@ import { useToastStore } from '../stores/toast-store';
 interface PublicWorkspace {
   id: string;
   name: string;
-  slug: string;
   memberCount: number;
   isPublic: boolean;
   pendingRequest: boolean;
@@ -112,7 +111,7 @@ export function JoinRequestPanel({ onRequestSent }: JoinRequestPanelProps) {
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
-                placeholder="워크스페이스 이름 또는 슬러그 검색..."
+                placeholder="워크스페이스 이름 검색..."
                 value={query}
                 onChange={(e) => handleSearch(e.target.value)}
                 style={{
@@ -145,7 +144,7 @@ export function JoinRequestPanel({ onRequestSent }: JoinRequestPanelProps) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '14px' }}>{ws.name}</div>
-                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)' }}>{ws.slug} · {ws.memberCount}명</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)' }}>{ws.name} · {ws.memberCount}명</div>
                 </div>
                 {ws.pendingRequest ? (
                   <span style={{
@@ -209,7 +208,7 @@ export function JoinRequestPanel({ onRequestSent }: JoinRequestPanelProps) {
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '15px' }}>{modalWs.name}</div>
-                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)' }}>공개 워크스페이스 · {modalWs.memberCount}명 · {modalWs.slug}</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)' }}>공개 워크스페이스 · {modalWs.memberCount}명</div>
                 </div>
               </div>
               <div style={{ marginBottom: '16px' }}>

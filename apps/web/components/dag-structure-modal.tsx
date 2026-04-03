@@ -4,14 +4,14 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface GraphNode {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
+  categoryId: number | null;
 }
 
 interface GraphEdge {
-  source: string;
-  target: string;
+  source: number;
+  target: number;
   type: 'prev' | 'next' | 'related';
 }
 
@@ -20,7 +20,7 @@ interface DagStructureModalProps {
   onClose: () => void;
   nodes: GraphNode[];
   edges: GraphEdge[];
-  currentDocId: string;
+  currentDocId: number;
   currentTitle: string;
   categoryName: string | null;
   workspaceSlug: string;
@@ -66,9 +66,9 @@ export function DagStructureModal({
       .filter(Boolean) as GraphNode[];
   }, [currentEdges, nodes, currentDocId]);
 
-  const navigateToDoc = (docId: string) => {
+  const navigateToDoc = (docId: number) => {
     onClose();
-    router.push(`/${workspaceSlug}/docs/${docId}`);
+    router.push(`/${workspaceSlug}/doc/${docId}`);
   };
 
   const zoom = (factor: number) => {

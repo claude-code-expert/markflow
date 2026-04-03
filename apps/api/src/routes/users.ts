@@ -38,7 +38,7 @@ export async function usersRoutes(app: FastifyInstance, opts: UsersRoutesOptions
         updatedAt: users.updatedAt,
       })
       .from(users)
-      .where(eq(users.id, request.currentUser.userId))
+      .where(eq(users.id, Number(request.currentUser.userId)))
       .limit(1);
 
     const user = found[0];
@@ -84,7 +84,7 @@ export async function usersRoutes(app: FastifyInstance, opts: UsersRoutesOptions
     const updated = await db
       .update(users)
       .set(updates)
-      .where(eq(users.id, request.currentUser.userId))
+      .where(eq(users.id, Number(request.currentUser.userId)))
       .returning({
         id: users.id,
         email: users.email,
@@ -142,7 +142,7 @@ export async function usersRoutes(app: FastifyInstance, opts: UsersRoutesOptions
         avatarUrl,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, request.currentUser.userId))
+      .where(eq(users.id, Number(request.currentUser.userId)))
       .returning({
         avatarUrl: users.avatarUrl,
       });

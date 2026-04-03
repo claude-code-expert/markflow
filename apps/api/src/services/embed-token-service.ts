@@ -9,7 +9,7 @@ export function createEmbedTokenService(db: Db) {
     return 'mf_gt_' + crypto.randomBytes(32).toString('hex');
   }
 
-  async function create(workspaceId: string, creatorId: string, label: string, scope: string, expiresAt: string) {
+  async function create(workspaceId: number, creatorId: number, label: string, scope: string, expiresAt: string) {
     if (!label.trim()) throw badRequest('MISSING_LABEL', 'Label is required');
     if (!['read', 'read_write'].includes(scope)) throw badRequest('INVALID_SCOPE', 'Scope must be "read" or "read_write"');
 
@@ -43,7 +43,7 @@ export function createEmbedTokenService(db: Db) {
     };
   }
 
-  async function list(workspaceId: string) {
+  async function list(workspaceId: number) {
     const tokens = await db
       .select()
       .from(embedTokens)
@@ -63,7 +63,7 @@ export function createEmbedTokenService(db: Db) {
     };
   }
 
-  async function revoke(workspaceId: string, tokenId: string) {
+  async function revoke(workspaceId: number, tokenId: number) {
     const [token] = await db
       .select({ id: embedTokens.id })
       .from(embedTokens)

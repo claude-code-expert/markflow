@@ -38,16 +38,16 @@ export async function workspacesRoutes(app: FastifyInstance, opts: WorkspacesRou
 
   // POST /api/v1/workspaces
   app.post<{
-    Body: { name: string; slug: string };
+    Body: { name: string };
   }>('/workspaces', async (request, reply) => {
-    const { name, slug } = request.body;
+    const { name } = request.body;
 
-    if (!name || !slug) {
-      throw badRequest('MISSING_FIELDS', 'name and slug are required');
+    if (!name) {
+      throw badRequest('MISSING_FIELDS', 'name is required');
     }
 
     const userId = request.currentUser!.userId;
-    const workspace = await workspaceService.create(userId, name, slug);
+    const workspace = await workspaceService.create(userId, name);
     return reply.status(201).send({ workspace });
   });
 
@@ -71,21 +71,17 @@ export async function workspacesRoutes(app: FastifyInstance, opts: WorkspacesRou
   // PATCH /api/v1/workspaces/:id
   app.patch<{
     Params: { id: string };
-    Body: { name?: string; slug?: string; isPublic?: boolean };
+    Body: { name?: string; isPublic?: boolean };
   }>('/workspaces/:id', {
     preHandler: requireRole('owner'),
   }, async (request, reply) => {
-    const { name, slug, isPublic } = request.body;
+    const { name, isPublic } = request.body;
 
-    if (name === undefined && slug === undefined && isPublic === undefined) {
-      throw badRequest('MISSING_FIELDS', 'At least one field (name, slug, isPublic) is required');
+    if (name === undefined && isPublic === undefined) {
+      throw badRequest('MISSING_FIELDS', 'At least one field (name, isPublic) is required');
     }
 
-    if (slug !== undefined && !/^[a-z0-9-]+$/.test(slug)) {
-      throw badRequest('INVALID_SLUG', 'URL must contain only lowercase letters, numbers, and hyphens');
-    }
-
-    const workspace = await workspaceService.update(request.params.id, { name, slug, isPublic });
+    const workspace = await workspaceService.update(request.params.id, { name, isPublic });
     return reply.status(200).send({ workspace });
   });
 

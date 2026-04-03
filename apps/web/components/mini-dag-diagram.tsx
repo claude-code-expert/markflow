@@ -1,7 +1,7 @@
 'use client';
 
 interface RelationDoc {
-  id: string;
+  id: number;
   title: string;
 }
 

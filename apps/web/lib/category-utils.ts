@@ -1,12 +1,12 @@
 import type { Category as TreeCategory, TreeDocument } from '../components/category-tree';
 
 export interface FlatCategory {
-  id: string;
+  id: number;
   path: string;
 }
 
 export interface FlatDocument {
-  id: string;
+  id: number;
   title: string;
 }
 

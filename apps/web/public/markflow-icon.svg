@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+
+  <!-- Hash mark: MarkFlow markdown symbol -->
+  <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+  <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+  <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+  <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+
+  <!-- Graph dot accent -->
+  <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+  <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+</svg>

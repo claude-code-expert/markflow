@@ -23,19 +23,22 @@ export function createMemberService(db: Db) {
       })
       .from(workspaceMembers)
       .innerJoin(users, eq(workspaceMembers.userId, users.id))
-      .where(eq(workspaceMembers.workspaceId, workspaceId));
+      .where(eq(workspaceMembers.workspaceId, Number(workspaceId)));
 
     return rows;
   }
 
   async function updateRole(workspaceId: string, targetUserId: string, newRole: MemberRole) {
+    const numWorkspaceId = Number(workspaceId);
+    const numTargetUserId = Number(targetUserId);
+
     const [member] = await db
       .select()
       .from(workspaceMembers)
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numTargetUserId),
         ),
       )
       .limit(1);
@@ -53,8 +56,8 @@ export function createMemberService(db: Db) {
       .set({ role: newRole as 'owner' | 'admin' | 'editor' | 'viewer' })
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numTargetUserId),
         ),
       )
       .returning();
@@ -63,13 +66,16 @@ export function createMemberService(db: Db) {
   }
 
   async function remove(workspaceId: string, targetUserId: string, requesterId: string) {
+    const numWorkspaceId = Number(workspaceId);
+    const numTargetUserId = Number(targetUserId);
+
     const [member] = await db
       .select()
       .from(workspaceMembers)
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numTargetUserId),
         ),
       )
       .limit(1);
@@ -90,8 +96,8 @@ export function createMemberService(db: Db) {
       .delete(workspaceMembers)
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, targetUserId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numTargetUserId),
         ),
       );
   }

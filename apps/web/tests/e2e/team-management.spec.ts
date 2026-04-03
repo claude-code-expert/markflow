@@ -41,11 +41,6 @@ test.describe('Team management flow', () => {
       const nameInput = page.locator('input[placeholder*="워크스페이스"], input[name="name"]');
       await nameInput.fill(workspaceName);
 
-      const slugInput = page.locator('input[placeholder*="slug"], input[name="slug"]');
-      if (await slugInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await slugInput.fill(`e2e-team-${Date.now()}`);
-      }
-
       const submitButton = page.locator('button[type="submit"], button:has-text("만들기"), button:has-text("생성")');
       await submitButton.click();
 
@@ -57,9 +52,9 @@ test.describe('Team management flow', () => {
   });
 
   test('should navigate to members settings page', async ({ page }) => {
-    const workspaceSlug = process.env.E2E_WORKSPACE_SLUG ?? 'test-workspace';
+    const workspaceName = process.env.E2E_WORKSPACE_NAME ?? 'test-workspace';
 
-    await page.goto(`/${workspaceSlug}/settings/members`);
+    await page.goto(`/${workspaceName}/settings/members`);
     await page.waitForTimeout(2_000);
 
     // Verify members page is visible
@@ -67,9 +62,9 @@ test.describe('Team management flow', () => {
   });
 
   test('should invite a member by email', async ({ page }) => {
-    const workspaceSlug = process.env.E2E_WORKSPACE_SLUG ?? 'test-workspace';
+    const workspaceName = process.env.E2E_WORKSPACE_NAME ?? 'test-workspace';
 
-    await page.goto(`/${workspaceSlug}/settings/members`);
+    await page.goto(`/${workspaceName}/settings/members`);
     await page.waitForTimeout(2_000);
 
     // Find invite button
@@ -105,9 +100,9 @@ test.describe('Team management flow', () => {
   });
 
   test('should show role-based access controls', async ({ page }) => {
-    const workspaceSlug = process.env.E2E_WORKSPACE_SLUG ?? 'test-workspace';
+    const workspaceName = process.env.E2E_WORKSPACE_NAME ?? 'test-workspace';
 
-    await page.goto(`/${workspaceSlug}/settings/members`);
+    await page.goto(`/${workspaceName}/settings/members`);
     await page.waitForTimeout(2_000);
 
     // Verify role labels are visible for existing members
@@ -116,9 +111,9 @@ test.describe('Team management flow', () => {
   });
 
   test('should navigate to workspace settings', async ({ page }) => {
-    const workspaceSlug = process.env.E2E_WORKSPACE_SLUG ?? 'test-workspace';
+    const workspaceName = process.env.E2E_WORKSPACE_NAME ?? 'test-workspace';
 
-    await page.goto(`/${workspaceSlug}/settings`);
+    await page.goto(`/${workspaceName}/settings`);
     await page.waitForTimeout(2_000);
 
     await expect(page.locator('text=설정')).toBeVisible({ timeout: 10_000 });

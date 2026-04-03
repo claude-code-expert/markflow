@@ -61,8 +61,8 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 /** Flatten a Category tree to a lookup map for category names */
-function buildCategoryMap(cats: Category[]): Map<string, string> {
-  const map = new Map<string, string>();
+function buildCategoryMap(cats: Category[]): Map<number, string> {
+  const map = new Map<number, string>();
   function walk(items: Category[], prefix: string) {
     for (const c of items) {
       const path = prefix ? `${prefix} / ${c.name}` : c.name;
@@ -130,7 +130,7 @@ export default function DocsPage() {
 
   useEffect(() => {
     if (!currentWorkspace && workspaces.length > 0) {
-      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      const found = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug));
       if (found) setCurrentWorkspace(found);
     }
   }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
@@ -152,8 +152,8 @@ export default function DocsPage() {
   // Modal state
   const [showNewDocModal, setShowNewDocModal] = useState(false);
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
-  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
-  const [newDocCategoryId, setNewDocCategoryId] = useState<string | null>(null);
+  const [newFolderParentId, setNewFolderParentId] = useState<number | null>(null);
+  const [newDocCategoryId, setNewDocCategoryId] = useState<number | null>(null);
 
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
@@ -253,8 +253,9 @@ export default function DocsPage() {
   // Breadcrumb for current category
   const currentCategoryBreadcrumb = (() => {
     if (!categoryIdParam || categories.length === 0) return null;
+    const targetNumId = Number(categoryIdParam);
     const path: string[] = [];
-    function findPath(cats: Category[], targetId: string): boolean {
+    function findPath(cats: Category[], targetId: number): boolean {
       for (const cat of cats) {
         if (cat.id === targetId) {
           path.push(cat.name);
@@ -268,7 +269,7 @@ export default function DocsPage() {
       }
       return false;
     }
-    findPath(categories, categoryIdParam);
+    findPath(categories, targetNumId);
     return path.length > 0 ? path : null;
   })();
 
@@ -326,7 +327,7 @@ export default function DocsPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => router.push(`/${workspaceSlug}/docs`)}
+                    onClick={() => router.push(`/${workspaceSlug}/doc`)}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -389,7 +390,7 @@ export default function DocsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNewDocCategoryId(categoryIdParam);
+                    setNewDocCategoryId(categoryIdParam ? Number(categoryIdParam) : null);
                     setShowNewDocModal(true);
                   }}
                   style={btnPrimary}
@@ -464,7 +465,7 @@ export default function DocsPage() {
                 setSortOrder(order);
               }}
               style={{
-                padding: '8px 12px',
+                padding: '8px 28px 8px 12px',
                 border: '1.5px solid var(--border)',
                 borderRadius: 'var(--radius-sm)',
                 background: 'var(--surface)',
@@ -473,6 +474,11 @@ export default function DocsPage() {
                 fontFamily: 'inherit',
                 cursor: 'pointer',
                 outline: 'none',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 8px center',
               }}
             >
               <option value="updatedAt:desc">수정일 (최신)</option>
@@ -489,7 +495,7 @@ export default function DocsPage() {
                 value={selectedTag}
                 onChange={(e) => setSelectedTag(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '8px 28px 8px 12px',
                   border: '1.5px solid var(--border)',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--surface)',
@@ -498,6 +504,11 @@ export default function DocsPage() {
                   fontFamily: 'inherit',
                   cursor: 'pointer',
                   outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center',
                 }}
               >
                 <option value="">전체 태그</option>
@@ -610,10 +621,13 @@ export default function DocsPage() {
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
               style={{
-                padding: '5px 8px', fontSize: '12px', color: 'var(--text-2)',
+                padding: '5px 24px 5px 8px', fontSize: '12px', color: 'var(--text-2)',
                 background: 'var(--surface)', border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)', cursor: 'pointer', outline: 'none',
                 fontFamily: 'inherit',
+                appearance: 'none', WebkitAppearance: 'none' as never,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center',
               }}
             >
               <option value={10}>10개</option>
@@ -722,7 +736,7 @@ export default function DocsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setNewDocCategoryId(categoryIdParam);
+                      setNewDocCategoryId(categoryIdParam ? Number(categoryIdParam) : null);
                       setShowNewDocModal(true);
                     }}
                     style={btnPrimary}
@@ -755,7 +769,7 @@ export default function DocsPage() {
                     key={doc.id}
                     type="button"
                     onClick={() =>
-                      router.push(`/${workspaceSlug}/docs/${doc.id}`)
+                      router.push(`/${workspaceSlug}/doc/${doc.id}`)
                     }
                     style={{
                       background: 'var(--surface)',
@@ -960,7 +974,7 @@ export default function DocsPage() {
                     key={doc.id}
                     type="button"
                     onClick={() =>
-                      router.push(`/${workspaceSlug}/docs/${doc.id}`)
+                      router.push(`/${workspaceSlug}/doc/${doc.id}`)
                     }
                     style={{
                       display: 'grid',
@@ -1100,16 +1114,12 @@ export default function DocsPage() {
         <FolderContextMenu
           category={contextMenu.category}
           workspaceSlug={workspaceSlug}
-          workspaceId={wsId ?? workspaceSlug}
+          workspaceId={wsId ?? 0}
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           onNewDoc={() => {
             setNewDocCategoryId(contextMenu.category.id);
             setShowNewDocModal(true);
-          }}
-          onNewFolder={() => {
-            setNewFolderParentId(contextMenu.category.id);
-            setShowNewFolderModal(true);
           }}
           onRefresh={() => void categoriesQuery.refetch()}
         />
@@ -1122,13 +1132,13 @@ export default function DocsPage() {
         open={showNewDocModal}
         onClose={() => setShowNewDocModal(false)}
         workspaceSlug={workspaceSlug}
-        workspaceId={currentWorkspace?.id ?? workspaceSlug}
+        workspaceId={currentWorkspace?.id ?? 0}
         categories={flattenCategories(categories).map((c) => ({ id: c.id, name: c.path }))}
       />
       <NewFolderModal
         open={showNewFolderModal}
         onClose={() => setShowNewFolderModal(false)}
-        workspaceId={wsId ?? workspaceSlug}
+        workspaceId={wsId ?? 0}
         categories={categories}
         defaultParentId={newFolderParentId}
         onCreated={() => void categoriesQuery.refetch()}
@@ -1143,7 +1153,7 @@ export default function DocsPage() {
           }}
           workspaceId={wsId}
           workspaceSlug={workspaceSlug}
-          currentCategoryId={categoryIdParam ?? undefined}
+          currentCategoryId={categoryIdParam ? Number(categoryIdParam) : undefined}
         />
       )}
 

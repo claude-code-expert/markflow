@@ -11,7 +11,7 @@
 
 ```typescript
 interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatarUrl: string | null;
@@ -26,12 +26,11 @@ interface User {
 
 ```typescript
 interface Workspace {
-  id: string;
-  name: string;
-  slug: string;
+  id: number;
+  name: string;          // UNIQUE, URL 경로에 URL-encoded name 사용 (slug 필드 제거됨)
   isRoot: boolean;
   isPublic: boolean;
-  ownerId: string;
+  ownerId: number;
   createdAt: string;   // ISO 8601
   updatedAt: string;
   role: WorkspaceRole; // 현재 사용자의 역할
@@ -48,13 +47,13 @@ type WorkspaceRole = 'owner' | 'admin' | 'editor' | 'viewer';
 
 ```typescript
 interface Document {
-  id: string;
-  workspaceId: string;
-  authorId: string;
+  id: number;
+  workspaceId: number;
+  authorId: number;
   title: string;
-  slug: string;
+  slug: string;          // 문서 slug (내부 용도, 유지)
   content: string;
-  categoryId: string | null;
+  categoryId: number | null;
   currentVersion: number;
   isDeleted: boolean;
   createdAt: string;
@@ -69,10 +68,10 @@ interface Document {
 
 ```typescript
 interface Category {
-  id: string;
-  workspaceId: string;
+  id: number;
+  workspaceId: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
   depth: number;
   createdAt: string;
 }
@@ -85,8 +84,8 @@ interface Category {
 
 ```typescript
 interface Tag {
-  id: string;
-  workspaceId: string;
+  id: number;
+  workspaceId: number;
   name: string;
 }
 ```
@@ -98,8 +97,8 @@ interface Tag {
 
 ```typescript
 interface WorkspaceMember {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   role: WorkspaceRole;
   joinedAt: string;
   userName: string;
@@ -115,9 +114,9 @@ interface WorkspaceMember {
 
 ```typescript
 interface Invitation {
-  id: string;
-  workspaceId: string;
-  inviterId: string;
+  id: number;
+  workspaceId: number;
+  inviterId: number;
   email: string;
   role: string;
   token: string;
@@ -229,11 +228,11 @@ interface WorkspaceState {
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 interface EditorState {
-  documentId: string | null;
+  documentId: number | null;
   content: string;
   title: string;
   saveStatus: SaveStatus;
-  setDocument(id: string, title: string, content: string): void;
+  setDocument(id: number, title: string, content: string): void;
   setContent(content: string): void;
   setTitle(title: string): void;
   setSaveStatus(status: SaveStatus): void;
@@ -252,12 +251,12 @@ interface EditorState {
 
 ```typescript
 interface SidebarState {
-  expandedCategoryIds: Set<string>;
+  expandedCategoryIds: Set<number>;
   isSidebarOpen: boolean;
-  toggleCategory(id: string): void;
+  toggleCategory(id: number): void;
   toggleSidebar(): void;
-  expandCategory(id: string): void;
-  collapseCategory(id: string): void;
+  expandCategory(id: number): void;
+  collapseCategory(id: number): void;
 }
 ```
 
@@ -268,10 +267,10 @@ interface SidebarState {
 | Route | Params | Source |
 |-------|--------|--------|
 | `/(app)/page.tsx` | — | 워크스페이스 목록 (루트) |
-| `/(app)/[workspaceSlug]/...` | `workspaceSlug: string` | URL path segment |
-| `/(app)/[workspaceSlug]/docs/[docId]/page.tsx` | `docId: string` | URL path segment |
+| `/(app)/[workspaceSlug]/...` | `workspaceSlug: string` | URL path segment (실제로는 URL-encoded workspace name) |
+| `/(app)/[workspaceSlug]/doc/[docId]/page.tsx` | `docId: string` | URL path segment |
 
-**중요**: `workspaceSlug`는 워크스페이스의 `slug` 필드와 일치해야 한다. `undefined`가 되면 `/undefined` 라우팅 버그 발생.
+**중요**: `workspaceSlug` 파라미터는 워크스페이스의 `name` 필드(URL-encoded)와 일치해야 한다. `undefined`가 되면 `/undefined` 라우팅 버그 발생. workspace slug 필드는 제거되었으며 name이 UNIQUE 식별자로 사용된다.
 
 ---
 
@@ -308,6 +307,6 @@ interface MarkdownEditorProps {
 | 이메일 | RFC 5322 형식 | 로그인/회원가입 폼 |
 | 비밀번호 | 8자 이상, 영문+숫자+특수문자 | 회원가입 폼 |
 | 워크스페이스 이름 | 1~100자 | 워크스페이스 생성 모달 |
-| 워크스페이스 slug | 영문 소문자+숫자+하이픈, 고유 | 워크스페이스 생성 모달 |
+| 워크스페이스 이름 | 1~100자, UNIQUE | 워크스페이스 생성 모달 (slug 필드 제거됨, name이 URL 식별자) |
 | 문서 제목 | 1~300자 | 문서 생성 모달 |
 | 카테고리 이름 | 1~100자 | 폴더 생성 모달 |

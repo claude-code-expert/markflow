@@ -11,12 +11,12 @@
 - API 실제 응답: `{ workspaces: Workspace[] }`
 - 스토어 타입 선언: `apiFetch<Workspace[]>('/workspaces')` (배열 직접 기대)
 - 결과: 전체 응답 객체 `{ workspaces: [...] }`가 `state.workspaces`에 저장됨
-- `.map()` 호출 시 객체 프로퍼티를 순회하면서 `ws.slug`가 `undefined`
-- `Link href={/${workspace.slug}}`가 `/undefined`로 렌더링
+- `.map()` 호출 시 객체 프로퍼티를 순회하면서 `ws.name`이 올바르게 추출되지 않음
+- `Link href={/${encodeURIComponent(workspace.name)}}`가 `/undefined`로 렌더링 (워크스페이스는 slug 필드 제거됨, name이 UNIQUE URL 식별자)
 
 **연쇄 영향**:
 1. 워크스페이스 목록 페이지(`/(app)/page.tsx`)에 워크스페이스가 표시되지 않음
-2. 사이드바(`sidebar.tsx`)에서 워크스페이스 네비게이션 링크가 `/undefined`로 생성
+2. 사이드바(`sidebar.tsx`)에서 워크스페이스 네비게이션 링크가 `/undefined`로 생성 (name 기반 URL로 전환됨)
 3. 워크스페이스 진입 자체가 불가능하여 모든 하위 기능(문서 CRUD 등) 접근 불가
 
 **수정 방법**:
@@ -124,7 +124,7 @@ set({ workspaces: response.workspaces, isLoading: false });
 
 ### Decision: `(app)/page.tsx`에서 조건부 리다이렉트
 
-워크스페이스 목록 페이지에서 `fetchWorkspaces` 결과가 정확히 1개일 때 `router.replace(/${workspace.slug})`로 자동 이동.
+워크스페이스 목록 페이지에서 `fetchWorkspaces` 결과가 정확히 1개일 때 `router.replace(/${encodeURIComponent(workspace.name)})`로 자동 이동.
 
 **Rationale**: UX 편의성. 개인 사용자(My Notes 워크스페이스만 보유)에게 불필요한 선택 화면을 건너뛴다.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, ApiError } from '../lib/api';
 import { useWorkspaceStore } from '../stores/workspace-store';
@@ -11,76 +11,13 @@ interface CreateWorkspaceModalProps {
   onClose: () => void;
 }
 
-interface SlugCheckResponse {
-  available: boolean;
-}
-
-function toSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[가-힣ㄱ-ㅎㅏ-ㅣ]+/g, '') // Remove Korean characters
-    .replace(/[^a-z0-9-\s]/g, '')        // Keep only alphanumeric, hyphens, spaces
-    .replace(/\s+/g, '-')                 // Spaces to hyphens
-    .replace(/-+/g, '-')                  // Collapse multiple hyphens
-    .replace(/^-|-$/g, '');               // Trim leading/trailing hyphens
-}
-
 export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProps) {
   const router = useRouter();
   const { fetchWorkspaces } = useWorkspaceStore();
 
   const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
-  const [slugChecking, setSlugChecking] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const slugCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const checkSlugAvailability = useCallback(async (slugValue: string) => {
-    if (slugValue.length < 2) {
-      setSlugAvailable(null);
-      return;
-    }
-
-    setSlugChecking(true);
-    try {
-      const result = await apiFetch<SlugCheckResponse>(
-        `/workspaces/check-slug?slug=${encodeURIComponent(slugValue)}`,
-      );
-      setSlugAvailable(result.available);
-    } catch {
-      setSlugAvailable(null);
-    } finally {
-      setSlugChecking(false);
-    }
-  }, []);
-
-  // Debounced slug check
-  useEffect(() => {
-    if (!open) return;
-
-    if (slugCheckTimerRef.current) {
-      clearTimeout(slugCheckTimerRef.current);
-    }
-
-    if (slug.length >= 2) {
-      slugCheckTimerRef.current = setTimeout(() => {
-        void checkSlugAvailability(slug);
-      }, 400);
-    } else {
-      setSlugAvailable(null);
-    }
-
-    return () => {
-      if (slugCheckTimerRef.current) {
-        clearTimeout(slugCheckTimerRef.current);
-      }
-    };
-  }, [slug, open, checkSlugAvailability]);
 
   // ESC key handler
   useEffect(() => {
@@ -98,27 +35,10 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
     };
   }, [open, onClose]);
 
-  // Auto-generate slug from name
-  function handleNameChange(value: string) {
-    setName(value);
-    if (!slugManuallyEdited) {
-      setSlug(toSlug(value));
-    }
-  }
-
-  function handleSlugChange(value: string) {
-    setSlugManuallyEdited(true);
-    setSlug(toSlug(value));
-  }
-
   // Reset on close
   useEffect(() => {
     if (!open) {
       setName('');
-      setSlug('');
-      setSlugManuallyEdited(false);
-      setSlugAvailable(null);
-      setSlugChecking(false);
       setError('');
       setIsSubmitting(false);
     }
@@ -133,35 +53,20 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
       return;
     }
 
-    if (!slug || slug.length < 2) {
-      setError('슬러그는 2자 이상이어야 합니다.');
-      return;
-    }
-
-    if (slugAvailable === false) {
-      setError('이미 사용 중인 슬러그입니다. 다른 슬러그를 입력해주세요.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const result = await apiFetch<CreateWorkspaceResponse>('/workspaces', {
         method: 'POST',
-        body: { name: name.trim(), slug },
+        body: { name: name.trim() },
       });
 
       await fetchWorkspaces();
       onClose();
-      router.push(`/${result.workspace.slug}/docs`);
+      router.push(`/${encodeURIComponent(result.workspace.name)}/doc`);
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.code === 'SLUG_TAKEN') {
-          setSlugAvailable(false);
-          setError('이미 사용 중인 슬러그입니다.');
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       } else {
         setError('워크스페이스 생성 중 오류가 발생했습니다.');
       }
@@ -305,7 +210,7 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
               id="wsName"
               type="text"
               value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="예: 개발팀 위키"
               autoFocus
               style={inputStyle}
@@ -317,58 +222,6 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
                 e.currentTarget.style.boxShadow = 'none';
               }}
             />
-          </div>
-
-          {/* Slug input */}
-          <div style={{ marginBottom: '6px' }}>
-            <label htmlFor="wsSlug" style={labelStyle}>
-              슬러그 (URL)
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span
-                style={{
-                  fontSize: '14px',
-                  color: 'var(--text-3)',
-                  fontWeight: 500,
-                  flexShrink: 0,
-                }}
-              >
-                /
-              </span>
-              <input
-                id="wsSlug"
-                type="text"
-                value={slug}
-                onChange={(e) => handleSlugChange(e.target.value)}
-                placeholder="dev-wiki"
-                style={inputStyle}
-                onFocus={(e) => {
-                  Object.assign(e.currentTarget.style, inputFocusStyle);
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-            {/* Slug status */}
-            <div style={{ minHeight: '20px', marginTop: '6px' }}>
-              {slugChecking && (
-                <p style={{ fontSize: '12px', color: 'var(--text-3)', margin: 0 }}>
-                  확인 중...
-                </p>
-              )}
-              {!slugChecking && slugAvailable === true && slug.length >= 2 && (
-                <p style={{ fontSize: '12px', color: 'var(--green)', margin: 0 }}>
-                  /{slug} — 사용 가능한 슬러그입니다
-                </p>
-              )}
-              {!slugChecking && slugAvailable === false && (
-                <p style={{ fontSize: '12px', color: 'var(--red)', margin: 0 }}>
-                  이미 사용 중인 슬러그입니다
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Footer buttons */}
@@ -409,32 +262,32 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || slugAvailable === false}
+              disabled={isSubmitting}
               style={{
                 padding: '9px 22px',
                 borderRadius: 'var(--radius-sm)',
                 border: 'none',
-                background: isSubmitting || slugAvailable === false
+                background: isSubmitting
                   ? 'var(--border-2)'
                   : 'var(--accent)',
-                color: isSubmitting || slugAvailable === false
+                color: isSubmitting
                   ? 'var(--text-3)'
                   : '#FFFFFF',
                 fontSize: '13.5px',
                 fontWeight: 600,
-                cursor: isSubmitting || slugAvailable === false
+                cursor: isSubmitting
                   ? 'not-allowed'
                   : 'pointer',
                 transition: 'background 0.15s',
-                opacity: isSubmitting || slugAvailable === false ? 0.7 : 1,
+                opacity: isSubmitting ? 0.7 : 1,
               }}
               onMouseEnter={(e) => {
-                if (!isSubmitting && slugAvailable !== false) {
+                if (!isSubmitting) {
                   e.currentTarget.style.background = 'var(--accent-dk)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (!isSubmitting && slugAvailable !== false) {
+                if (!isSubmitting) {
                   e.currentTarget.style.background = 'var(--accent)';
                 }
               }}

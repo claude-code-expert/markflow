@@ -24,7 +24,7 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK, default gen_random_uuid() | |
+| id | BIGSERIAL | PK, auto-increment | |
 | email | VARCHAR(255) | UNIQUE, NOT NULL | 로그인 식별자 |
 | password_hash | VARCHAR(255) | NOT NULL | bcrypt 해시 |
 | name | VARCHAR(100) | NOT NULL | 표시 이름 |
@@ -41,12 +41,11 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| name | VARCHAR(100) | NOT NULL | |
-| slug | VARCHAR(100) | UNIQUE, NOT NULL | URL 경로 |
+| id | BIGSERIAL | PK, auto-increment | |
+| name | VARCHAR(100) | UNIQUE, NOT NULL | URL 경로에 URL-encoded name 사용 |
 | is_root | BOOLEAN | NOT NULL, default false | Root 워크스페이스 여부 (삭제 불가) |
 | is_public | BOOLEAN | NOT NULL, default true | 공개 시 가입 신청 가능 |
-| owner_id | UUID | FK → users.id, NOT NULL | |
+| owner_id | BIGINT | FK → users.id, NOT NULL | |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |
 | updated_at | TIMESTAMPTZ | NOT NULL, default now() | |
 
@@ -54,9 +53,9 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | |
-| user_id | UUID | FK → users.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | |
+| user_id | BIGINT | FK → users.id, NOT NULL | |
 | role | VARCHAR(20) | NOT NULL, CHECK IN ('owner','admin','editor','viewer') | |
 | joined_at | TIMESTAMPTZ | NOT NULL, default now() | |
 
@@ -66,10 +65,10 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | |
 | name | VARCHAR(100) | NOT NULL | |
-| parent_id | UUID | FK → categories.id, NULLABLE | 루트 카테고리는 NULL |
+| parent_id | BIGINT | FK → categories.id, NULLABLE | 루트 카테고리는 NULL |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |
 
 **Unique**: (workspace_id, parent_id, name) — 같은 부모 아래 중복 이름 방지
@@ -78,8 +77,8 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| ancestor_id | UUID | FK → categories.id, NOT NULL | |
-| descendant_id | UUID | FK → categories.id, NOT NULL | |
+| ancestor_id | BIGINT | FK → categories.id, NOT NULL | |
+| descendant_id | BIGINT | FK → categories.id, NOT NULL | |
 | depth | INTEGER | NOT NULL | 0 = 자기 자신 |
 
 **PK**: (ancestor_id, descendant_id)
@@ -88,10 +87,10 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | 데이터 격리 |
-| category_id | UUID | FK → categories.id, NULLABLE | NULL = 루트 위치 |
-| author_id | UUID | FK → users.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | 데이터 격리 |
+| category_id | BIGINT | FK → categories.id, NULLABLE | NULL = 루트 위치 |
+| author_id | BIGINT | FK → users.id, NOT NULL | |
 | title | VARCHAR(300) | NOT NULL | |
 | slug | VARCHAR(300) | NOT NULL | |
 | content | TEXT | NOT NULL, default '' | 마크다운 본문 |
@@ -107,8 +106,8 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| document_id | UUID | FK → documents.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| document_id | BIGINT | FK → documents.id, NOT NULL | |
 | version | INTEGER | NOT NULL | |
 | content | TEXT | NOT NULL | 전체 스냅샷 |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |
@@ -120,9 +119,9 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| source_id | UUID | FK → documents.id, NOT NULL | |
-| target_id | UUID | FK → documents.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| source_id | BIGINT | FK → documents.id, NOT NULL | |
+| target_id | BIGINT | FK → documents.id, NOT NULL | |
 | type | VARCHAR(20) | NOT NULL, CHECK IN ('prev','next','related') | |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |
 
@@ -133,8 +132,8 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | |
 | name | VARCHAR(50) | NOT NULL | |
 
 **Unique**: (workspace_id, name)
@@ -143,8 +142,8 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| document_id | UUID | FK → documents.id, NOT NULL | |
-| tag_id | UUID | FK → tags.id, NOT NULL | |
+| document_id | BIGINT | FK → documents.id, NOT NULL | |
+| tag_id | BIGINT | FK → tags.id, NOT NULL | |
 
 **PK**: (document_id, tag_id)
 **Rule**: 문서당 최대 30개
@@ -153,9 +152,9 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | |
-| inviter_id | UUID | FK → users.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | |
+| inviter_id | BIGINT | FK → users.id, NOT NULL | |
 | email | VARCHAR(255) | NOT NULL | |
 | role | VARCHAR(20) | NOT NULL | 초대 시 지정한 역할 |
 | token | VARCHAR(255) | UNIQUE, NOT NULL | URL 토큰 |
@@ -167,12 +166,12 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| workspace_id | UUID | FK → workspaces.id, NOT NULL | |
-| user_id | UUID | FK → users.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| workspace_id | BIGINT | FK → workspaces.id, NOT NULL | |
+| user_id | BIGINT | FK → users.id, NOT NULL | |
 | message | TEXT | NULLABLE | 신청 메시지 |
 | status | VARCHAR(20) | NOT NULL, default 'pending' | pending/approved/rejected |
-| reviewed_by | UUID | FK → users.id, NULLABLE | 승인/거절한 관리자 |
+| reviewed_by | BIGINT | FK → users.id, NULLABLE | 승인/거절한 관리자 |
 | assigned_role | VARCHAR(20) | NULLABLE | 승인 시 부여할 역할 |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |
 | updated_at | TIMESTAMPTZ | NOT NULL, default now() | |
@@ -181,8 +180,8 @@ Document *──* DocumentTag *──1 Tag
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| id | UUID | PK | |
-| user_id | UUID | FK → users.id, NOT NULL | |
+| id | BIGSERIAL | PK, auto-increment | |
+| user_id | BIGINT | FK → users.id, NOT NULL | |
 | token_hash | VARCHAR(255) | UNIQUE, NOT NULL | 해시 저장 |
 | expires_at | TIMESTAMPTZ | NOT NULL | 7일 (remember me: 30일) |
 | created_at | TIMESTAMPTZ | NOT NULL, default now() | |

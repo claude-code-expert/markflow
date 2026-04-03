@@ -111,6 +111,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       request.params.id,
       request.params.wsId,
       { content, title, categoryId },
+      request.currentUser!.userId,
     );
 
     return reply.status(200).send({ document });

@@ -7,7 +7,7 @@ import { useToastStore } from '../stores/toast-store';
 import type { Document } from '../lib/types';
 
 interface RelationDoc {
-  id: string;
+  id: number;
   title: string;
 }
 
@@ -20,8 +20,8 @@ interface Relations {
 interface DocumentLinksModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceId: string;
-  documentId: string;
+  workspaceId: number;
+  documentId: number;
   onSaved?: () => void;
 }
 
@@ -101,7 +101,7 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
     setRelatedSearch('');
   };
 
-  const removeRelated = (id: string) => {
+  const removeRelated = (id: number) => {
     setRelations((r) => ({ ...r, related: r.related.filter((d) => d.id !== id) }));
   };
 

@@ -11,12 +11,14 @@ import { logger } from '../utils/logger.js';
 
 export function createTrashService(db: Db) {
   async function softDelete(documentId: string, workspaceId: string): Promise<void> {
+    const numDocumentId = Number(documentId);
+    const numWorkspaceId = Number(workspaceId);
     const [doc] = await db
       .select({ id: documents.id })
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, numWorkspaceId),
         eq(documents.isDeleted, false),
       ))
       .limit(1);
@@ -31,7 +33,7 @@ export function createTrashService(db: Db) {
         isDeleted: true,
         deletedAt: new Date(),
       })
-      .where(eq(documents.id, documentId));
+      .where(eq(documents.id, numDocumentId));
 
     logger.info('Document soft deleted', { documentId, workspaceId });
   }
@@ -50,7 +52,7 @@ export function createTrashService(db: Db) {
       })
       .from(documents)
       .where(and(
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, true),
       ))
       .orderBy(documents.deletedAt);
@@ -68,12 +70,14 @@ export function createTrashService(db: Db) {
   }
 
   async function restore(documentId: string, workspaceId: string) {
+    const numDocumentId = Number(documentId);
+    const numWorkspaceId = Number(workspaceId);
     const [doc] = await db
       .select()
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, numWorkspaceId),
         eq(documents.isDeleted, true),
       ))
       .limit(1);
@@ -90,7 +94,7 @@ export function createTrashService(db: Db) {
         .from(categories)
         .where(and(
           eq(categories.id, categoryId),
-          eq(categories.workspaceId, workspaceId),
+          eq(categories.workspaceId, numWorkspaceId),
         ))
         .limit(1);
 
@@ -106,7 +110,7 @@ export function createTrashService(db: Db) {
         deletedAt: null,
         categoryId,
       })
-      .where(eq(documents.id, documentId))
+      .where(eq(documents.id, numDocumentId))
       .returning();
 
     logger.info('Document restored from trash', { documentId, workspaceId });
@@ -115,12 +119,13 @@ export function createTrashService(db: Db) {
   }
 
   async function permanentDelete(documentId: string, workspaceId: string): Promise<void> {
+    const numDocumentId = Number(documentId);
     const [doc] = await db
       .select({ id: documents.id })
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, true),
       ))
       .limit(1);
@@ -132,12 +137,12 @@ export function createTrashService(db: Db) {
     // Delete all versions first (cascade should handle this, but be explicit)
     await db
       .delete(documentVersions)
-      .where(eq(documentVersions.documentId, documentId));
+      .where(eq(documentVersions.documentId, numDocumentId));
 
     // Hard delete document
     await db
       .delete(documents)
-      .where(eq(documents.id, documentId));
+      .where(eq(documents.id, numDocumentId));
 
     logger.info('Document permanently deleted', { documentId, workspaceId });
   }

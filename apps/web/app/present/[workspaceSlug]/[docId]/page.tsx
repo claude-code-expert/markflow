@@ -40,7 +40,7 @@ export default function PresentPage() {
   }, [workspaces.length, fetchWorkspaces]);
 
   useEffect(() => {
-    const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+    const found = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug));
     if (found) setCurrentWorkspace(found);
   }, [workspaces, workspaceSlug, setCurrentWorkspace]);
 

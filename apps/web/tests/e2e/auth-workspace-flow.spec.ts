@@ -7,7 +7,7 @@ const TEST_USER = {
 };
 
 test.describe('US1: 로그인 후 워크스페이스 정상 진입', () => {
-  test('로그인 → 워크스페이스 목록 표시 → 클릭 → /{slug}/docs 진입', async ({ page }) => {
+  test('로그인 → 워크스페이스 목록 표시 → 클릭 → /{name}/doc 진입', async ({ page }) => {
     // 1. 로그인 페이지 접속
     await page.goto('/login');
     await expect(page.locator('text=MarkFlow')).toBeVisible();
@@ -27,9 +27,9 @@ test.describe('US1: 로그인 후 워크스페이스 정상 진입', () => {
     const firstWorkspace = page.locator('a[href^="/"]').filter({ hasText: /.+/ }).first();
     await firstWorkspace.click();
 
-    // 6. docs 페이지 진입 확인 (/{slug}/docs 경로)
-    await page.waitForURL(/\/[^/]+\/docs/, { timeout: 5000 });
-    expect(page.url()).toMatch(/\/[^/]+\/docs/);
+    // 6. docs 페이지 진입 확인 (/{name}/doc 경로)
+    await page.waitForURL(/\/[^/]+\/doc/, { timeout: 5000 });
+    expect(page.url()).toMatch(/\/[^/]+\/doc/);
     expect(page.url()).not.toContain('/undefined');
   });
 
@@ -67,8 +67,8 @@ test.describe('US1: 로그인 후 워크스페이스 정상 진입', () => {
     await page.click('button[type="submit"]');
 
     // 자동 리다이렉트 대기 (워크스페이스 1개인 경우)
-    // 워크스페이스 목록이 보이거나, /{slug}/docs로 바로 이동
-    await page.waitForURL(/\/(.*\/docs|$)/, { timeout: 5000 });
+    // 워크스페이스 목록이 보이거나, /{name}/doc로 바로 이동
+    await page.waitForURL(/\/(.*\/doc|$)/, { timeout: 5000 });
     expect(page.url()).not.toContain('/undefined');
   });
 });

@@ -75,8 +75,8 @@ markflow-editor/                     (Turborepo monorepo root)
 │   │   │   ├── (auth)/              ← 로그인/회원가입 페이지
 │   │   │   ├── (app)/               ← 인증 필요 영역
 │   │   │   │   ├── layout.tsx       ← AppShell (Sidebar + MainContent)
-│   │   │   │   └── [workspaceSlug]/
-│   │   │   │       ├── docs/        ← 문서 목록 + 편집
+│   │   │   │   └── [workspaceSlug]/  ← URL에는 URL-encoded workspace name 사용
+│   │   │   │       ├── doc/         ← 문서 목록 + 편집
 │   │   │   │       ├── graph/       ← DAG 그래프 뷰
 │   │   │   │       ├── trash/       ← 휴지통
 │   │   │   │       └── settings/    ← 워크스페이스 설정

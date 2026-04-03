@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from '../stores/auth-store';
 import { useSidebarStore } from '../stores/sidebar-store';
 import { useWorkspaceStore } from '../stores/workspace-store';
+import { ProfileEditModal } from './profile-edit-modal';
 
 function Breadcrumb() {
   const pathname = usePathname();
@@ -31,13 +32,14 @@ function Breadcrumb() {
 
   const slug = segments[0];
   if (slug !== undefined) {
-    const ws = workspaces.find((w) => w.slug === slug);
-    crumbs.push({ label: ws?.name ?? slug, href: `/${slug}/settings` });
+    const decodedSlug = decodeURIComponent(slug);
+    const ws = workspaces.find((w) => w.name === decodedSlug);
+    crumbs.push({ label: ws?.name ?? decodedSlug, href: `/${slug}/settings` });
   }
   const second = segments[1];
   if (second !== undefined) {
     const pageLabels: Record<string, string> = {
-      docs: '문서',
+      doc: '문서',
       settings: '설정',
       trash: '휴지통',
       graph: '그래프',
@@ -75,7 +77,7 @@ function Breadcrumb() {
 /* ─── Settings Dropdown ─── */
 
 const SETTINGS_MENU = [
-  { label: '문서', path: 'docs', icon: <FileText size={14} /> },
+  { label: '문서', path: 'doc', icon: <FileText size={14} /> },
   { label: '그래프', path: 'graph', icon: <LinkIcon size={14} /> },
   { label: '휴지통', path: 'trash', icon: <Trash2 size={14} /> },
   { label: '멤버', path: 'settings/members', icon: <Users size={14} /> },
@@ -162,6 +164,7 @@ function ProfileMenu() {
   const { logout } = useAuthStore();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = useCallback(async () => {
@@ -230,7 +233,7 @@ function ProfileMenu() {
           {/* 메뉴 항목 */}
           <div style={{ padding: '4px' }}>
             <button
-              onClick={() => { setOpen(false); /* TODO: 프로필 수정 모달 */ }}
+              onClick={() => { setOpen(false); setShowProfileModal(true); }}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -277,6 +280,11 @@ function ProfileMenu() {
           </div>
         </div>
       )}
+
+      <ProfileEditModal
+        open={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </div>
   );
 }
@@ -324,12 +332,8 @@ export function AppHeader({ onSearchClick, onNewDoc }: { onSearchClick?: () => v
           href="/workspaces"
           style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '16px', borderRight: '1px solid var(--border)', textDecoration: 'none', color: 'inherit' }}
         >
-          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: '#fff', fontSize: '13px', fontWeight: 700 }}>M</span>
-          </div>
-          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: '15px', color: 'var(--text)' }}>
-            MarkFlow
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/markflow-logo.svg?v=2" alt="MarkFlow" style={{ display: 'block', height: '36px', width: 'auto', objectFit: 'contain' }} />
         </Link>
 
         <Breadcrumb />

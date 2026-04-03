@@ -17,7 +17,7 @@ interface SetRelationsInput {
 }
 
 interface RelationDoc {
-  id: string;
+  id: number;
   title: string;
 }
 
@@ -35,19 +35,20 @@ export function createRelationService(db: Db) {
     if (targetIds.length === 0) return;
 
     const unique = [...new Set(targetIds)];
+    const numUnique = unique.map(Number);
     const found = await db
       .select({ id: documents.id })
       .from(documents)
       .where(
         and(
-          inArray(documents.id, unique),
-          eq(documents.workspaceId, workspaceId),
+          inArray(documents.id, numUnique),
+          eq(documents.workspaceId, Number(workspaceId)),
           eq(documents.isDeleted, false),
         ),
       );
 
     const foundIds = new Set(found.map((d) => d.id));
-    for (const id of unique) {
+    for (const id of numUnique) {
       if (!foundIds.has(id)) {
         throw notFound(`Target document ${id} not found in workspace`);
       }
@@ -74,13 +75,15 @@ export function createRelationService(db: Db) {
     // For next: docId.next = targetId means docId -> targetId
     // Check if following targetId's next chain reaches docId
 
-    const startNode = direction === 'prev' ? docId : targetId;
-    const searchFor = direction === 'prev' ? targetId : docId;
+    const numDocId = Number(docId);
+    const numTargetId = Number(targetId);
+    const startNode = direction === 'prev' ? numDocId : numTargetId;
+    const searchFor = direction === 'prev' ? numTargetId : numDocId;
 
-    const visited = new Set<string>();
-    let current = startNode;
+    const visited = new Set<number>();
+    let current: number | null = startNode;
 
-    while (current) {
+    while (current !== null) {
       if (visited.has(current)) break;
       visited.add(current);
 
@@ -105,10 +108,10 @@ export function createRelationService(db: Db) {
     }
 
     // Also check prev chain in reverse
-    const visited2 = new Set<string>();
-    let current2 = searchFor;
+    const visited2 = new Set<number>();
+    let current2: number | null = searchFor;
 
-    while (current2) {
+    while (current2 !== null) {
       if (visited2.has(current2)) break;
       visited2.add(current2);
 
@@ -140,14 +143,15 @@ export function createRelationService(db: Db) {
     workspaceId: string,
     data: SetRelationsInput,
   ): Promise<RelationsResult> {
+    const numDocId = Number(docId);
     // Validate the document itself exists
     const [doc] = await db
       .select({ id: documents.id })
       .from(documents)
       .where(
         and(
-          eq(documents.id, docId),
-          eq(documents.workspaceId, workspaceId),
+          eq(documents.id, numDocId),
+          eq(documents.workspaceId, Number(workspaceId)),
           eq(documents.isDeleted, false),
         ),
       )
@@ -206,14 +210,14 @@ export function createRelationService(db: Db) {
     // 1. Delete all relations where this doc is source
     await db
       .delete(documentRelations)
-      .where(eq(documentRelations.sourceId, docId));
+      .where(eq(documentRelations.sourceId, numDocId));
 
     // 2. Delete bidirectional counterparts (where this doc is target for prev/next)
     await db
       .delete(documentRelations)
       .where(
         and(
-          eq(documentRelations.targetId, docId),
+          eq(documentRelations.targetId, numDocId),
           or(
             eq(documentRelations.type, 'prev'),
             eq(documentRelations.type, 'next'),
@@ -223,29 +227,31 @@ export function createRelationService(db: Db) {
 
     // Insert new relations
     const toInsert: Array<{
-      sourceId: string;
-      targetId: string;
+      sourceId: number;
+      targetId: number;
       type: 'prev' | 'next' | 'related';
     }> = [];
 
     if (data.prev) {
+      const numPrev = Number(data.prev);
       // A.prev = B
-      toInsert.push({ sourceId: docId, targetId: data.prev, type: 'prev' });
+      toInsert.push({ sourceId: numDocId, targetId: numPrev, type: 'prev' });
       // Bidirectional: B.next = A
-      toInsert.push({ sourceId: data.prev, targetId: docId, type: 'next' });
+      toInsert.push({ sourceId: numPrev, targetId: numDocId, type: 'next' });
     }
 
     if (data.next) {
+      const numNext = Number(data.next);
       // A.next = B
-      toInsert.push({ sourceId: docId, targetId: data.next, type: 'next' });
+      toInsert.push({ sourceId: numDocId, targetId: numNext, type: 'next' });
       // Bidirectional: B.prev = A
-      toInsert.push({ sourceId: data.next, targetId: docId, type: 'prev' });
+      toInsert.push({ sourceId: numNext, targetId: numDocId, type: 'prev' });
     }
 
     if (data.related) {
       const uniqueRelated = [...new Set(data.related)];
       for (const relatedId of uniqueRelated) {
-        toInsert.push({ sourceId: docId, targetId: relatedId, type: 'related' });
+        toInsert.push({ sourceId: numDocId, targetId: Number(relatedId), type: 'related' });
       }
     }
 
@@ -266,7 +272,7 @@ export function createRelationService(db: Db) {
         targetId: documentRelations.targetId,
       })
       .from(documentRelations)
-      .where(eq(documentRelations.sourceId, docId));
+      .where(eq(documentRelations.sourceId, Number(docId)));
 
     let prevDoc: RelationDoc | null = null;
     let nextDoc: RelationDoc | null = null;

@@ -1,21 +1,21 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Folder, FolderOpen, FileText } from 'lucide-react';
+import { ChevronRight, Folder, FolderOpen, FileText, GripVertical } from 'lucide-react';
 import { useSidebarStore } from '../stores/sidebar-store';
 
 export interface TreeDocument {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   updatedAt: string;
 }
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
   children: Category[];
   documents: TreeDocument[];
 }
@@ -23,18 +23,25 @@ export interface Category {
 interface CategoryTreeProps {
   categories: Category[];
   workspaceSlug: string;
-  currentCategoryId?: string | null;
-  currentDocId?: string | null;
+  currentCategoryId?: number | null;
+  currentDocId?: number | null;
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
+  onDocContextMenu?: (e: React.MouseEvent, doc: TreeDocument) => void;
+  onReorder?: (orderedIds: number[]) => void;
+  basePl?: number;
+  indentPx?: number;
 }
 
 interface CategoryNodeProps {
   category: Category;
   workspaceSlug: string;
-  currentCategoryId?: string | null;
-  currentDocId?: string | null;
+  currentCategoryId?: number | null;
+  currentDocId?: number | null;
   depth: number;
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
+  onDocContextMenu?: (e: React.MouseEvent, doc: TreeDocument) => void;
+  basePl: number;
+  indentPx: number;
 }
 
 function CategoryNode({
@@ -44,6 +51,9 @@ function CategoryNode({
   currentDocId,
   depth,
   onContextMenu,
+  onDocContextMenu,
+  basePl,
+  indentPx,
 }: CategoryNodeProps) {
   const { expandedCategoryIds, toggleCategory } = useSidebarStore();
   const isExpanded = expandedCategoryIds.has(category.id);
@@ -71,17 +81,23 @@ function CategoryNode({
     [category, onContextMenu],
   );
 
-  const paddingLeft = depth * 14 + 12;
+  const paddingLeft = basePl + depth * indentPx;
 
   return (
-    <div>
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', String(category.id));
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+    >
       <Link
-        href={`/${workspaceSlug}/docs?categoryId=${category.id}`}
+        href={`/${workspaceSlug}/doc?categoryId=${category.id}`}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
-          padding: '6px 12px',
+          padding: '6px 10px',
           paddingLeft: `${paddingLeft}px`,
           fontSize: '13.5px',
           fontWeight: isActive ? 500 : 400,
@@ -105,6 +121,13 @@ function CategoryNode({
         }}
         onContextMenu={handleContextMenu}
       >
+        {/* Drag handle */}
+        <GripVertical
+          size={12}
+          style={{ opacity: 0.3, flexShrink: 0, cursor: 'grab' }}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+
         {/* Expand/Collapse chevron */}
         <button
           type="button"
@@ -187,12 +210,16 @@ function CategoryNode({
               currentDocId={currentDocId}
               depth={depth + 1}
               onContextMenu={onContextMenu}
+              onDocContextMenu={onDocContextMenu}
+              basePl={basePl}
+              indentPx={indentPx}
             />
           ))}
           {/* Documents in this category */}
           {category.documents.map((doc) => {
-            const docHref = `/${workspaceSlug}/docs/${doc.id}`;
+            const docHref = `/${workspaceSlug}/doc/${doc.id}`;
             const isDocActive = currentDocId === doc.id;
+            const docPl = basePl + (depth + 1) * indentPx;
             return (
               <Link
                 key={doc.id}
@@ -201,8 +228,8 @@ function CategoryNode({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '5px 12px',
-                  paddingLeft: `${(depth + 1) * 14 + 12}px`,
+                  padding: '5px 10px',
+                  paddingLeft: `${docPl}px`,
                   fontSize: '13px',
                   fontWeight: isDocActive ? 500 : 400,
                   color: isDocActive ? 'var(--accent)' : 'var(--text-2)',
@@ -216,6 +243,12 @@ function CategoryNode({
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = isDocActive ? 'var(--accent-2)' : 'transparent';
+                }}
+                onContextMenu={(e) => {
+                  if (onDocContextMenu) {
+                    e.preventDefault();
+                    onDocContextMenu(e, doc);
+                  }
                 }}
               >
                 <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
@@ -240,23 +273,63 @@ export function CategoryTree({
   currentCategoryId,
   currentDocId,
   onContextMenu,
+  onDocContextMenu,
+  onReorder,
+  basePl = 10,
+  indentPx = 16,
 }: CategoryTreeProps) {
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
+
   if (categories.length === 0) {
     return null;
+  }
+
+  function handleDragOver(e: React.DragEvent, categoryId: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverId(categoryId);
+  }
+
+  function handleDrop(e: React.DragEvent, targetId: number) {
+    e.preventDefault();
+    setDragOverId(null);
+    const draggedId = Number(e.dataTransfer.getData('text/plain'));
+    if (!draggedId || draggedId === targetId || !onReorder) return;
+
+    const ids = categories.map((c) => c.id);
+    const fromIndex = ids.indexOf(draggedId);
+    const toIndex = ids.indexOf(targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    ids.splice(fromIndex, 1);
+    ids.splice(toIndex, 0, draggedId);
+    onReorder(ids);
   }
 
   return (
     <nav style={{ padding: '4px 0' }} aria-label="카테고리 트리">
       {categories.map((category) => (
-        <CategoryNode
+        <div
           key={category.id}
-          category={category}
-          workspaceSlug={workspaceSlug}
-          currentCategoryId={currentCategoryId}
-          currentDocId={currentDocId}
-          depth={0}
-          onContextMenu={onContextMenu}
-        />
+          onDragOver={(e) => handleDragOver(e, category.id)}
+          onDragLeave={() => setDragOverId(null)}
+          onDrop={(e) => handleDrop(e, category.id)}
+          style={{
+            borderTop: dragOverId === category.id ? '2px solid var(--accent)' : '2px solid transparent',
+          }}
+        >
+          <CategoryNode
+            category={category}
+            workspaceSlug={workspaceSlug}
+            currentCategoryId={currentCategoryId}
+            currentDocId={currentDocId}
+            depth={0}
+            onContextMenu={onContextMenu}
+            onDocContextMenu={onDocContextMenu}
+            basePl={basePl}
+            indentPx={indentPx}
+          />
+        </div>
       ))}
     </nav>
   );

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarkFlow — Logo & Favicon Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #F8F7F4;
+    --surface:   #FFFFFF;
+    --surface-2: #F1F0EC;
+    --surface-3: #E8E7E1;
+    --border:    #E2E0D8;
+    --text:      #1A1916;
+    --text-2:    #57564F;
+    --text-3:    #9A9890;
+    --accent:    #1A56DB;
+    --accent-2:  #EEF3FF;
+    --accent-dk: #1343B0;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    padding: 48px 32px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 40px;
+  }
+
+  .section {
+    margin-bottom: 40px;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Preview cards */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .preview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .preview-card.dark {
+    background: #1A1916;
+    border-color: #2E2D28;
+  }
+
+  .preview-card.blue {
+    background: var(--accent);
+    border-color: var(--accent-dk);
+  }
+
+  .preview-card .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.5px;
+  }
+
+  .preview-card.dark .card-label,
+  .preview-card.blue .card-label {
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* Favicon sizes row */
+  .favicon-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+
+  .favicon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .favicon-item span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-3);
+  }
+
+  /* Usage code */
+  .code-block {
+    background: var(--text);
+    color: #E2E8F0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .code-block .kw  { color: #93C5FD; }
+  .code-block .str { color: #86EFAC; }
+  .code-block .cm  { color: #6B7280; }
+
+  /* Wordmark inline recreation */
+  .logo-wordmark {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon-inline {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  .logo-text-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .logo-name {
+    font-family: 'Sora', sans-serif;
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: -0.4px;
+  }
+
+  .logo-name span.mark { font-weight: 600; color: var(--text); }
+  .logo-name span.flow { font-weight: 700; color: var(--accent); }
+
+  .logo-tagline {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+</style>
+</head>
+<body>
+
+<h1>MarkFlow — Brand Identity Kit</h1>
+
+<!-- Full Logo -->
+<div class="section">
+  <div class="section-label">// full logo — light / dark / accent</div>
+  <div class="preview-grid">
+    <!-- Light -->
+    <div class="preview-card">
+      <div class="logo-wordmark">
+        <svg class="logo-icon-inline" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+          <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+          <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+          <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+          <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+          <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+          <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+        </svg>
+        <div class="logo-text-wrap">
+          <div class="logo-name"><span class="mark">Mark</span><span class="flow">Flow</span></div>
+          <div class="logo-tagline">Markdown Knowledge System</div>
+        </div>
+      </div>
+      <span class="card-label">on-light</span>
+    </div>
+
+    <!-- Dark -->
+    <div class="preview-card dark">
+      <div class="logo-wordmark">
+        <svg class="logo-icon-inline" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="14" fill="#4F80F7"/>
+          <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+          <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+          <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+          <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+          <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.85"/>
+          <circle cx="51" cy="13" r="2.5" fill="#4F80F7"/>
+        </svg>
+        <div class="logo-text-wrap">
+          <div class="logo-name">
+            <span style="font-family:'Sora',sans-serif;font-weight:600;color:#F1F0EC;font-size:22px;letter-spacing:-0.4px;">Mark</span><span style="font-family:'Sora',sans-serif;font-weight:700;color:#7AA0FF;font-size:22px;letter-spacing:-0.4px;">Flow</span>
+          </div>
+          <div class="logo-tagline" style="color:rgba(255,255,255,0.3);">Markdown Knowledge System</div>
+        </div>
+      </div>
+      <span class="card-label">on-dark</span>
+    </div>
+
+    <!-- Blue / Accent -->
+    <div class="preview-card blue">
+      <div class="logo-wordmark">
+        <svg class="logo-icon-inline" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="64" height="64" rx="14" fill="rgba(255,255,255,0.15)"/>
+          <rect x="17" y="26" width="30" height="4" rx="2" fill="white"/>
+          <rect x="17" y="34" width="30" height="4" rx="2" fill="white"/>
+          <rect x="24" y="19" width="4" height="26" rx="2" fill="white"/>
+          <rect x="36" y="19" width="4" height="26" rx="2" fill="white"/>
+          <circle cx="51" cy="13" r="4.5" fill="rgba(255,255,255,0.3)"/>
+          <circle cx="51" cy="13" r="2.5" fill="white"/>
+        </svg>
+        <div class="logo-text-wrap">
+          <div class="logo-name">
+            <span style="font-family:'Sora',sans-serif;font-weight:600;color:rgba(255,255,255,0.85);font-size:22px;letter-spacing:-0.4px;">Mark</span><span style="font-family:'Sora',sans-serif;font-weight:700;color:white;font-size:22px;letter-spacing:-0.4px;">Flow</span>
+          </div>
+          <div class="logo-tagline" style="color:rgba(255,255,255,0.5);">Markdown Knowledge System</div>
+        </div>
+      </div>
+      <span class="card-label">on-accent</span>
+    </div>
+  </div>
+</div>
+
+<!-- Icon Only -->
+<div class="section">
+  <div class="section-label">// icon mark — all sizes</div>
+  <div class="favicon-row">
+    <div class="favicon-item">
+      <svg width="256" height="256" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>256px</span>
+    </div>
+    <div class="favicon-item">
+      <svg width="128" height="128" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>128px</span>
+    </div>
+    <div class="favicon-item">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>64px</span>
+    </div>
+    <div class="favicon-item">
+      <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>48px</span>
+    </div>
+    <div class="favicon-item">
+      <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>32px</span>
+    </div>
+    <div class="favicon-item">
+      <svg width="16" height="16" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.95"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.95"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span>16px</span>
+    </div>
+  </div>
+</div>
+
+<!-- Color variants -->
+<div class="section">
+  <div class="section-label">// icon color variants</div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <!-- Brand Blue -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <rect width="64" height="64" rx="14" fill="#1A56DB"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white"/>
+        <circle cx="51" cy="13" r="4.5" fill="#EEF3FF" opacity="0.9"/>
+        <circle cx="51" cy="13" r="2.5" fill="#1A56DB"/>
+      </svg>
+      <span style="font-family:'JetBrains Mono';font-size:10px;color:var(--text-3);">#1A56DB</span>
+    </div>
+    <!-- Dark -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <rect width="64" height="64" rx="14" fill="#1A1916"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white" opacity="0.9"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white" opacity="0.9"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white" opacity="0.9"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white" opacity="0.9"/>
+        <circle cx="51" cy="13" r="4.5" fill="#4F80F7" opacity="0.6"/>
+        <circle cx="51" cy="13" r="2.5" fill="#7AA0FF"/>
+      </svg>
+      <span style="font-family:'JetBrains Mono';font-size:10px;color:var(--text-3);">#1A1916</span>
+    </div>
+    <!-- Monochrome -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <rect width="64" height="64" rx="14" fill="#57564F"/>
+        <rect x="17" y="26" width="30" height="4" rx="2" fill="white"/>
+        <rect x="17" y="34" width="30" height="4" rx="2" fill="white"/>
+        <rect x="24" y="19" width="4" height="26" rx="2" fill="white"/>
+        <rect x="36" y="19" width="4" height="26" rx="2" fill="white"/>
+        <circle cx="51" cy="13" r="4.5" fill="rgba(255,255,255,0.3)"/>
+        <circle cx="51" cy="13" r="2.5" fill="white"/>
+      </svg>
+      <span style="font-family:'JetBrains Mono';font-size:10px;color:var(--text-3);">#57564F</span>
+    </div>
+    <!-- White on colored bg -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="width:64px;height:64px;background:#0D9488;border-radius:14px;display:flex;align-items:center;justify-content:center;">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="17" y="26" width="30" height="4" rx="2" fill="white"/>
+          <rect x="17" y="34" width="30" height="4" rx="2" fill="white"/>
+          <rect x="24" y="19" width="4" height="26" rx="2" fill="white"/>
+          <rect x="36" y="19" width="4" height="26" rx="2" fill="white"/>
+          <circle cx="51" cy="13" r="4.5" fill="rgba(255,255,255,0.35)"/>
+          <circle cx="51" cy="13" r="2.5" fill="white"/>
+        </svg>
+      </div>
+      <span style="font-family:'JetBrains Mono';font-size:10px;color:var(--text-3);">teal variant</span>
+    </div>
+  </div>
+</div>
+
+<!-- HTML Usage -->
+<div class="section">
+  <div class="section-label">// html head — favicon implementation</div>
+  <div class="code-block">
+<span class="cm">&lt;!-- MarkFlow Favicon Setup --&gt;</span>
+<span class="kw">&lt;link</span> <span class="str">rel</span>=<span class="str">"icon"</span> <span class="str">href</span>=<span class="str">"/markflow.ico"</span> <span class="str">sizes</span>=<span class="str">"any"</span><span class="kw">&gt;</span>
+<span class="kw">&lt;link</span> <span class="str">rel</span>=<span class="str">"icon"</span> <span class="str">href</span>=<span class="str">"/markflow-icon.svg"</span> <span class="str">type</span>=<span class="str">"image/svg+xml"</span><span class="kw">&gt;</span>
+<span class="kw">&lt;link</span> <span class="str">rel</span>=<span class="str">"apple-touch-icon"</span> <span class="str">href</span>=<span class="str">"/markflow-icon-512.png"</span><span class="kw">&gt;</span>
+
+<span class="cm">&lt;!-- OG / Social --&gt;</span>
+<span class="kw">&lt;meta</span> <span class="str">property</span>=<span class="str">"og:image"</span> <span class="str">content</span>=<span class="str">"/markflow-icon-512.png"</span><span class="kw">&gt;</span>
+<span class="kw">&lt;meta</span> <span class="str">name</span>=<span class="str">"theme-color"</span> <span class="str">content</span>=<span class="str">"#1A56DB"</span><span class="kw">&gt;</span>
+  </div>
+</div>
+
+<!-- Design tokens -->
+<div class="section">
+  <div class="section-label">// design tokens used in logo</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+      <div style="width:20px;height:20px;border-radius:4px;background:#1A56DB;flex-shrink:0;"></div>
+      <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--text-2);">--accent #1A56DB</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+      <div style="width:20px;height:20px;border-radius:4px;background:#1343B0;flex-shrink:0;"></div>
+      <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--text-2);">--accent-dk #1343B0</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+      <div style="width:20px;height:20px;border-radius:4px;background:#1A1916;flex-shrink:0;"></div>
+      <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--text-2);">--text #1A1916</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;">
+      <div style="width:20px;height:20px;border-radius:4px;background:#EEF3FF;border:1px solid #E2E0D8;flex-shrink:0;"></div>
+      <span style="font-family:'JetBrains Mono';font-size:11px;color:var(--text-2);">--accent-2 #EEF3FF</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

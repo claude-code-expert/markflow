@@ -28,8 +28,8 @@ export function createInvitationService(db: Db) {
     const inserted = await db
       .insert(invitations)
       .values({
-        workspaceId,
-        inviterId,
+        workspaceId: Number(workspaceId),
+        inviterId: Number(inviterId),
         email: email.toLowerCase(),
         role,
         token,
@@ -60,7 +60,6 @@ export function createInvitationService(db: Db) {
         expiresAt: invitations.expiresAt,
         createdAt: invitations.createdAt,
         workspaceName: workspaces.name,
-        workspaceSlug: workspaces.slug,
         inviterName: users.name,
       })
       .from(invitations)
@@ -112,7 +111,7 @@ export function createInvitationService(db: Db) {
       .where(
         and(
           eq(workspaceMembers.workspaceId, invitation.workspaceId),
-          eq(workspaceMembers.userId, userId),
+          eq(workspaceMembers.userId, Number(userId)),
         ),
       )
       .limit(1);
@@ -124,7 +123,7 @@ export function createInvitationService(db: Db) {
     // Add user as member
     await db.insert(workspaceMembers).values({
       workspaceId: invitation.workspaceId,
-      userId,
+      userId: Number(userId),
       role: invitation.role,
     });
 

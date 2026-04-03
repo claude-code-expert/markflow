@@ -115,7 +115,7 @@
 - [x] T052 [P] [US2] Implement invitation routes in apps/api/src/routes/invitations.ts
 - [x] T053 [P] [US2] Implement join-request routes in apps/api/src/routes/join-requests.ts
 - [x] T054 [US2] Create workspace list page (행 기반 뷰, 역할 배지) in apps/web/app/(app)/page.tsx
-- [x] T054a [P] [US2] Create CreateWorkspaceModal component (이름, slug 입력, slug 중복 검증) in apps/web/components/create-workspace-modal.tsx
+- [x] T054a [P] [US2] Create CreateWorkspaceModal component (이름 입력, 이름 중복 검증) in apps/web/components/create-workspace-modal.tsx
 - [x] T055 [P] [US2] Create workspace settings page (이름, 공개/비공개, 삭제) in apps/web/app/(app)/[workspaceSlug]/settings/page.tsx
 - [x] T056 [P] [US2] Create member management page (3탭: 멤버/가입신청/초대현황) in apps/web/app/(app)/[workspaceSlug]/settings/members/page.tsx
 - [x] T057 [US2] Create invitation accept page in apps/web/app/(auth)/invite/[token]/page.tsx
@@ -176,8 +176,8 @@
 - [x] T080 [P] [US3] Create FolderContextMenu component (새 문서/하위 폴더/이름 변경/삭제 + 이름 입력 확인 다이얼로그) in apps/web/components/folder-context-menu.tsx
 - [x] T081 [P] [US3] Create NewFolderModal component (이름+상위 위치+경로 미리보기) in apps/web/components/new-folder-modal.tsx
 - [x] T082 [P] [US3] Create NewDocModal component (제목+카테고리 선택+시작 방식) in apps/web/components/new-doc-modal.tsx
-- [x] T083 [US3] Create document list page (리스트/그리드 뷰, 정렬, 필터) in apps/web/app/(app)/[workspaceSlug]/docs/page.tsx
-- [x] T084 [US3] Create editor page with @markflow/editor integration + auto-save in apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx
+- [x] T083 [US3] Create document list page (리스트/그리드 뷰, 정렬, 필터) in apps/web/app/(app)/[workspaceSlug]/doc/page.tsx
+- [x] T084 [US3] Create editor page with @markflow/editor integration + auto-save in apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx
 - [x] T085 [US3] Create trash page (삭제 문서 목록, 복원/영구삭제) in apps/web/app/(app)/[workspaceSlug]/trash/page.tsx
 - [x] T086 [US3] Add editor store (Zustand: documentId, saveStatus, queueSave) in apps/web/stores/editor-store.ts
 - [x] T087 [US3] Add sidebar store (Zustand: expandedCategoryIds, isSidebarOpen) in apps/web/stores/sidebar-store.ts
@@ -210,7 +210,7 @@
 - [x] T097 [P] [US4] Create DAGPipelineGraph component (스테이지 렌더링, 노드 색상, pulse 애니메이션) in apps/web/components/dag-pipeline-graph.tsx
 - [x] T098 [P] [US4] Create DAGPipelineNav component (프리뷰 하단 내비게이션) in apps/web/components/dag-pipeline-nav.tsx
 - [x] T099 [US4] Create GraphViewPage (워크스페이스 전체 DAG, 범례, 통계) in apps/web/app/(app)/[workspaceSlug]/graph/page.tsx
-- [x] T100 [US4] Integrate MiniDAGGraph into editor page meta panel in apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx
+- [x] T100 [US4] Integrate MiniDAGGraph into editor page meta panel in apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx
 - [x] T101 [US4] Add graph view navigation item to Sidebar in apps/web/components/sidebar.tsx
 
 **Checkpoint**: US4 완료 — 문서 링크 + DAG 시각화 전체 검증 가능
@@ -233,8 +233,8 @@
 - [x] T104 [US5] Implement ImportService (.md parse → document create, .zip extract → category + documents) in apps/api/src/services/import-service.ts
 - [x] T105 [US5] Implement ExportService (.md single download, .zip category with folder structure) in apps/api/src/services/export-service.ts
 - [x] T106 [US5] Implement import/export routes in apps/api/src/routes/import-export.ts
-- [x] T107 [US5] Add import/export buttons to document list page toolbar in apps/web/app/(app)/[workspaceSlug]/docs/page.tsx
-- [x] T108 [US5] Add export button to individual document editor page in apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx
+- [x] T107 [US5] Add import/export buttons to document list page toolbar in apps/web/app/(app)/[workspaceSlug]/doc/page.tsx
+- [x] T108 [US5] Add export button to individual document editor page in apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx
 
 **Checkpoint**: US5 완료 — Import/Export 전체 검증 가능
 
@@ -257,7 +257,7 @@
 - [x] T112 [US7] Implement tag routes (PUT /documents/:id/tags, GET /workspaces/:id/tags) in apps/api/src/routes/tags.ts
 - [x] T113 [US7] Create TagInput component (autocomplete, badge display) in apps/web/components/tag-input.tsx
 - [x] T114 [US7] Integrate TagInput into document meta panel in apps/web/components/document-meta-panel.tsx
-- [x] T115 [US7] Add tag filter to document list page in apps/web/app/(app)/[workspaceSlug]/docs/page.tsx
+- [x] T115 [US7] Add tag filter to document list page in apps/web/app/(app)/[workspaceSlug]/doc/page.tsx
 
 **Checkpoint**: US7 완료 — 태그 관리 전체 검증 가능
 

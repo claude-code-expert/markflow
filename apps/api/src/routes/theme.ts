@@ -9,6 +9,9 @@ interface ThemeRoutesOptions {
 }
 
 export async function themeRoutes(app: FastifyInstance, opts: ThemeRoutesOptions) {
+  if (!app.hasDecorator('db')) {
+    app.decorate('db', opts.db);
+  }
   const themeService = createThemeService(opts.db);
 
   // GET /workspaces/:id/theme — Viewer+

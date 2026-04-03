@@ -4,24 +4,24 @@ import { useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface GraphNode {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
+  categoryId: number | null;
 }
 
 interface GraphEdge {
-  source: string;
-  target: string;
+  source: number;
+  target: number;
   type: 'prev' | 'next' | 'related';
 }
 
 interface DAGPipelineGraphProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  currentDocId?: string;
+  currentDocId?: number;
   workspaceSlug: string;
   fullPage?: boolean;
-  categoryColors?: Record<string, string>;
+  categoryColors?: Record<number, string>;
 }
 
 // Default category colors
@@ -36,8 +36,8 @@ const DEFAULT_COLORS = [
   '#F97316', // orange
 ];
 
-function getCategoryColor(categoryId: string | null, colorMap: Map<string, string>): string {
-  if (!categoryId) return '#6B7280'; // gray for uncategorized
+function getCategoryColor(categoryId: number | null, colorMap: Map<number, string>): string {
+  if (categoryId === null) return '#6B7280'; // gray for uncategorized
   const existing = colorMap.get(categoryId);
   if (existing) return existing;
   const color = DEFAULT_COLORS[colorMap.size % DEFAULT_COLORS.length] ?? '#6B7280';
@@ -46,9 +46,9 @@ function getCategoryColor(categoryId: string | null, colorMap: Map<string, strin
 }
 
 interface LayoutNode {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
+  categoryId: number | null;
   x: number;
   y: number;
   stage: number;
@@ -67,8 +67,8 @@ export function DAGPipelineGraph({
     if (nodes.length === 0) return { layoutNodes: [], layoutEdges: edges, width: 0, height: 0 };
 
     // Build adjacency for next relations (directional DAG)
-    const nextMap = new Map<string, string>();
-    const prevMap = new Map<string, string>();
+    const nextMap = new Map<number, number>();
+    const prevMap = new Map<number, number>();
 
     for (const edge of edges) {
       if (edge.type === 'next') {
@@ -80,7 +80,7 @@ export function DAGPipelineGraph({
     }
 
     // Find chain starts (nodes that have no prev)
-    const hasIncoming = new Set<string>();
+    const hasIncoming = new Set<number>();
     for (const edge of edges) {
       if (edge.type === 'next') {
         hasIncoming.add(edge.target);
@@ -93,8 +93,8 @@ export function DAGPipelineGraph({
     );
 
     // Assign stages by following next chains
-    const stageMap = new Map<string, number>();
-    const visited = new Set<string>();
+    const stageMap = new Map<number, number>();
+    const visited = new Set<number>();
 
     for (const start of chainStarts) {
       let current = start.id;
@@ -123,7 +123,7 @@ export function DAGPipelineGraph({
     }
 
     // Group by stage
-    const stageGroups = new Map<number, string[]>();
+    const stageGroups = new Map<number, number[]>();
     for (const [id, stage] of stageMap) {
       const group = stageGroups.get(stage) ?? [];
       group.push(id);
@@ -173,7 +173,7 @@ export function DAGPipelineGraph({
   }, [nodes, edges, fullPage]);
 
   const categoryColorMap = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<number, string>();
     for (const node of nodes) {
       getCategoryColor(node.categoryId, map);
     }
@@ -181,8 +181,8 @@ export function DAGPipelineGraph({
   }, [nodes]);
 
   const handleNodeClick = useCallback(
-    (nodeId: string) => {
-      router.push(`/${workspaceSlug}/docs/${nodeId}`);
+    (nodeId: number) => {
+      router.push(`/${workspaceSlug}/doc/${nodeId}`);
     },
     [router, workspaceSlug],
   );

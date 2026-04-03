@@ -91,6 +91,24 @@ export async function categoriesRoutes(app: FastifyInstance, opts: CategoriesRou
     return reply.status(200).send({ category });
   });
 
+  // PUT /api/v1/workspaces/:wsId/categories/reorder
+  app.put<{
+    Params: { wsId: string };
+    Body: { orderedIds: number[] };
+  }>('/workspaces/:wsId/categories/reorder', {
+    preHandler: requireRole('editor'),
+  }, async (request, reply) => {
+    const { orderedIds } = request.body;
+
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      throw badRequest('MISSING_FIELDS', 'orderedIds array is required');
+    }
+
+    await categoryService.reorder(request.params.wsId, orderedIds);
+
+    return reply.status(200).send({ ok: true });
+  });
+
   // DELETE /api/v1/workspaces/:wsId/categories/:id
   app.delete<{
     Params: { wsId: string; id: string };

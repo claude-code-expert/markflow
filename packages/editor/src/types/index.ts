@@ -12,6 +12,12 @@ export interface ToolbarItem {
   group: 'heading' | 'format' | 'list' | 'block' | 'insert' | 'media'
 }
 
+/** Wiki link search result item */
+export interface WikiLinkItem {
+  id: number
+  title: string
+}
+
 export interface MarkdownEditorProps {
   /** Current markdown content (controlled) */
   value?: string
@@ -35,6 +41,8 @@ export interface MarkdownEditorProps {
   themeVars?: Record<string, string>
   /** Custom image upload handler. If not provided, uses built-in Cloudflare R2 uploader (requires Worker URL via settings). */
   onImageUpload?: (file: File) => Promise<string>
+  /** Wiki link search callback. Called when user types [[ to autocomplete document links. */
+  onWikiLinkSearch?: (query: string) => Promise<WikiLinkItem[]>
 }
 
 export interface EditorPaneProps {
@@ -47,6 +55,8 @@ export interface EditorPaneProps {
   scrollRatio?: number
   /** Called when an image file is dropped or pasted into the CodeMirror editor */
   onImageFile?: (file: File) => void
+  /** Wiki link search callback for [[ autocomplete */
+  onWikiLinkSearch?: (query: string) => Promise<WikiLinkItem[]>
 }
 
 export interface PreviewPaneProps {

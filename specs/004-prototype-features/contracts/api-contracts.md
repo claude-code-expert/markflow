@@ -18,9 +18,8 @@ Auth: Required (any authenticated user)
 {
   "workspaces": [
     {
-      "id": "uuid",
+      "id": 1,
       "name": "Acme Corp Docs",
-      "slug": "acme-corp",
       "memberCount": 12,
       "isPublic": true,
       "pendingRequest": false
@@ -112,7 +111,7 @@ Auth: Admin+
 **Response 201**:
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "label": "외부 블로그 임베드",
   "token": "mf_gt_a1b2c3d4e5f6...",
   "scope": "read",
@@ -133,7 +132,7 @@ Auth: Admin+
 {
   "tokens": [
     {
-      "id": "uuid",
+      "id": 1,
       "label": "외부 블로그 임베드",
       "tokenPreview": "mf_gt_a1b2...••••",
       "scope": "read",

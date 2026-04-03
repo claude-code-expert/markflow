@@ -90,6 +90,7 @@ export function MarkdownEditor({
   className = '',
   themeVars,
   onImageUpload: onImageUploadProp,
+  onWikiLinkSearch,
 }: MarkdownEditorProps) {
   // ── State ─────────────────────────────────────────────────────────────────
   const [internalValue, setInternalValue] = useState<string>(
@@ -321,11 +322,15 @@ export function MarkdownEditor({
 
   const hasImageUpload = !!onImageUploadProp || !!workerUrl
 
-  // ── Custom theme variables as inline style ────────────────────────────────
+  // ── Root style (height only — themeVars applied to preview pane only) ─────
   const rootStyle: React.CSSProperties = {
     height,
-    ...themeVars as React.CSSProperties,
   }
+
+  // ── Custom theme variables for preview pane only ────────────────────────
+  const previewThemeStyle: React.CSSProperties = themeVars
+    ? { ...themeVars as React.CSSProperties }
+    : {}
 
   return (
     <div
@@ -389,9 +394,6 @@ export function MarkdownEditor({
                 <PenLine size={10} />
                 Editor
               </span>
-              <span style={{ fontWeight: 400, color: 'var(--mf-text-3, #9A9890)', fontSize: '11px' }}>
-                줄 {cursorLine}, 열 {cursorCol}
-              </span>
             </div>
             <div className="mf-pane-content">
               <EditorPane
@@ -404,6 +406,7 @@ export function MarkdownEditor({
                 onScrollRatio={handleEditorCursorSync}
                 scrollRatio={editorScrollRatio}
                 onImageFile={handleImageUpload}
+                onWikiLinkSearch={onWikiLinkSearch}
               />
             </div>
           </div>
@@ -426,7 +429,7 @@ export function MarkdownEditor({
                 {countWords(markdown)} words
               </span>
             </div>
-            <div className="mf-pane-content">
+            <div className="mf-pane-content" style={previewThemeStyle}>
               <PreviewPane
                 ref={previewRef}
                 markdown={markdown}
@@ -479,7 +482,6 @@ export function MarkdownEditor({
         </span>
         <span className="mf-statusbar-right">
           {readOnly && <span className="mf-readonly-badge">READ ONLY</span>}
-          <span>CommonMark 0.28 + GFM</span>
         </span>
       </div>
     </div>

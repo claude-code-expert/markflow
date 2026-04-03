@@ -10,7 +10,7 @@ interface ProfileEditModalProps {
 }
 
 interface UpdateUserResponse {
-  id: string;
+  id: number;
   name: string;
   email: string;
   avatarUrl: string | null;

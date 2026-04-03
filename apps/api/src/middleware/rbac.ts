@@ -34,8 +34,8 @@ export function requireRole(...allowedRoles: Role[]) {
       .select()
       .from(workspaceMembers)
       .where(and(
-        eq(workspaceMembers.workspaceId, workspaceId),
-        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.workspaceId, Number(workspaceId)),
+        eq(workspaceMembers.userId, Number(userId)),
       ))
       .limit(1);
 

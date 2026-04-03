@@ -11,7 +11,7 @@ export function createThemeService(db: Db) {
     const [ws] = await db
       .select({ themePreset: workspaces.themePreset, themeCss: workspaces.themeCss })
       .from(workspaces)
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, Number(workspaceId)))
       .limit(1);
 
     if (!ws) throw notFound('Workspace not found');
@@ -40,7 +40,7 @@ export function createThemeService(db: Db) {
     const [updated] = await db
       .update(workspaces)
       .set({ themePreset: preset, themeCss: css, updatedAt: new Date() })
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, Number(workspaceId)))
       .returning({ themePreset: workspaces.themePreset, themeCss: workspaces.themeCss });
 
     if (!updated) throw notFound('Workspace not found');

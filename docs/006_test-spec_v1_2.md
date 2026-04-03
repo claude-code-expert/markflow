@@ -421,9 +421,10 @@ jobs:
 ### 5.3 테스트 데이터 팩토리
 
 ```typescript
+let nextId = 1;
 export const factory = {
-  user: (overrides?) => ({ id: randomUUID(), email: `user-${Date.now()}@example.com`, name: 'Test User', emailVerified: true, ...overrides }),
-  workspace: (ownerId, overrides?) => ({ id: randomUUID(), name: 'Test Workspace', slug: `ws-${Date.now()}`, ownerId, ...overrides }),
-  document: (workspaceId, authorId, overrides?) => ({ id: randomUUID(), workspaceId, authorId, title: 'Test Document', slug: `doc-${Date.now()}`, content: '# Test', currentVersion: 1, ...overrides }),
+  user: (overrides?) => ({ id: nextId++, email: `user-${Date.now()}@example.com`, name: 'Test User', emailVerified: true, ...overrides }),
+  workspace: (ownerId, overrides?) => ({ id: nextId++, name: `Test Workspace ${Date.now()}`, ownerId, ...overrides }),
+  document: (workspaceId, authorId, overrides?) => ({ id: nextId++, workspaceId, authorId, title: 'Test Document', slug: `doc-${Date.now()}`, content: '# Test', currentVersion: 1, ...overrides }),
 }
 ```

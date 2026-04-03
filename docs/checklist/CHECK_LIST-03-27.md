@@ -46,7 +46,7 @@
 - [x] T024 document-links-modal 단위 테스트 작성 완료
 - [ ] T025 `apps/web/components/document-links-modal.tsx` — Prev/Next/Related 편집 모달
 - [ ] T026 `apps/web/components/document-meta-panel.tsx` — 인라인 관계 편집 → 모달 연동으로 변경
-- [ ] T027 `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx` — 프리뷰 하단 Prev/Next 카드
+- [ ] T027 `apps/web/app/(app)/[workspaceName]/doc/[docId]/page.tsx` — 프리뷰 하단 Prev/Next 카드
 
 ## Phase 6: US4 — DAG Structure Diagram 🔴 미구현
 
@@ -68,7 +68,7 @@
 - [x] T037 import-export-modal 단위 테스트 작성 완료
 - [ ] T038 `apps/web/components/import-export-modal.tsx` — 가져오기/내보내기 모달 (탭, 드롭존, 범위 선택)
 - [ ] T039 `apps/web/components/sidebar.tsx` — "가져오기/내보내기" 사이드바 항목 → 모달 연동
-- [ ] T040 `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx` — 에디터 툴바 Export 버튼 → 모달
+- [ ] T040 `apps/web/app/(app)/[workspaceName]/doc/[docId]/page.tsx` — 에디터 툴바 Export 버튼 → 모달
 
 ## Phase 9: US3 — Join Request System 🔴 미구현
 
@@ -83,7 +83,7 @@
 ## Phase 10: US8 — Member Management 4탭 🔴 미구현
 
 - [x] T048 members 탭 전환/역할 매트릭스 단위 테스트 작성 완료
-- [ ] T049 `apps/web/app/(app)/[workspaceSlug]/settings/members/page.tsx` — 4탭 리팩토링
+- [ ] T049 `apps/web/app/(app)/[workspaceName]/settings/members/page.tsx` — 4탭 리팩토링
 - [ ] T050 `apps/web/components/settings/invite-status-tab.tsx` — 초대 현황 탭
 - [ ] T051 `apps/web/components/settings/member-export-tab.tsx` — 내보내기 탭 (CSV/PDF)
 - [ ] T052 역할 권한 매트릭스 테이블 (Owner/Admin/Editor/Viewer × Read/Write/Invite/Settings)
@@ -96,8 +96,8 @@
 - [ ] T056 `apps/api/src/services/theme-service.ts` — 테마 CRUD 서비스
 - [ ] T057 `apps/api/src/routes/theme.ts` — GET/PATCH /workspaces/:id/theme
 - [ ] T058 `apps/api/src/index.ts` — 테마 라우트 등록
-- [ ] T059 `apps/web/app/(app)/[workspaceSlug]/settings/theme/page.tsx` — 테마 설정 페이지
-- [ ] T060 `apps/web/app/(app)/[workspaceSlug]/layout.tsx` — 동적 `<style>` 테마 주입
+- [ ] T059 `apps/web/app/(app)/[workspaceName]/settings/theme/page.tsx` — 테마 설정 페이지
+- [ ] T060 `apps/web/app/(app)/[workspaceName]/layout.tsx` — 동적 `<style>` 테마 주입
 - [ ] T061 설정 사이드바에 "CSS 테마" 항목 추가
 
 ## Phase 12: US7 — Embed Integration 🔴 미구현 (Backend + Frontend)
@@ -106,7 +106,7 @@
 - [ ] T063 `apps/api/src/services/embed-token-service.ts` — Guest Token 서비스 (생성, 목록, 폐기)
 - [ ] T064 `apps/api/src/routes/embed-tokens.ts` — POST/GET/DELETE 엔드포인트
 - [ ] T065 `apps/api/src/index.ts` — 임베드 토큰 라우트 등록
-- [ ] T066 `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx` — 3탭 설정 페이지
+- [ ] T066 `apps/web/app/(app)/[workspaceName]/settings/embed/page.tsx` — 3탭 설정 페이지
 - [ ] T067 설정 사이드바에 "임베드 연동" 항목 추가
 
 ## Phase 13: Editor Enhancements 🔴 미구현

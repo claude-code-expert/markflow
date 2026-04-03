@@ -20,7 +20,7 @@
 **Response 201**:
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "email": "user@example.com",
   "name": "홍길동",
   "emailVerified": false
@@ -49,7 +49,7 @@
 ```json
 {
   "accessToken": "jwt...",
-  "user": { "id": "uuid", "email": "...", "name": "..." }
+  "user": { "id": 1, "email": "...", "name": "..." }
 }
 ```
 + Set-Cookie: refreshToken (HttpOnly, SameSite=Strict, 7일 / rememberMe: 30일)
@@ -86,13 +86,13 @@
 
 ### POST /workspaces
 
-**Request**: `{ "name": "팀 워크스페이스", "slug": "team-ws" }`
+**Request**: `{ "name": "팀 워크스페이스" }`
 **Response 201**: Workspace 객체 (isPublic: true 기본)
-**Errors**: 409 SLUG_EXISTS
+**Errors**: 409 NAME_EXISTS
 
 ### GET /workspaces
 
-**Response 200**: `{ "workspaces": [{ id, name, slug, isRoot, isPublic, role, lastActivityAt }] }`
+**Response 200**: `{ "workspaces": [{ id, name, isRoot, isPublic, role, lastActivityAt }] }`
 
 ### GET /workspaces/:id
 
@@ -138,7 +138,7 @@
 
 ### GET /invitations/:token
 
-**Response 200**: `{ "workspace": { name, slug }, "role", "inviterName" }`
+**Response 200**: `{ "workspace": { name }, "role", "inviterName" }`
 **Errors**: 410 INVITATION_EXPIRED
 
 ### POST /invitations/:token/accept
@@ -167,7 +167,7 @@
 
 ### PATCH /workspaces/:id/join-requests/batch
 
-**Request**: `{ "requestIds": ["id1", "id2"], "status": "approved", "role": "editor" }`
+**Request**: `{ "requestIds": [1, 2], "status": "approved", "role": "editor" }`
 **Auth**: Owner/Admin
 **Response 200**: `{ "updated": 2 }`
 
@@ -197,13 +197,13 @@
 
 ### POST /workspaces/:wsId/documents
 
-**Request**: `{ "title": "새 문서", "categoryId": "uuid" | null }`
+**Request**: `{ "title": "새 문서", "categoryId": 1 | null }`
 **Auth**: Editor+
 **Response 201**: Document 객체 (slug 자동 생성)
 
 ### GET /workspaces/:wsId/documents
 
-**Query**: `?sort=updated_at&order=desc&categoryId=uuid&tagId=uuid&q=검색어&view=list|grid`
+**Query**: `?sort=updated_at&order=desc&categoryId=1&tagId=1&q=검색어&view=list|grid`
 **Response 200**: `{ "documents": [...], "total": 100, "page": 1 }`
 
 ### GET /workspaces/:wsId/documents/:id
@@ -258,9 +258,9 @@
 **Request**:
 ```json
 {
-  "prev": "docId" | null,
-  "next": "docId" | null,
-  "related": ["docId1", "docId2"]
+  "prev": 1 | null,
+  "next": 2 | null,
+  "related": [3, 4]
 }
 ```
 **Response 200**: 업데이트된 관계

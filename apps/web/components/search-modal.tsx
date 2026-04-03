@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Search, FileText } from 'lucide-react';
+import { Search, FileText, FolderOpen } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { useWorkspaceStore } from '../stores/workspace-store';
-import type { Document } from '../lib/types';
+import type { Document, Category, CategoriesResponse } from '../lib/types';
 
 interface SearchModalProps {
   open: boolean;
@@ -13,7 +13,7 @@ interface SearchModalProps {
 }
 
 interface SearchResult {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   categoryPath: string | null;
@@ -31,6 +31,8 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [recentDocs, setRecentDocs] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -39,9 +41,11 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
       setQuery('');
       setResults([]);
       setSelectedIndex(0);
+      setSelectedCategoryId(null);
       setTimeout(() => inputRef.current?.focus(), 50);
       if (currentWorkspace) {
         void loadRecentDocs();
+        void loadCategories();
       }
     }
   }, [open, currentWorkspace]);
@@ -66,24 +70,64 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
     }
   };
 
+  const loadCategories = async () => {
+    if (!currentWorkspace) return;
+    try {
+      const res = await apiFetch<CategoriesResponse>(
+        `/workspaces/${currentWorkspace.id}/categories`
+      );
+      setCategories(res.categories);
+    } catch {
+      // Silently fail for categories
+    }
+  };
+
   const searchDocs = useCallback(
-    async (q: string) => {
+    async (q: string, catId: number | null) => {
       if (!currentWorkspace || !q.trim()) {
         setResults([]);
         return;
       }
       setIsSearching(true);
       try {
-        const res = await apiFetch<{ documents: Document[] }>(
-          `/workspaces/${currentWorkspace.id}/documents?q=${encodeURIComponent(q)}&limit=10`
+        // 숫자면 문서 ID로 직접 조회 시도
+        const trimmed = q.trim();
+
+        if (/^\d+$/.test(trimmed)) {
+          try {
+            const res = await apiFetch<{ document: Document }>(
+              `/workspaces/${currentWorkspace.id}/documents/${trimmed}`
+            );
+            const doc = res.document;
+            setResults([{
+              id: doc.id,
+              title: doc.title,
+              slug: doc.slug,
+              categoryPath: null,
+              excerpt: doc.content.slice(0, 100),
+            }]);
+            setSelectedIndex(0);
+            return;
+          } catch {
+            // ID로 못 찾으면 일반 검색으로 fallback
+          }
+        }
+
+        let url = `/workspaces/${currentWorkspace.id}/documents?q=${encodeURIComponent(trimmed)}&limit=10`;
+        if (catId !== null) {
+          url += `&categoryId=${catId}`;
+        }
+
+        const res = await apiFetch<{ documents: Array<Document & { excerpt?: string; categoryName?: string | null }> }>(
+          url
         );
         setResults(
           res.documents.map((d) => ({
             id: d.id,
             title: d.title,
             slug: d.slug,
-            categoryPath: null,
-            excerpt: d.content.slice(0, 100),
+            categoryPath: d.categoryName ?? null,
+            excerpt: d.excerpt ?? d.content.slice(0, 100),
           }))
         );
         setSelectedIndex(0);
@@ -99,7 +143,15 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const handleInputChange = (value: string) => {
     setQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchDocs(value), 200);
+    debounceRef.current = setTimeout(() => searchDocs(value, selectedCategoryId), 200);
+  };
+
+  const handleCategorySelect = (catId: number | null) => {
+    setSelectedCategoryId(catId);
+    if (query.trim()) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => searchDocs(query, catId), 100);
+    }
   };
 
   const displayItems = query.trim() ? results : recentDocs;
@@ -122,7 +174,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const navigateToDoc = (doc: SearchResult) => {
     onClose();
     if (workspaceSlug) {
-      router.push(`/${workspaceSlug}/docs/${doc.id}`);
+      router.push(`/${workspaceSlug}/doc/${doc.id}`);
     }
   };
 
@@ -166,6 +218,36 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           <kbd className="text-xs bg-[#F1F0EC] px-2 py-0.5 rounded text-[#9A9890]">Esc</kbd>
         </div>
 
+        {/* Category Filter */}
+        {categories.length > 0 && (
+          <div className="flex items-center gap-1.5 px-4 py-2 border-b border-[#E2E0D8] overflow-x-auto">
+            <FolderOpen size={13} className="text-[#9A9890] shrink-0" />
+            <button
+              className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+                selectedCategoryId === null
+                  ? 'bg-[#1A1916] text-white'
+                  : 'bg-[#F1F0EC] text-[#6B6960] hover:bg-[#E2E0D8]'
+              }`}
+              onClick={() => handleCategorySelect(null)}
+            >
+              전체
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+                  selectedCategoryId === cat.id
+                    ? 'bg-[#1A1916] text-white'
+                    : 'bg-[#F1F0EC] text-[#6B6960] hover:bg-[#E2E0D8]'
+                }`}
+                onClick={() => handleCategorySelect(cat.id)}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Results */}
         <div className="max-h-[420px] overflow-y-auto p-2">
           {displayItems.length === 0 && query.trim() && !isSearching && (
@@ -198,8 +280,16 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             >
               <FileText size={16} className="shrink-0 mt-0.5 text-[#9A9890]" />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium mb-0.5">
-                  {highlightMatch(doc.title, query)}
+                <div className="text-sm font-medium mb-0.5 flex items-center gap-2">
+                  <span>{highlightMatch(doc.title || '제목 없음', query)}</span>
+                  {doc.categoryPath && (
+                    <span className="text-[10px] text-[#9A9890] bg-[#F1F0EC] px-1.5 py-0.5 rounded shrink-0">
+                      {doc.categoryPath}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-[#C4C2BA] font-mono shrink-0">
+                    {String(doc.id).slice(0, 8)}
+                  </span>
                 </div>
                 {doc.excerpt && (
                   <div className="text-xs text-[#9A9890] line-clamp-1">

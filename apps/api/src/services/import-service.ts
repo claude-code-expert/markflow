@@ -33,18 +33,19 @@ export function createImportService(db: Db) {
     categoryId?: string | null,
   ) {
     const title = filename.replace(/\.md$/i, '').trim() || 'Untitled';
+    const numWorkspaceId = Number(workspaceId);
     const baseSlug = generateSlug(title);
-    const slug = await ensureUniqueSlug(db, workspaceId, baseSlug);
+    const slug = await ensureUniqueSlug(db, numWorkspaceId, baseSlug);
 
     const [document] = await db
       .insert(documents)
       .values({
-        workspaceId,
-        authorId,
+        workspaceId: numWorkspaceId,
+        authorId: Number(authorId),
         title,
         slug,
         content,
-        categoryId: categoryId ?? null,
+        categoryId: categoryId ? Number(categoryId) : null,
         currentVersion: 1,
       })
       .returning();

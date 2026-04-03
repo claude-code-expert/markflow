@@ -26,15 +26,15 @@ export default function WorkspaceHomePage() {
     }
 
     // 워크스페이스가 존재하는지 확인
-    const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+    const found = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug));
     if (workspaces.length > 0 && !found) {
       // 유효하지 않은 slug → 워크스페이스 목록으로
       router.replace('/workspaces');
       return;
     }
 
-    // /{workspaceSlug} → /{workspaceSlug}/docs 리다이렉트
-    router.replace(`/${workspaceSlug}/docs`);
+    // /{workspaceSlug} → /{workspaceSlug}/doc 리다이렉트
+    router.replace(`/${workspaceSlug}/doc`);
   }, [isLoading, workspaceSlug, workspaces, router]);
 
   return (

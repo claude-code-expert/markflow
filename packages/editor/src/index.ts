@@ -12,6 +12,7 @@ export type {
   ToolbarProps,
   EditorPaneProps,
   PreviewPaneProps,
+  WikiLinkItem,
 } from './types'
 export { parseMarkdown } from './utils/parseMarkdown'
 export { applyToolbarAction } from './utils/markdownActions'

@@ -3,11 +3,11 @@ import { create } from 'zustand';
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 interface EditorState {
-  documentId: string | null;
+  documentId: number | null;
   content: string;
   title: string;
   saveStatus: SaveStatus;
-  setDocument: (id: string, title: string, content: string) => void;
+  setDocument: (id: number, title: string, content: string) => void;
   setContent: (content: string) => void;
   setTitle: (title: string) => void;
   setSaveStatus: (status: SaveStatus) => void;

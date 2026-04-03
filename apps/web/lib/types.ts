@@ -4,7 +4,7 @@
 // === Entity Types ===
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatarUrl: string | null;
@@ -16,12 +16,13 @@ export interface User {
 export type WorkspaceRole = 'owner' | 'admin' | 'editor' | 'viewer';
 
 export interface Workspace {
-  id: string;
+  id: number;
   name: string;
-  slug: string;
   isRoot: boolean;
   isPublic: boolean;
-  ownerId: string;
+  ownerId: number;
+  themePreset: string;
+  themeCss: string;
   createdAt: string;
   updatedAt: string;
   role: WorkspaceRole;
@@ -29,13 +30,13 @@ export interface Workspace {
 }
 
 export interface Document {
-  id: string;
-  workspaceId: string;
-  authorId: string;
+  id: number;
+  workspaceId: number;
+  authorId: number;
   title: string;
   slug: string;
   content: string;
-  categoryId: string | null;
+  categoryId: number | null;
   currentVersion: number;
   isDeleted: boolean;
   createdAt: string;
@@ -44,23 +45,23 @@ export interface Document {
 }
 
 export interface Category {
-  id: string;
-  workspaceId: string;
+  id: number;
+  workspaceId: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
   depth: number;
   createdAt: string;
 }
 
 export interface Tag {
-  id: string;
-  workspaceId: string;
+  id: number;
+  workspaceId: number;
   name: string;
 }
 
 export interface WorkspaceMember {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   role: WorkspaceRole;
   joinedAt: string;
   userName: string;
@@ -69,9 +70,9 @@ export interface WorkspaceMember {
 }
 
 export interface Invitation {
-  id: string;
-  workspaceId: string;
-  inviterId: string;
+  id: number;
+  workspaceId: number;
+  inviterId: number;
   email: string;
   role: string;
   token: string;
@@ -145,9 +146,9 @@ export interface MembersResponse {
 
 export interface MemberResponse {
   member: {
-    id: string;
-    workspaceId: string;
-    userId: string;
+    id: number;
+    workspaceId: number;
+    userId: number;
     role: WorkspaceRole;
     joinedAt: string;
   };
@@ -159,7 +160,7 @@ export interface InvitationResponse {
 }
 
 export interface InvitationAcceptResponse {
-  workspaceId: string;
+  workspaceId: number;
   role: WorkspaceRole;
 }
 

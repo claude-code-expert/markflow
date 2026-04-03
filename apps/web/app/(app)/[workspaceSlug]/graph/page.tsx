@@ -3,6 +3,7 @@
 import { use, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../../../lib/api';
+import { useWorkspaceStore } from '../../../../stores/workspace-store';
 import { DAGPipelineGraph } from '../../../../components/dag-pipeline-graph';
 import type { GraphNode, GraphEdge } from '../../../../components/dag-pipeline-graph';
 
@@ -17,13 +18,16 @@ export default function GraphPage({
   params: Promise<{ workspaceSlug: string }>;
 }) {
   const { workspaceSlug } = use(params);
+  const { workspaces } = useWorkspaceStore();
+  const wsId = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug))?.id;
 
   const graphQuery = useQuery({
-    queryKey: ['graph', workspaceSlug],
+    queryKey: ['graph', wsId],
     queryFn: () =>
       apiFetch<GraphData>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/graph`,
+        `/workspaces/${wsId}/graph`,
       ),
+    enabled: !!wsId,
   });
 
   const stats = useMemo(() => {
@@ -33,7 +37,7 @@ export default function GraphPage({
     const totalDocs = nodes.length;
 
     // Connected nodes: nodes that appear in at least one edge
-    const connectedIds = new Set<string>();
+    const connectedIds = new Set<number>();
     for (const edge of edges) {
       connectedIds.add(edge.source);
       connectedIds.add(edge.target);

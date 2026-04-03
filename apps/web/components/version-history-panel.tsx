@@ -1,48 +1,219 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { diffLines } from 'diff';
 import { apiFetch, ApiError } from '../lib/api';
 
 interface Version {
-  id: string;
-  versionNumber: number;
+  id: number;
+  version: number;
   content: string;
   createdAt: string;
-  createdBy: {
-    id: string;
+  createdBy?: {
+    id: number;
     name: string;
-  };
+  } | null;
 }
 
 interface VersionHistoryPanelProps {
   open: boolean;
   onClose: () => void;
-  workspaceSlug: string;
+  workspaceId: number;
   documentId: string;
+  currentContent: string;
   onOpenFullModal?: () => void;
+  onRestore?: (content: string) => void;
 }
+
+/* ─── Diff Modal ─── */
+
+function DiffModal({
+  version,
+  currentContent,
+  onClose,
+  onRestore,
+}: {
+  version: Version;
+  currentContent: string;
+  onClose: () => void;
+  onRestore?: (content: string) => void;
+}) {
+  const diff = useMemo(() => diffLines(version.content, currentContent), [version.content, currentContent]);
+
+  const stats = useMemo(() => {
+    let added = 0;
+    let removed = 0;
+    for (const part of diff) {
+      const count = part.value.replace(/\n$/, '').split('\n').length;
+      if (part.added) added += count;
+      else if (part.removed) removed += count;
+    }
+    return { added, removed };
+  }, [diff]);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }}
+      />
+
+      {/* Modal */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: '90vw', maxWidth: '800px', height: '80vh',
+        background: 'var(--surface)', borderRadius: 'var(--radius-lg, 12px)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '16px', fontWeight: 600 }}>
+              v{version.version} → 현재
+            </span>
+            <span style={{
+              fontSize: '12px', color: '#166534', background: '#dcfce7',
+              padding: '2px 8px', borderRadius: '100px',
+            }}>
+              +{stats.added}
+            </span>
+            <span style={{
+              fontSize: '12px', color: '#991b1b', background: '#fee2e2',
+              padding: '2px 8px', borderRadius: '100px',
+            }}>
+              -{stats.removed}
+            </span>
+            {version.createdBy && (
+              <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                by {version.createdBy.name}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {onRestore && (
+              <button
+                type="button"
+                onClick={() => { onRestore(version.content); onClose(); }}
+                style={{
+                  padding: '7px 16px', fontSize: '13px', fontWeight: 500,
+                  color: '#fff', background: 'var(--accent)',
+                  border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                }}
+              >
+                이 버전으로 되돌리기
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                color: 'var(--text-3)', borderRadius: 'var(--radius-sm)', fontSize: '18px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Diff Content */}
+        <div style={{
+          flex: 1, overflowY: 'auto', padding: '16px 24px',
+          fontSize: '13px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace", lineHeight: '1.6',
+        }}>
+          {diff.map((part, i) => {
+            const lines = part.value.replace(/\n$/, '').split('\n');
+
+            if (!part.added && !part.removed && lines.length > 6) {
+              // Show first 2 and last 2 lines of unchanged blocks
+              const first = lines.slice(0, 2);
+              const last = lines.slice(-2);
+              const collapsed = lines.length - 4;
+              return (
+                <div key={i}>
+                  {first.map((line, j) => (
+                    <div key={`${i}-f${j}`} style={{ padding: '1px 8px', color: 'var(--text-3)' }}>
+                      <span style={{ userSelect: 'none', marginRight: '8px', opacity: 0.4 }}>&nbsp;</span>
+                      {line || ' '}
+                    </div>
+                  ))}
+                  <div style={{
+                    padding: '4px 8px', color: 'var(--text-3)', fontStyle: 'italic',
+                    fontSize: '11px', background: 'var(--surface-2)', borderRadius: '4px',
+                    margin: '4px 0', textAlign: 'center',
+                  }}>
+                    ··· {collapsed}줄 동일 ···
+                  </div>
+                  {last.map((line, j) => (
+                    <div key={`${i}-l${j}`} style={{ padding: '1px 8px', color: 'var(--text-3)' }}>
+                      <span style={{ userSelect: 'none', marginRight: '8px', opacity: 0.4 }}>&nbsp;</span>
+                      {line || ' '}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            return lines.map((line, j) => (
+              <div
+                key={`${i}-${j}`}
+                style={{
+                  padding: '1px 8px',
+                  background: part.added ? '#dcfce7' : part.removed ? '#fee2e2' : 'transparent',
+                  color: part.added ? '#166534' : part.removed ? '#991b1b' : 'var(--text-2)',
+                  borderRadius: '2px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}
+              >
+                <span style={{ userSelect: 'none', marginRight: '8px', opacity: 0.5, fontWeight: 600 }}>
+                  {part.added ? '+' : part.removed ? '-' : ' '}
+                </span>
+                {line || ' '}
+              </div>
+            ));
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Version History Panel ─── */
 
 export function VersionHistoryPanel({
   open,
   onClose,
-  workspaceSlug,
+  workspaceId,
   documentId,
+  currentContent,
   onOpenFullModal,
+  onRestore,
 }: VersionHistoryPanelProps) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [diffVersion, setDiffVersion] = useState<Version | null>(null);
 
   const fetchVersions = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
-      const data = await apiFetch<Version[]>(
-        `/workspaces/${encodeURIComponent(workspaceSlug)}/documents/${documentId}/versions`,
+      const data = await apiFetch<{ versions: Version[] }>(
+        `/workspaces/${workspaceId}/documents/${documentId}/versions`,
       );
-      setVersions(data);
+      setVersions(data.versions);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -52,145 +223,135 @@ export function VersionHistoryPanel({
     } finally {
       setIsLoading(false);
     }
-  }, [workspaceSlug, documentId]);
+  }, [workspaceId, documentId]);
 
   useEffect(() => {
     if (open) {
       void fetchVersions();
-      setSelectedVersionId(null);
-      setPreviewContent(null);
+      setDiffVersion(null);
     }
   }, [open, fetchVersions]);
-
-  function handleSelectVersion(version: Version) {
-    if (selectedVersionId === version.id) {
-      setSelectedVersionId(null);
-      setPreviewContent(null);
-    } else {
-      setSelectedVersionId(version.id);
-      setPreviewContent(version.content);
-    }
-  }
 
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   }
 
   if (!open) return null;
 
   return (
-    <div className="flex h-full w-80 shrink-0 flex-col border-l border-gray-200 bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-900">버전 기록</h3>
-        <div className="flex items-center gap-1">
-          {onOpenFullModal && (
+    <>
+      <div style={{
+        width: '320px', height: '100%', flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        borderLeft: '1px solid var(--border)', background: 'var(--surface)',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>버전 기록</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {onOpenFullModal && (
+              <button
+                type="button"
+                onClick={onOpenFullModal}
+                style={{
+                  padding: '4px 8px', fontSize: '12px', fontWeight: 500,
+                  color: 'var(--accent)', background: 'transparent',
+                  border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                }}
+              >
+                전체 보기
+              </button>
+            )}
             <button
               type="button"
-              onClick={onOpenFullModal}
-              className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+              onClick={onClose}
+              style={{
+                width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', background: 'transparent', cursor: 'pointer',
+                color: 'var(--text-3)', borderRadius: 'var(--radius-sm)',
+              }}
+              aria-label="패널 닫기"
             >
-              전체 보기
+              ✕
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="패널 닫기"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          </div>
         </div>
-      </div>
 
-      {/* Version List */}
-      <div className="flex-1 overflow-y-auto">
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-          </div>
-        )}
-
-        {error && (
-          <div className="m-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error}
-          </div>
-        )}
-
-        {!isLoading && !error && versions.length === 0 && (
-          <div className="px-4 py-12 text-center">
-            <svg
-              className="mx-auto mb-2 h-8 w-8 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-xs text-gray-400">버전 기록이 없습니다</p>
-          </div>
-        )}
-
-        {!isLoading && versions.map((version) => (
-          <button
-            key={version.id}
-            type="button"
-            onClick={() => handleSelectVersion(version)}
-            className={`w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
-              selectedVersionId === version.id ? 'bg-blue-50' : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">
-                v{version.versionNumber}
-              </span>
-              <span className="text-xs text-gray-400">
-                {formatDate(version.createdAt)}
-              </span>
+        {/* Version List */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {isLoading && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+              <div style={{
+                width: '24px', height: '24px', borderRadius: '50%',
+                border: '2px solid var(--accent)', borderTopColor: 'transparent',
+                animation: 'spin 1s linear infinite',
+              }} />
             </div>
-            <p className="mt-0.5 text-xs text-gray-500">
-              {version.createdBy.name}
-            </p>
-          </button>
-        ))}
+          )}
+
+          {error && (
+            <div style={{
+              margin: '12px', padding: '8px 12px', fontSize: '12px',
+              color: 'var(--red)', background: 'var(--red-lt)',
+              borderRadius: 'var(--radius-sm)', border: '1px solid var(--red)',
+            }}>
+              {error}
+            </div>
+          )}
+
+          {!isLoading && !error && versions.length === 0 && (
+            <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '12px' }}>
+              버전 기록이 없습니다
+            </div>
+          )}
+
+          {!isLoading && versions.map((version) => (
+            <button
+              key={version.id}
+              type="button"
+              onClick={() => setDiffVersion(version)}
+              style={{
+                width: '100%', textAlign: 'left', padding: '10px 16px',
+                borderBottom: '1px solid var(--border)', border: 'none',
+                background: 'transparent', cursor: 'pointer', transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)' }}>
+                  v{version.version}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>
+                  {formatDate(version.createdAt)}
+                </span>
+              </div>
+              {version.createdBy && (
+                <p style={{ marginTop: '2px', fontSize: '11px', color: 'var(--text-3)' }}>
+                  {version.createdBy.name}
+                </p>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Preview */}
-      {previewContent !== null && (
-        <div className="border-t border-gray-200">
-          <div className="flex items-center justify-between px-4 py-2">
-            <p className="text-xs font-medium text-gray-500">미리보기</p>
-            <button
-              type="button"
-              disabled
-              className="rounded-md px-2 py-1 text-xs font-medium text-gray-400"
-              title="Phase 2에서 지원 예정"
-            >
-              현재 버전으로 되돌리기
-            </button>
-          </div>
-          <div className="max-h-60 overflow-y-auto border-t border-gray-100 bg-gray-50 px-4 py-3">
-            <pre className="whitespace-pre-wrap text-xs text-gray-700">
-              {previewContent}
-            </pre>
-          </div>
-        </div>
+      {/* Diff Modal */}
+      {diffVersion && (
+        <DiffModal
+          version={diffVersion}
+          currentContent={currentContent}
+          onClose={() => setDiffVersion(null)}
+          onRestore={onRestore}
+        />
       )}
-    </div>
+    </>
   );
 }

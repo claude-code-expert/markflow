@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MarkdownEditor } from '@markflow/editor';
+import { MarkdownEditor, type WikiLinkItem } from '@markflow/editor';
 import '@markflow/editor/styles';
 import { apiFetch, ApiError } from '../../../../../lib/api';
 import { useEditorStore } from '../../../../../stores/editor-store';
@@ -11,11 +11,14 @@ import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
 import type { DocumentResponse, Category } from '../../../../../lib/types';
 import Link from 'next/link';
-import { History, PanelRight, Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, Presentation } from 'lucide-react';
+import { History, PanelRight, Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, Presentation, MessageSquare } from 'lucide-react';
 import { DocumentMetaPanel } from '../../../../../components/document-meta-panel';
 import { VersionHistoryPanel } from '../../../../../components/version-history-panel';
 import { VersionHistoryModal } from '../../../../../components/version-history-modal';
 import { useToastStore } from '../../../../../stores/toast-store';
+import { LinkPreview } from '../../../../../components/link-preview';
+import { CommentPanel } from '../../../../../components/comment-panel';
+import { parseThemeCss } from '../../../../../lib/parse-theme-css';
 
 export default function DocEditorPage() {
   const { workspaceSlug, docId } = useParams<{ workspaceSlug: string; docId: string }>();
@@ -26,6 +29,10 @@ export default function DocEditorPage() {
   const { currentWorkspace } = useWorkspaceStore();
   const wsId = currentWorkspace?.id;
   const permissions = usePermissions(currentWorkspace?.role);
+  const themeVars = useMemo(
+    () => currentWorkspace?.themeCss ? parseThemeCss(currentWorkspace.themeCss) : undefined,
+    [currentWorkspace?.themeCss],
+  );
 
   const {
     content, title, saveStatus,
@@ -33,18 +40,22 @@ export default function DocEditorPage() {
   } = useEditorStore();
 
   const [error, setError] = useState('');
-  const [showMetaPanel, setShowMetaPanel] = useState(true);
-  const [showVersionPanel, setShowVersionPanel] = useState(false);
+  const [activePanel, setActivePanel] = useState<'meta' | 'version' | 'comment' | null>('meta');
   const [showVersionModal, setShowVersionModal] = useState(false);
+
+  const togglePanel = (panel: 'meta' | 'version' | 'comment') => {
+    setActivePanel((prev) => (prev === panel ? null : panel));
+  };
   const [editorLayout, setEditorLayout] = useState<'editor' | 'split' | 'preview'>('split');
   const [editorTheme, setEditorTheme] = useState<'light' | 'dark'>('light');
   const isMountedRef = useRef(true);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const wsIdRef = useRef(wsId);
   wsIdRef.current = wsId;
 
   // Fetch document
   const documentQuery = useQuery({
-    queryKey: ['document', wsId, docId],
+    queryKey: ['document', wsId, Number(docId)],
     queryFn: async () => {
       const res = await apiFetch<DocumentResponse>(
         `/workspaces/${wsId}/documents/${docId}`,
@@ -63,28 +74,41 @@ export default function DocEditorPage() {
   const categoryList = categoriesQuery.data?.categories ?? [];
 
   // Category change handler
-  const handleCategoryChange = useCallback(async (categoryId: string | null) => {
+  const handleCategoryChange = useCallback(async (categoryId: number | null) => {
     const currentWsId = wsIdRef.current;
     if (!currentWsId) return;
     try {
       await apiFetch(`/workspaces/${currentWsId}/documents/${docId}`, {
         method: 'PATCH', body: { categoryId },
       });
-      void queryClient.invalidateQueries({ queryKey: ['document', currentWsId, docId] });
+      void queryClient.invalidateQueries({ queryKey: ['document', currentWsId, Number(docId)] });
     } catch { /* handled by meta panel */ }
   }, [docId, queryClient]);
 
   // Fetch relations for Prev/Next navigation
   const relationsQuery = useQuery({
-    queryKey: ['relations', wsId, docId],
+    queryKey: ['relations', wsId, Number(docId)],
     queryFn: async () => {
-      const res = await apiFetch<{ prev: { id: string; title: string } | null; next: { id: string; title: string } | null }>(
+      const res = await apiFetch<{ prev: { id: number; title: string } | null; next: { id: number; title: string } | null }>(
         `/workspaces/${wsId}/documents/${docId}/relations`,
       );
       return res;
     },
     enabled: !!wsId,
   });
+
+  // Wiki link search callback
+  const handleWikiLinkSearch = useCallback(async (query: string): Promise<WikiLinkItem[]> => {
+    if (!wsId) return [];
+    try {
+      const res = await apiFetch<{ documents: Array<{ id: number; title: string }> }>(
+        `/workspaces/${wsId}/documents?q=${encodeURIComponent(query)}&limit=8`
+      );
+      return res.documents.map((d) => ({ id: d.id, title: d.title }));
+    } catch {
+      return [];
+    }
+  }, [wsId]);
 
   // Initialize editor store
   useEffect(() => {
@@ -193,7 +217,7 @@ export default function DocEditorPage() {
           </p>
           <button
             type="button"
-            onClick={() => router.push(`/${workspaceSlug}/docs`)}
+            onClick={() => router.push(`/${workspaceSlug}/doc`)}
             style={{
               padding: '9px 18px', background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: 'var(--radius)', fontSize: '13.5px',
@@ -233,7 +257,7 @@ export default function DocEditorPage() {
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <select
               value={doc.categoryId ?? ''}
-              onChange={(e) => void handleCategoryChange(e.target.value || null)}
+              onChange={(e) => void handleCategoryChange(e.target.value ? Number(e.target.value) : null)}
               disabled={isReadOnly}
               aria-label="카테고리 선택"
               style={{
@@ -267,34 +291,6 @@ export default function DocEditorPage() {
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={() => setShowVersionModal(!showVersionModal)}
-              title="버전 기록"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: '32px', height: '32px', borderRadius: 'var(--radius-sm)',
-                border: 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-                background: showVersionModal ? 'var(--accent-2)' : 'transparent',
-                color: showVersionModal ? 'var(--accent)' : 'var(--text-3)',
-              }}
-            >
-              <History size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowMetaPanel(!showMetaPanel)}
-              title="문서 속성"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: '32px', height: '32px', borderRadius: 'var(--radius-sm)',
-                border: 'none', cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-                background: showMetaPanel ? 'var(--accent-2)' : 'transparent',
-                color: showMetaPanel ? 'var(--accent)' : 'var(--text-3)',
-              }}
-            >
-              <PanelRight size={16} />
-            </button>
             {isReadOnly && (
               <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px', marginLeft: '4px' }}>
                 읽기 전용
@@ -381,6 +377,16 @@ export default function DocEditorPage() {
             <button type="button" title="프리젠테이션" onClick={() => window.open(`/present/${workspaceSlug}/${docId}`, '_blank', 'noopener')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--text-3)' }}>
               <Presentation size={14} />
             </button>
+            <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 4px' }} />
+            <button type="button" title="댓글" onClick={() => togglePanel('comment')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: activePanel === 'comment' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: activePanel === 'comment' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <MessageSquare size={14} />
+            </button>
+            <button type="button" title="문서 속성" onClick={() => togglePanel('meta')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: activePanel === 'meta' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: activePanel === 'meta' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <PanelRight size={14} />
+            </button>
+            <button type="button" title="버전 기록" onClick={() => togglePanel('version')} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: 'var(--radius-sm)', background: activePanel === 'version' ? 'var(--accent-2)' : 'transparent', cursor: 'pointer', color: activePanel === 'version' ? 'var(--accent)' : 'var(--text-3)' }}>
+              <History size={14} />
+            </button>
           </div>
         </div>
       </div>
@@ -388,7 +394,7 @@ export default function DocEditorPage() {
       {/* Editor + Meta Panel */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
         <style>{`.mf-toolbar-spacer { display: none !important; }`}</style>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div ref={editorContainerRef} style={{ flex: 1, overflow: 'hidden' }}>
           <MarkdownEditor
             value={content}
             onChange={setContent}
@@ -396,11 +402,19 @@ export default function DocEditorPage() {
             layout={editorLayout}
             theme={editorTheme}
             readOnly={isReadOnly}
+            onWikiLinkSearch={handleWikiLinkSearch}
+            themeVars={themeVars}
           />
+          {wsId && (
+            <LinkPreview
+              containerRef={editorContainerRef}
+              workspaceId={wsId}
+            />
+          )}
         </div>
 
         {/* Meta Panel */}
-        {showMetaPanel && wsId && (
+        {activePanel === 'meta' && wsId && (
           <DocumentMetaPanel
             document={{
               id: doc.id,
@@ -409,23 +423,36 @@ export default function DocEditorPage() {
               categoryPath: doc.categoryId ?? null,
               createdAt: doc.createdAt,
               updatedAt: doc.updatedAt,
-              author: { id: doc.authorId, name: doc.authorId },
+              author: { id: doc.authorId, name: String(doc.authorId) },
             }}
             workspaceSlug={workspaceSlug}
             workspaceId={wsId}
             role={currentWorkspace?.role ?? null}
-            onClose={() => setShowMetaPanel(false)}
+            onClose={() => setActivePanel(null)}
+          />
+        )}
+
+        {/* Comment Panel */}
+        {activePanel === 'comment' && wsId && (
+          <CommentPanel
+            workspaceId={wsId}
+            documentId={docId}
+            onClose={() => setActivePanel(null)}
           />
         )}
 
         {/* Version History Side Panel */}
-        <VersionHistoryPanel
-          open={showVersionPanel}
-          onClose={() => setShowVersionPanel(false)}
-          workspaceSlug={workspaceSlug}
-          documentId={docId}
-          onOpenFullModal={() => { setShowVersionPanel(false); setShowVersionModal(true); }}
-        />
+        {activePanel === 'version' && wsId && (
+          <VersionHistoryPanel
+            open={activePanel === 'version'}
+            onClose={() => setActivePanel(null)}
+            workspaceId={wsId}
+            documentId={docId}
+            currentContent={content}
+            onRestore={(restoredContent) => setContent(restoredContent)}
+            onOpenFullModal={() => { setActivePanel(null); setShowVersionModal(true); }}
+          />
+        )}
       </div>
 
       {/* Version History Full Modal */}
@@ -446,7 +473,7 @@ export default function DocEditorPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '50px', padding: '0 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           {relationsQuery.data.prev ? (
             <Link
-              href={`/${workspaceSlug}/docs/${relationsQuery.data.prev.id}`}
+              href={`/${workspaceSlug}/doc/${relationsQuery.data.prev.id}`}
               title={`이전 문서: ${relationsQuery.data.prev.title}`}
               style={{
                 maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', gap: '6px',
@@ -463,7 +490,7 @@ export default function DocEditorPage() {
           ) : <div />}
           {relationsQuery.data.next ? (
             <Link
-              href={`/${workspaceSlug}/docs/${relationsQuery.data.next.id}`}
+              href={`/${workspaceSlug}/doc/${relationsQuery.data.next.id}`}
               title={`다음 문서: ${relationsQuery.data.next.title}`}
               style={{
                 maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px',

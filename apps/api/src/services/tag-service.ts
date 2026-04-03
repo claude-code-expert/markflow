@@ -32,16 +32,18 @@ export function createTagService(db: Db) {
     const uniqueNames = [...new Set(tagNames.map((n) => n.trim()).filter((n) => n.length > 0))];
 
     // Remove all existing document_tags for this document
+    const numDocumentId = Number(documentId);
     await db
       .delete(documentTags)
-      .where(eq(documentTags.documentId, documentId));
+      .where(eq(documentTags.documentId, numDocumentId));
 
     if (uniqueNames.length === 0) {
       return [];
     }
 
     // Upsert tags: find existing or create new
-    const tagRows: Array<{ id: string; name: string }> = [];
+    const numWorkspaceId = Number(workspaceId);
+    const tagRows: Array<{ id: number; name: string }> = [];
 
     for (const name of uniqueNames) {
       // Try to find existing tag in workspace
@@ -49,7 +51,7 @@ export function createTagService(db: Db) {
         .select({ id: tags.id, name: tags.name })
         .from(tags)
         .where(and(
-          eq(tags.workspaceId, workspaceId),
+          eq(tags.workspaceId, numWorkspaceId),
           eq(tags.name, name),
         ))
         .limit(1);
@@ -60,7 +62,7 @@ export function createTagService(db: Db) {
         // Create new tag
         const [created] = await db
           .insert(tags)
-          .values({ workspaceId, name })
+          .values({ workspaceId: numWorkspaceId, name })
           .returning({ id: tags.id, name: tags.name });
 
         if (created) {
@@ -74,7 +76,7 @@ export function createTagService(db: Db) {
       await db
         .insert(documentTags)
         .values(tagRows.map((t) => ({
-          documentId,
+          documentId: numDocumentId,
           tagId: t.id,
         })));
     }
@@ -96,7 +98,7 @@ export function createTagService(db: Db) {
       })
       .from(tags)
       .leftJoin(documentTags, eq(documentTags.tagId, tags.id))
-      .where(eq(tags.workspaceId, workspaceId))
+      .where(eq(tags.workspaceId, Number(workspaceId)))
       .groupBy(tags.id, tags.name)
       .orderBy(tags.name);
 
@@ -118,7 +120,7 @@ export function createTagService(db: Db) {
       })
       .from(documentTags)
       .innerJoin(tags, eq(tags.id, documentTags.tagId))
-      .where(eq(documentTags.documentId, documentId))
+      .where(eq(documentTags.documentId, Number(documentId)))
       .orderBy(tags.name);
 
     return rows;

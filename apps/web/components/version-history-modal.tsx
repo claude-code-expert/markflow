@@ -6,17 +6,17 @@ import { apiFetch } from '../lib/api';
 import { useToastStore } from '../stores/toast-store';
 
 interface Version {
-  id: string;
+  id: number;
   version: number;
   content: string;
   createdAt: string;
-  createdBy?: { id: string; name: string };
+  createdBy?: { id: number; name: string } | null;
 }
 
 interface VersionHistoryModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceId: string;
+  workspaceId: number;
   documentId: string;
   currentContent: string;
   hasUnsavedChanges?: boolean;

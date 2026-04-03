@@ -15,7 +15,7 @@ import type { Category } from '../lib/types';
 /* ─── Types ─── */
 
 interface RelationDoc {
-  id: string;
+  id: number;
   title: string;
 }
 
@@ -26,14 +26,14 @@ interface Relations {
 }
 
 interface GraphNode {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
+  categoryId: number | null;
 }
 
 interface GraphEdge {
-  source: string;
-  target: string;
+  source: number;
+  target: number;
   type: 'prev' | 'next' | 'related';
 }
 
@@ -45,19 +45,19 @@ interface VersionSummary {
 }
 
 interface DocumentInfo {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
-  categoryPath: string | null;
+  categoryId: number | null;
+  categoryPath: number | null;
   createdAt: string;
   updatedAt: string;
-  author: { id: string; name: string };
+  author: { id: number; name: string };
 }
 
 interface DocumentMetaPanelProps {
   document: DocumentInfo;
   workspaceSlug: string;
-  workspaceId: string;
+  workspaceId: number;
   role: string | null | undefined;
   onClose?: () => void;
 }
@@ -196,7 +196,7 @@ export function DocumentMetaPanel({
 
   return (
     <aside style={{
-      width: '300px', borderLeft: '1px solid var(--border)', background: 'var(--surface)',
+      width: '320px', height: '100%', borderLeft: '1px solid var(--border)', background: 'var(--surface)',
       overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
@@ -219,8 +219,8 @@ export function DocumentMetaPanel({
         <SectionTitle>태그</SectionTitle>
         <TagInput
           workspaceSlug={workspaceSlug}
-          workspaceId={workspaceId}
-          documentId={doc.id}
+          workspaceId={String(workspaceId)}
+          documentId={String(doc.id)}
           initialTags={docTags}
           disabled={!permissions.canManageTags}
         />
@@ -307,7 +307,7 @@ export function DocumentMetaPanel({
         {relations && (
           <MiniDagDiagram
             currentTitle={doc.title}
-            categoryName={doc.categoryPath}
+            categoryName={doc.categoryPath != null ? String(doc.categoryPath) : null}
             prev={relations.prev}
             next={relations.next}
             related={relations.related}
@@ -340,7 +340,7 @@ export function DocumentMetaPanel({
           edges={graphQuery.data.edges}
           currentDocId={doc.id}
           currentTitle={doc.title}
-          categoryName={doc.categoryPath}
+          categoryName={doc.categoryPath != null ? String(doc.categoryPath) : null}
           workspaceSlug={workspaceSlug}
           onEditLinks={() => { setShowDagModal(false); setShowLinksModal(true); }}
         />

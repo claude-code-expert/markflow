@@ -14,7 +14,7 @@ import { AppError, badRequest, conflict, unauthorized, gone } from '../utils/err
 import { logger } from '../utils/logger.js';
 
 interface SafeUser {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatarUrl: string | null;
@@ -24,7 +24,7 @@ interface SafeUser {
 }
 
 function toSafeUser(row: {
-  id: string;
+  id: number;
   email: string;
   name: string;
   avatarUrl: string | null;
@@ -84,13 +84,10 @@ export function createAuthService(db: Db) {
       throw new Error('Failed to insert user');
     }
 
-    const slug = `my-notes-${user.id.slice(0, 8)}`;
-
     const insertedWorkspace = await db
       .insert(workspaces)
       .values({
         name: 'My Notes',
-        slug,
         isRoot: true,
         ownerId: user.id,
       })
@@ -199,7 +196,7 @@ export function createAuthService(db: Db) {
       .where(eq(users.id, user.id));
 
     const tokenPair = signTokenPair(
-      { userId: user.id, email: user.email },
+      { userId: String(user.id), email: user.email },
       rememberMe,
     );
 
@@ -229,7 +226,7 @@ export function createAuthService(db: Db) {
       .where(
         and(
           eq(refreshTokens.tokenHash, tokenHash),
-          eq(refreshTokens.userId, payload.userId),
+          eq(refreshTokens.userId, Number(payload.userId)),
         ),
       )
       .limit(1);

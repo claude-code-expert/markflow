@@ -232,8 +232,8 @@ function MemberRow({
 }: {
   member: WorkspaceMember;
   canManage: boolean;
-  onRoleChange: (userId: string, role: WorkspaceRole) => void;
-  onRemove: (userId: string, name: string) => void;
+  onRoleChange: (userId: number, role: WorkspaceRole) => void;
+  onRemove: (userId: number, name: string) => void;
   isUpdating: boolean;
 }) {
   const isOwner = member.role === 'owner';
@@ -298,7 +298,7 @@ function MemberRow({
 
 // ─── InviteForm ──────────────────────────────────────────────────────────────
 
-function InviteForm({ workspaceId }: { workspaceId: string }) {
+function InviteForm({ workspaceId }: { workspaceId: number }) {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<WorkspaceRole>('editor');
@@ -407,7 +407,7 @@ export default function MembersPage() {
   const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
   const permissions = usePermissions(currentWorkspace?.role ?? null);
 
-  const workspaceId = currentWorkspace?.id ?? '';
+  const workspaceId = currentWorkspace?.id ?? 0;
 
   // ── Fetch members ──
   const { data, isLoading } = useQuery<MembersResponse>({
@@ -421,7 +421,7 @@ export default function MembersPage() {
 
   // ── Mutations ──
   const updateRole = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: WorkspaceRole }) =>
+    mutationFn: ({ userId, role }: { userId: number; role: WorkspaceRole }) =>
       apiFetch(`/workspaces/${workspaceId}/members/${userId}`, {
         method: 'PATCH',
         body: { role },
@@ -432,7 +432,7 @@ export default function MembersPage() {
   });
 
   const removeMember = useMutation({
-    mutationFn: (userId: string) =>
+    mutationFn: (userId: number) =>
       apiFetch(`/workspaces/${workspaceId}/members/${userId}`, {
         method: 'DELETE',
       }),
@@ -441,11 +441,11 @@ export default function MembersPage() {
     },
   });
 
-  function handleRoleChange(userId: string, role: WorkspaceRole) {
+  function handleRoleChange(userId: number, role: WorkspaceRole) {
     updateRole.mutate({ userId, role });
   }
 
-  function handleRemove(userId: string, name: string) {
+  function handleRemove(userId: number, name: string) {
     if (window.confirm(`${name}님을 워크스페이스에서 제거하시겠습니까?`)) {
       removeMember.mutate(userId);
     }

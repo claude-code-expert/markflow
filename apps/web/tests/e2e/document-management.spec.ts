@@ -87,7 +87,7 @@ test.describe('Document management flow', () => {
     await page.waitForTimeout(2_000);
 
     // Click on first document link
-    const firstDocLink = page.locator('a[href*="/docs/"]').first();
+    const firstDocLink = page.locator('a[href*="/doc/"]').first();
     if (await firstDocLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
       await firstDocLink.click();
 

@@ -273,7 +273,7 @@ App (Next.js App Router)
 │
 └── (app)/
     ├── WorkspaceSwitcher
-    └── [workspaceSlug]/
+    └── [workspaceName]/
         ├── AppShell
         │   ├── Sidebar
         │   │   ├── WorkspaceHeader
@@ -288,7 +288,7 @@ App (Next.js App Router)
         │   ├── MainContent (router outlet)
         │   └── WorkspaceThemeInjector           ← <style> 동적 주입
         │
-        ├── docs/
+        ├── doc/
         │   └── DocumentListPage → DocumentListToolbar, DocumentList/Grid
         │
         ├── graph/
@@ -296,7 +296,7 @@ App (Next.js App Router)
         │       ├── DAGToolbar                  ← 범례 + 통계 + 이동 버튼
         │       └── DAGPipelineGraph 🚧         ← 카테고리·순서·태그 Row별 렌더링
         │
-        └── docs/[docId]/
+        └── doc/[docId]/
             └── EditorPage
                 ├── MarkdownEditor             ← @markflow/editor 패키지
                 ├── DocumentMetaPanel

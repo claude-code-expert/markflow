@@ -1,14 +1,14 @@
-import { pgTable, uuid, varchar, text, integer, boolean, timestamp, unique, index } from 'drizzle-orm/pg-core';
+import { pgTable, bigserial, bigint, varchar, text, integer, boolean, timestamp, unique, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { workspaces } from './workspaces';
 import { categories } from './categories';
 import { users } from './users';
 
 export const documents = pgTable('documents', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
-  authorId: uuid('author_id').notNull().references(() => users.id),
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  workspaceId: bigint('workspace_id', { mode: 'number' }).notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  categoryId: bigint('category_id', { mode: 'number' }).references(() => categories.id, { onDelete: 'set null' }),
+  authorId: bigint('author_id', { mode: 'number' }).notNull().references(() => users.id),
   title: varchar('title', { length: 300 }).notNull(),
   slug: varchar('slug', { length: 300 }).notNull(),
   content: text('content').notNull().default(''),
@@ -26,10 +26,11 @@ export const documents = pgTable('documents', {
 ]);
 
 export const documentVersions = pgTable('document_versions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  documentId: uuid('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  documentId: bigint('document_id', { mode: 'number' }).notNull().references(() => documents.id, { onDelete: 'cascade' }),
   version: integer('version').notNull(),
   content: text('content').notNull(),
+  authorId: bigint('author_id', { mode: 'number' }).references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   unique('uq_document_version').on(table.documentId, table.version),

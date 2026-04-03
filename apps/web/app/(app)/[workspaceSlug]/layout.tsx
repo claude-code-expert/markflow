@@ -20,7 +20,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
     if (isLoading) return;
     if (workspaces.length === 0) return;
 
-    const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+    const found = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug));
     if (found) {
       setCurrentWorkspace(found);
       setStatus('found');

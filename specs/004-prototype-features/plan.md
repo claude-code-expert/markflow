@@ -72,7 +72,7 @@ apps/
 ├── web/
 │   ├── app/
 │   │   ├── (landing)/page.tsx              # (신규) US1 — 랜딩 페이지
-│   │   └── (app)/[workspaceSlug]/settings/
+│   │   └── (app)/[workspaceSlug]/settings/  # workspaceSlug는 실제로 URL-encoded workspace name
 │   │       ├── theme/page.tsx              # (신규) US5 — CSS 테마
 │   │       └── embed/page.tsx              # (신규) US7 — 임베드 설정
 │   ├── components/

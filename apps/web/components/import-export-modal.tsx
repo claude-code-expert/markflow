@@ -16,10 +16,10 @@ type ExportScope = 'document' | 'category';
 interface ImportExportModalProps {
   open: boolean;
   onClose: () => void;
-  workspaceId: string;
+  workspaceId: number;
   workspaceSlug: string;
-  currentDocId?: string;
-  currentCategoryId?: string;
+  currentDocId?: number;
+  currentCategoryId?: number;
 }
 
 interface CategoryTreeResponse {
@@ -36,8 +36,8 @@ export function ImportExportModal({
   const [importFormat, setImportFormat] = useState<ImportFormat>('md');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('md');
   const [exportScope, setExportScope] = useState<ExportScope>('document');
-  const [selectedDocId, setSelectedDocId] = useState<string>(currentDocId ?? '');
-  const [selectedCatId, setSelectedCatId] = useState<string>(currentCategoryId ?? '');
+  const [selectedDocId, setSelectedDocId] = useState<string>(currentDocId ? String(currentDocId) : '');
+  const [selectedCatId, setSelectedCatId] = useState<string>(currentCategoryId ? String(currentCategoryId) : '');
   const [isDragging, setIsDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [targetCategoryId, setTargetCategoryId] = useState<string>('');
@@ -59,8 +59,8 @@ export function ImportExportModal({
   // 모달 열릴 때 초기값 설정
   useEffect(() => {
     if (!open) return;
-    setSelectedDocId(currentDocId ?? '');
-    setSelectedCatId(currentCategoryId ?? '');
+    setSelectedDocId(currentDocId ? String(currentDocId) : '');
+    setSelectedCatId(currentCategoryId ? String(currentCategoryId) : '');
     setExportScope(currentDocId ? 'document' : 'category');
   }, [open, currentDocId, currentCategoryId]);
 
@@ -308,12 +308,14 @@ export function ImportExportModal({
                   ]).map((fmt) => (
                     <div
                       key={fmt.id}
-                      onClick={() => setExportFormat(fmt.id)}
+                      onClick={() => { if (fmt.id !== 'pdf') setExportFormat(fmt.id); }}
                       style={{
                         padding: '16px 14px', borderRadius: 'var(--radius)',
                         border: `1.5px solid ${exportFormat === fmt.id ? 'var(--accent)' : 'var(--border)'}`,
                         background: exportFormat === fmt.id ? 'var(--accent-2)' : 'var(--bg)',
-                        cursor: 'pointer', transition: 'all 0.15s',
+                        cursor: fmt.id === 'pdf' ? 'not-allowed' : 'pointer',
+                        opacity: fmt.id === 'pdf' ? 0.5 : 1,
+                        transition: 'all 0.15s',
                       }}
                     >
                       <div style={{ color: exportFormat === fmt.id ? 'var(--accent)' : 'var(--text-2)', marginBottom: '6px' }}>

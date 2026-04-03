@@ -9,8 +9,8 @@ interface NewDocModalProps {
   open: boolean;
   onClose: () => void;
   workspaceSlug: string;
-  workspaceId: string;
-  categories?: Array<{ id: string; name: string }>;
+  workspaceId: number;
+  categories?: Array<{ id: number; name: string }>;
 }
 
 export function NewDocModal({
@@ -64,7 +64,7 @@ export function NewDocModal({
     setIsSubmitting(true);
     try {
       const { document } = await apiFetch<DocumentResponse>(
-        `/workspaces/${encodeURIComponent(workspaceId)}/documents`,
+        `/workspaces/${workspaceId}/documents`,
         {
           method: 'POST',
           body: {
@@ -74,7 +74,7 @@ export function NewDocModal({
         },
       );
       onClose();
-      router.push(`/${workspaceSlug}/docs/${document.id}`);
+      router.push(`/${workspaceSlug}/doc/${document.id}`);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

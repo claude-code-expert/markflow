@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
 import { useWorkspaceStore } from '../../../stores/workspace-store';
 import type { Workspace } from '../../../lib/types';
 import { CreateWorkspaceModal } from '../../../components/create-workspace-modal';
@@ -60,44 +61,27 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 function WorkspaceRow({ workspace }: { workspace: Workspace }) {
-  const slug = workspace.slug;
-  if (!slug) return null;
+  const encodedName = encodeURIComponent(workspace.name);
 
   return (
-    <Link
-      href={`/${slug}/docs`}
+    <div
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
         padding: '16px',
         borderBottom: '1px solid var(--border)',
-        textDecoration: 'none',
-        color: 'inherit',
-        transition: 'background 0.15s ease',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
     >
       {/* Icon */}
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: 'var(--radius)',
-          background: 'var(--accent-2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          color: 'var(--accent)',
-          fontSize: '16px',
-          fontWeight: 700,
-          fontFamily: 'var(--font-heading)',
-        }}
-      >
-        {workspace.name.charAt(0).toUpperCase()}
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/markflow-icon.svg"
+        alt={workspace.name}
+        width={40}
+        height={40}
+        style={{ borderRadius: 'var(--radius)', flexShrink: 0 }}
+      />
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -113,15 +97,63 @@ function WorkspaceRow({ workspace }: { workspace: Workspace }) {
           )}
         </div>
         <p style={{ marginTop: '2px', fontSize: '12px', color: 'var(--text-3)' }}>
-          /{workspace.slug} · {formatRelativeTime(workspace.lastActivityAt)}
+          {formatRelativeTime(workspace.lastActivityAt)}
         </p>
       </div>
 
-      {/* Arrow */}
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2" style={{ flexShrink: 0 }}>
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </Link>
+      {/* Action buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <Link
+          href={`/${encodedName}/doc`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 14px',
+            background: 'var(--accent)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '12.5px',
+            fontWeight: 500,
+            textDecoration: 'none',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-dk, #1347b8)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+        >
+          문서
+        </Link>
+        <Link
+          href={`/${encodedName}/settings`}
+          aria-label="설정"
+          title="설정"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text-3)',
+            textDecoration: 'none',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--surface-2)';
+            e.currentTarget.style.color = 'var(--text)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--surface)';
+            e.currentTarget.style.color = 'var(--text-3)';
+          }}
+        >
+          <Settings size={15} />
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -223,28 +255,9 @@ export default function WorkspaceListPage() {
           <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px', fontFamily: 'var(--font-heading)' }}>
             첫 워크스페이스를 만들어보세요
           </h2>
-          <p style={{ fontSize: '14px', color: 'var(--text-2)', marginBottom: '24px' }}>
-            팀과 함께 지식을 관리하세요.
+          <p style={{ fontSize: '14px', color: 'var(--text-2)' }}>
+            상단의 &quot;워크스페이스 만들기&quot; 버튼으로 시작하세요.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 24px',
-              background: 'var(--accent)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 'var(--radius)',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            워크스페이스 만들기
-          </button>
         </div>
       )}
 

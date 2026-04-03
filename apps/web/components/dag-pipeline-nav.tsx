@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 interface RelationDoc {
-  id: string;
+  id: number;
   title: string;
 }
 
@@ -41,7 +41,7 @@ export function DAGPipelineNav({
           {/* Previous */}
           {prev ? (
             <Link
-              href={`/${workspaceSlug}/docs/${prev.id}`}
+              href={`/${workspaceSlug}/doc/${prev.id}`}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-blue-300 hover:bg-blue-50"
             >
               <svg
@@ -73,7 +73,7 @@ export function DAGPipelineNav({
           {/* Next */}
           {next ? (
             <Link
-              href={`/${workspaceSlug}/docs/${next.id}`}
+              href={`/${workspaceSlug}/doc/${next.id}`}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-blue-300 hover:bg-blue-50"
             >
               <span className="max-w-[120px] truncate">{next.title}</span>
@@ -106,7 +106,7 @@ export function DAGPipelineNav({
           {related.map((doc) => (
             <Link
               key={doc.id}
-              href={`/${workspaceSlug}/docs/${doc.id}`}
+              href={`/${workspaceSlug}/doc/${doc.id}`}
               className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs text-gray-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
               {doc.title}

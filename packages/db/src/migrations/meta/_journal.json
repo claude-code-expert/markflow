@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1774537210577,
-      "tag": "0000_colossal_norman_osborn",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1774594430900,
-      "tag": "0001_left_magneto",
+      "when": 1775197819042,
+      "tag": "0000_even_bug",
       "breakpoints": true
     }
   ]

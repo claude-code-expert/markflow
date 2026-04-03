@@ -8,11 +8,10 @@ import type { Category } from './category-tree';
 interface FolderContextMenuProps {
   category: Category;
   workspaceSlug: string;
-  workspaceId: string;
+  workspaceId: number;
   position: { x: number; y: number };
   onClose: () => void;
   onNewDoc?: () => void;
-  onNewFolder?: () => void;
   onRefresh?: () => void;
 }
 
@@ -23,7 +22,6 @@ export function FolderContextMenu({
   position,
   onClose,
   onNewDoc,
-  onNewFolder,
   onRefresh,
 }: FolderContextMenuProps) {
   const router = useRouter();
@@ -97,7 +95,7 @@ export function FolderContextMenu({
       );
       onRefresh?.();
       onClose();
-      router.push(`/${workspaceSlug}/docs`);
+      router.push(`/${workspaceSlug}/doc`);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -237,19 +235,6 @@ export function FolderContextMenu({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
         </svg>
         새 문서
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          onNewFolder?.();
-          onClose();
-        }}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-      >
-        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-        </svg>
-        하위 폴더
       </button>
       <div className="my-1 border-t border-gray-100" />
       <button

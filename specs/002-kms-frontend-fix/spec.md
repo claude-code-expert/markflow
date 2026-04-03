@@ -25,7 +25,7 @@
 **Acceptance Scenarios**:
 
 1. **Given** 계정이 있는 사용자, **When** 로그인 성공, **Then** 워크스페이스 목록 페이지에 자신의 워크스페이스가 표시된다
-2. **Given** 워크스페이스 목록, **When** 워크스페이스를 클릭, **Then** /{workspaceSlug}/docs 경로로 이동하며 문서 목록이 표시된다 (/{workspaceSlug} 진입 시 /docs로 자동 리다이렉트)
+2. **Given** 워크스페이스 목록, **When** 워크스페이스를 클릭, **Then** /{workspaceName}/doc 경로로 이동하며 문서 목록이 표시된다 (/{workspaceName} 진입 시 /doc로 자동 리다이렉트). workspaceName은 URL-encoded
 3. **Given** 워크스페이스가 1개뿐인 사용자, **When** 로그인 성공, **Then** 해당 워크스페이스로 자동 리다이렉트된다
 4. **Given** 워크스페이스가 0개인 신규 사용자, **When** 로그인 성공, **Then** 빈 상태 UI에 "첫 워크스페이스를 만들어보세요" 안내와 생성 CTA 버튼이 표시된다
 5. **Given** 앱 내 어떤 페이지에서든, **When** URL에 /undefined가 포함되는 상황, **Then** 발생하지 않아야 한다
@@ -77,7 +77,7 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** 워크스페이스 목록, **When** "워크스페이스 만들기" 클릭, **Then** 생성 모달이 표시되고 이름/slug 입력 후 생성 가능. 생성 후 /{newSlug}/docs로 이동
+1. **Given** 워크스페이스 목록, **When** "워크스페이스 만들기" 클릭, **Then** 생성 모달이 표시되고 이름 입력 후 생성 가능. 생성 후 /{newName}/doc로 이동 (name은 URL-encoded)
 2. **Given** 워크스페이스 설정 페이지, **When** 이름 변경/공개 상태 전환, **Then** 저장 후 반영된다
 3. **Given** 멤버 관리 페이지, **When** 이메일 초대, **Then** 초대가 생성된다
 
@@ -87,11 +87,11 @@
 
 - 워크스페이스가 0개인 신규 사용자 → 빈 상태 UI + "워크스페이스 만들기" 안내 표시
 - API 서버 미응답 시 → 에러 상태 UI 표시, 재시도 버튼
-- 존재하지 않는 workspaceSlug 접근 시 → 404 페이지 또는 워크스페이스 목록으로 리다이렉트
+- 존재하지 않는 workspace name 접근 시 → 404 페이지 또는 워크스페이스 목록으로 리다이렉트
 - 브라우저 새로고침 시 인증 상태 유지 → refreshToken으로 세션 복원
 - 사이드바 접기/펴기 상태가 페이지 이동 시 유지
 - 긴 문서 제목(300자), 긴 워크스페이스 이름(100자) → UI에서 text-overflow: ellipsis로 truncation. 툴팁으로 전체 텍스트 표시
-- 한글 워크스페이스 이름의 slug 자동 생성 → 한글 제거 후 영문/숫자/하이픈만 유지. 결과가 빈 문자열이면 랜덤 slug 생성 (기존 create-workspace-modal.tsx 로직 유지)
+- 한글 워크스페이스 이름 → name은 UNIQUE 필드이며 URL에 URL-encoded 형태로 사용. slug 자동 생성 불필요 (기존 slug 필드 제거됨)
 - 대량 문서 목록 → 페이지당 20개, 서버 사이드 페이지네이션. 페이지 번호 UI(이전/다음/번호) 표시. 1000+ 문서 시 성능 최적화는 Phase 2로 연기
 - 에디터에서 미저장 콘텐츠가 있는 상태에서 다른 페이지/워크스페이스로 이동 시 → 브라우저 beforeunload 경고 표시. 사이드바 네비게이션 클릭 시에는 "저장하지 않은 변경사항이 있습니다" 확인 다이얼로그
 - 에디터에서 자동 저장 중 토큰 만료 시 → refreshToken으로 자동 갱신 후 저장 재시도. 갱신 실패 시 saveStatus를 'error'로 표시하고 "다시 로그인 필요" 안내. 미저장 콘텐츠는 editor-store에 유지하여 재로그인 후 복원 가능
@@ -103,7 +103,7 @@
 **버그 수정**
 
 - **FR-001**: 워크스페이스 목록 API 응답을 올바르게 파싱하여 워크스페이스가 화면에 표시되어야 한다
-- **FR-002**: 앱 내 모든 라우팅(Link href, router.push, router.replace, 사이드바 네비게이션)에서 slug가 undefined일 때 /undefined URL로 이동하지 않아야 한다. slug가 falsy이면 워크스페이스 목록(/)으로 fallback
+- **FR-002**: 앱 내 모든 라우팅(Link href, router.push, router.replace, 사이드바 네비게이션)에서 workspace name이 undefined일 때 /undefined URL로 이동하지 않아야 한다. name이 falsy이면 워크스페이스 목록(/)으로 fallback
 - **FR-003**: 워크스페이스가 1개뿐인 사용자는 로그인 후 해당 워크스페이스로 자동 리다이렉트되어야 한다
 
 **디자인 시스템**
@@ -118,7 +118,7 @@
 - **FR-008**: 문서 생성 모달에서 제목 입력 후 문서가 정상 생성되고 에디터로 이동해야 한다
 - **FR-009**: 에디터 페이지에서 @markflow/editor 통합(split pane: 좌측 CodeMirror 편집, 우측 마크다운 프리뷰) + 1초 디바운스 자동 저장이 정상 동작해야 한다. 저장 실패 시 saveStatus를 'error'로 표시하고 5초 후 자동 재시도(최대 3회)
 - **FR-010**: 문서 목록에서 검색, 정렬, 카테고리 필터가 정상 동작해야 한다
-- **FR-011**: 워크스페이스 생성 모달에서 이름/slug 입력 후 워크스페이스가 정상 생성되어야 한다
+- **FR-011**: 워크스페이스 생성 모달에서 이름 입력 후 워크스페이스가 정상 생성되어야 한다 (name은 UNIQUE, slug 필드 없음)
 - **FR-012**: 모든 모달은 프로토타입 공통 패턴을 따라야 한다 — max-width 560px(기본)/800px(lg), border-radius: var(--radius-xl), box-shadow: var(--shadow-xl), backdrop blur(2px), ESC 키로 닫기, overlay 클릭으로 닫기
 - **FR-013**: 사이드바 검색 바는 문서 제목 기준 필터링(클라이언트 사이드)으로 동작한다. ⌘K(Mac)/Ctrl+K(Windows) 단축키로 포커스 이동. Phase 1에서 전문 검색(내용 포함)은 제외
 - **FR-014**: 문서 삭제 시 확인 다이얼로그 없이 즉시 휴지통으로 이동하며, 하단 토스트로 "휴지통으로 이동됨" + "실행 취소" 버튼을 5초간 표시한다
@@ -141,7 +141,7 @@
 - 프로토타입 HTML(docs/markflow-prototype.html)의 디자인이 최종 디자인 기준이다
 - 랜딩 페이지(screen-landing)는 이번 범위에서 제외한다
 - CSS 테마 에디터, embed 기능은 이번 범위에서 제외한다
-- 그래프 페이지(/{workspaceSlug}/graph)는 사이드바 네비게이션 링크만 표시하고, 페이지 내용 구현은 이번 범위에서 제외한다 (placeholder "준비 중" UI)
+- 그래프 페이지(/{workspaceName}/graph)는 사이드바 네비게이션 링크만 표시하고, 페이지 내용 구현은 이번 범위에서 제외한다 (placeholder "준비 중" UI)
 - 반응형 레이아웃(모바일/태블릿)은 이번 범위에서 제외한다. 데스크톱(1280px+) 환경만 대상으로 한다
 - 동시 편집(같은 문서를 여러 탭/사용자가 동시에 편집)은 Phase 1에서 제외한다. 마지막 저장이 우선(last-write-wins)
 - 기존 프론트엔드 파일을 수정하는 것이 기본이며, 앱 셸 구성에 필요한 신규 컴포넌트(app-header.tsx) 및 공유 타입 파일(lib/types.ts)은 신규 생성을 허용한다

@@ -2,37 +2,25 @@ import {
   workspaces,
   workspaceMembers,
   joinRequests,
-  users,
   eq,
   and,
   count,
   ilike,
-  or,
-  sql,
   notInArray,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
-import { badRequest, conflict, notFound } from '../utils/errors.js';
+import { badRequest, notFound } from '../utils/errors.js';
 
 export function createWorkspaceService(db: Db) {
-  async function create(userId: string, name: string, slug: string) {
-    const existing = await db
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.slug, slug))
-      .limit(1);
-
-    if (existing.length > 0) {
-      throw conflict('SLUG_EXISTS', 'A workspace with this slug already exists');
-    }
+  async function create(userId: string, name: string) {
+    const numUserId = Number(userId);
 
     const inserted = await db
       .insert(workspaces)
       .values({
         name,
-        slug,
         isPublic: true,
-        ownerId: userId,
+        ownerId: numUserId,
       })
       .returning();
 
@@ -43,7 +31,7 @@ export function createWorkspaceService(db: Db) {
 
     await db.insert(workspaceMembers).values({
       workspaceId: workspace.id,
-      userId,
+      userId: numUserId,
       role: 'owner',
     });
 
@@ -51,10 +39,11 @@ export function createWorkspaceService(db: Db) {
   }
 
   async function getById(workspaceId: string) {
+    const numWorkspaceId = Number(workspaceId);
     const found = await db
       .select()
       .from(workspaces)
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, numWorkspaceId))
       .limit(1);
 
     const workspace = found[0];
@@ -65,7 +54,7 @@ export function createWorkspaceService(db: Db) {
     const memberCountResult = await db
       .select({ value: count() })
       .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, workspaceId));
+      .where(eq(workspaceMembers.workspaceId, numWorkspaceId));
 
     const memberCount = memberCountResult[0]?.value ?? 0;
 
@@ -77,10 +66,11 @@ export function createWorkspaceService(db: Db) {
       .select({
         id: workspaces.id,
         name: workspaces.name,
-        slug: workspaces.slug,
         isRoot: workspaces.isRoot,
         isPublic: workspaces.isPublic,
         ownerId: workspaces.ownerId,
+        themePreset: workspaces.themePreset,
+        themeCss: workspaces.themeCss,
         createdAt: workspaces.createdAt,
         updatedAt: workspaces.updatedAt,
         role: workspaceMembers.role,
@@ -88,15 +78,16 @@ export function createWorkspaceService(db: Db) {
       })
       .from(workspaceMembers)
       .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
-      .where(eq(workspaceMembers.userId, userId));
+      .where(eq(workspaceMembers.userId, Number(userId)));
 
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
-      slug: row.slug,
       isRoot: row.isRoot,
       isPublic: row.isPublic,
       ownerId: row.ownerId,
+      themePreset: row.themePreset,
+      themeCss: row.themeCss,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       role: row.role,
@@ -104,24 +95,14 @@ export function createWorkspaceService(db: Db) {
     }));
   }
 
-  async function update(workspaceId: string, data: { name?: string; slug?: string; isPublic?: boolean }) {
-    const updates: { name?: string; slug?: string; isPublic?: boolean; updatedAt: Date } = {
+  async function update(workspaceId: string, data: { name?: string; isPublic?: boolean }) {
+    const numWorkspaceId = Number(workspaceId);
+    const updates: { name?: string; isPublic?: boolean; updatedAt: Date } = {
       updatedAt: new Date(),
     };
 
     if (data.name !== undefined) {
       updates.name = data.name;
-    }
-    if (data.slug !== undefined) {
-      const existing = await db
-        .select({ id: workspaces.id })
-        .from(workspaces)
-        .where(eq(workspaces.slug, data.slug))
-        .limit(1);
-      if (existing[0] && existing[0].id !== workspaceId) {
-        throw badRequest('SLUG_EXISTS', 'This URL is already in use');
-      }
-      updates.slug = data.slug;
     }
     if (data.isPublic !== undefined) {
       updates.isPublic = data.isPublic;
@@ -130,7 +111,7 @@ export function createWorkspaceService(db: Db) {
     const updated = await db
       .update(workspaces)
       .set(updates)
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, numWorkspaceId))
       .returning();
 
     const workspace = updated[0];
@@ -142,10 +123,11 @@ export function createWorkspaceService(db: Db) {
   }
 
   async function remove(workspaceId: string, confirmName: string) {
+    const numWorkspaceId = Number(workspaceId);
     const found = await db
       .select()
       .from(workspaces)
-      .where(eq(workspaces.id, workspaceId))
+      .where(eq(workspaces.id, numWorkspaceId))
       .limit(1);
 
     const workspace = found[0];
@@ -161,7 +143,7 @@ export function createWorkspaceService(db: Db) {
       throw badRequest('NAME_MISMATCH', 'Confirmation name does not match workspace name');
     }
 
-    await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+    await db.delete(workspaces).where(eq(workspaces.id, numWorkspaceId));
   }
 
   async function transferOwnership(
@@ -169,14 +151,18 @@ export function createWorkspaceService(db: Db) {
     currentOwnerId: string,
     newOwnerId: string,
   ) {
+    const numWorkspaceId = Number(workspaceId);
+    const numCurrentOwnerId = Number(currentOwnerId);
+    const numNewOwnerId = Number(newOwnerId);
+
     // Verify new owner is an admin
     const [newOwnerMember] = await db
       .select()
       .from(workspaceMembers)
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, newOwnerId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numNewOwnerId),
         ),
       )
       .limit(1);
@@ -195,8 +181,8 @@ export function createWorkspaceService(db: Db) {
       .set({ role: 'admin' })
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, currentOwnerId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numCurrentOwnerId),
         ),
       );
 
@@ -206,16 +192,16 @@ export function createWorkspaceService(db: Db) {
       .set({ role: 'owner' })
       .where(
         and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.userId, newOwnerId),
+          eq(workspaceMembers.workspaceId, numWorkspaceId),
+          eq(workspaceMembers.userId, numNewOwnerId),
         ),
       );
 
     // Update workspace ownerId
     await db
       .update(workspaces)
-      .set({ ownerId: newOwnerId, updatedAt: new Date() })
-      .where(eq(workspaces.id, workspaceId));
+      .set({ ownerId: numNewOwnerId, updatedAt: new Date() })
+      .where(eq(workspaces.id, numWorkspaceId));
   }
 
   async function listPublicWorkspaces(userId: string, query: string, page: number, limit: number) {
@@ -223,7 +209,7 @@ export function createWorkspaceService(db: Db) {
     const memberRows = await db
       .select({ wsId: workspaceMembers.workspaceId })
       .from(workspaceMembers)
-      .where(eq(workspaceMembers.userId, userId));
+      .where(eq(workspaceMembers.userId, Number(userId)));
     const memberWsIds = memberRows.map((r) => r.wsId);
 
     // Build conditions: public + not a member
@@ -233,10 +219,7 @@ export function createWorkspaceService(db: Db) {
     }
     if (query.trim()) {
       conditions.push(
-        or(
-          ilike(workspaces.name, `%${query}%`),
-          ilike(workspaces.slug, `%${query}%`),
-        )!,
+        ilike(workspaces.name, `%${query}%`),
       );
     }
 
@@ -273,7 +256,7 @@ export function createWorkspaceService(db: Db) {
           .where(
             and(
               eq(joinRequests.workspaceId, ws.id),
-              eq(joinRequests.userId, userId),
+              eq(joinRequests.userId, Number(userId)),
               eq(joinRequests.status, 'pending'),
             ),
           );
@@ -282,7 +265,6 @@ export function createWorkspaceService(db: Db) {
         return {
           id: ws.id,
           name: ws.name,
-          slug: ws.slug,
           memberCount,
           isPublic: ws.isPublic,
           pendingRequest,

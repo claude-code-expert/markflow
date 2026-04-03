@@ -25,7 +25,7 @@ export function generateSlug(title: string): string {
  */
 export async function ensureUniqueSlug(
   db: Db,
-  workspaceId: string,
+  workspaceId: number,
   baseSlug: string,
 ): Promise<string> {
   let candidate = baseSlug;

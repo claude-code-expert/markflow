@@ -44,7 +44,7 @@
 
 **Goal**: 사용자가 로그인하면 워크스페이스 목록을 보고, 선택하면 문서 목록으로 이동한다. /undefined가 발생하지 않는다.
 
-**Independent Test**: 로그인 → 워크스페이스 목록 표시 → 워크스페이스 클릭 → /{slug} 진입 확인
+**Independent Test**: 로그인 → 워크스페이스 목록 표시 → 워크스페이스 클릭 → /{name} 진입 확인
 
 ### Implementation for User Story 1
 
@@ -52,15 +52,15 @@
 - [x] T009 [P] [US1] Redesign register page in `apps/web/app/(auth)/register/page.tsx` — login과 동일한 .auth-card 디자인, 이름/이메일/비밀번호/비밀번호 확인 필드, 비밀번호 유효성 검증(8자+영문+숫자+특수), 성공 시 /login 리다이렉트
 - [x] T010 [P] [US1] Redesign auth layout in `apps/web/app/(auth)/layout.tsx` — 프로토타입 .auth-screen: centered, 100vh, --bg 배경. 로고 + "팀 지식 관리 플랫폼" 부제 스타일 적용
 - [x] T010-1 [P] [US1] Redesign verify-email page in `apps/web/app/(auth)/verify-email/page.tsx` — 프로토타입 .auth-card 디자인 적용: 이메일 인증 아이콘(48px), 상태 메시지, 재전송 버튼, 정보 박스(--teal-lt 배경). FR-007 인증 화면 디자인 일치
-- [x] T011 [US1] Fix workspace list page in `apps/web/app/(app)/page.tsx` — T004 수정 기반으로 워크스페이스 목록 정상 렌더링. 프로토타입 .ws-list 디자인 적용: 680px max-width, 각 항목에 아이콘(40px) + 이름 + 메타데이터 + 역할 배지(Admin/Owner). workspaces.map에서 ws.slug 안전 접근 보장
-- [x] T012 [US1] Implement auto-redirect for single workspace in `apps/web/app/(app)/page.tsx` — fetchWorkspaces 결과가 정확히 1개일 때 router.replace(`/${ws.slug}`) 자동 이동. 0개일 때 빈 상태 UI 표시
-- [x] T013 [US1] Fix workspace home redirect in `apps/web/app/(app)/[workspaceSlug]/page.tsx` — 서버 컴포넌트 → 클라이언트 컴포넌트 전환, workspaceSlug로 워크스페이스 로드 후 /{workspaceSlug}/docs로 리다이렉트. slug가 유효하지 않으면 워크스페이스 목록으로 리다이렉트
+- [x] T011 [US1] Fix workspace list page in `apps/web/app/(app)/page.tsx` — T004 수정 기반으로 워크스페이스 목록 정상 렌더링. 프로토타입 .ws-list 디자인 적용: 680px max-width, 각 항목에 아이콘(40px) + 이름 + 메타데이터 + 역할 배지(Admin/Owner). workspaces.map에서 ws.name 안전 접근 보장 (slug 필드 제거됨, name이 URL 식별자)
+- [x] T012 [US1] Implement auto-redirect for single workspace in `apps/web/app/(app)/page.tsx` — fetchWorkspaces 결과가 정확히 1개일 때 router.replace(`/${encodeURIComponent(ws.name)}`) 자동 이동. 0개일 때 빈 상태 UI 표시
+- [x] T013 [US1] Fix workspace home redirect in `apps/web/app/(app)/[workspaceSlug]/page.tsx` — 서버 컴포넌트 → 클라이언트 컴포넌트 전환, workspaceSlug(실제로는 URL-encoded workspace name)로 워크스페이스 로드 후 /{workspaceName}/doc로 리다이렉트. name이 유효하지 않으면 워크스페이스 목록으로 리다이렉트
 
 ### E2E Test for User Story 1
 
-- [x] T014 [US1] Write E2E test in `apps/web/tests/e2e/auth-workspace-flow.spec.ts` — 시나리오: 로그인 → 워크스페이스 목록 표시 → 클릭 → /{slug}/docs 진입 확인. /undefined URL 미발생 어서션. 단일 워크스페이스 자동 리다이렉트 확인
+- [x] T014 [US1] Write E2E test in `apps/web/tests/e2e/auth-workspace-flow.spec.ts` — 시나리오: 로그인 → 워크스페이스 목록 표시 → 클릭 → /{name}/doc 진입 확인. /undefined URL 미발생 어서션. 단일 워크스페이스 자동 리다이렉트 확인
 
-**Checkpoint**: 로그인 → 워크스페이스 선택 → 문서 목록 진입 플로우가 /undefined 없이 정상 동작
+**Checkpoint**: 로그인 → 워크스페이스 선택 → /{name}/doc 문서 목록 진입 플로우가 /undefined 없이 정상 동작
 
 ---
 
@@ -95,10 +95,10 @@
 
 ### Implementation for User Story 3
 
-- [x] T021 [US3] Fix document list page in `apps/web/app/(app)/[workspaceSlug]/docs/page.tsx` — API 응답 래퍼 수정(DocumentsResponse), 프로토타입 문서 목록 디자인 적용: 리스트/그리드 뷰 토글, 검색/정렬/카테고리 필터, 페이지네이션. 각 문서 항목에 제목/카테고리/수정일/작성자 표시
-- [x] T022 [US3] Fix new document modal in `apps/web/components/new-doc-modal.tsx` — 프로토타입 모달 디자인(--radius-xl, --shadow-xl, 560px max-width), 제목 입력 + 카테고리 선택(옵션), 생성 후 `/${workspaceSlug}/docs/${document.id}` 에디터로 이동. API 응답 `{ document: {...} }` 래퍼 처리
-- [x] T023 [US3] Implement editor page in `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx` — 문서 로딩(GET /documents/:id → `{ document }` 래퍼), @markflow/editor 통합, editor-store 연동(setDocument → content 변경 감지), 프로토타입 에디터 레이아웃(toolbar + split pane or preview)
-- [x] T024 [US3] Implement auto-save in `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx` — content 변경 시 1초 디바운스 후 PATCH /documents/:id, saveStatus 상태 관리(unsaved→saving→saved/error), 헤더에 저장 상태 표시("저장됨"/"저장 중..."/"저장 실패"), useRef로 debounce timer 관리
+- [x] T021 [US3] Fix document list page in `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx` — API 응답 래퍼 수정(DocumentsResponse), 프로토타입 문서 목록 디자인 적용: 리스트/그리드 뷰 토글, 검색/정렬/카테고리 필터, 페이지네이션. 각 문서 항목에 제목/카테고리/수정일/작성자 표시
+- [x] T022 [US3] Fix new document modal in `apps/web/components/new-doc-modal.tsx` — 프로토타입 모달 디자인(--radius-xl, --shadow-xl, 560px max-width), 제목 입력 + 카테고리 선택(옵션), 생성 후 `/${encodeURIComponent(workspaceName)}/doc/${document.id}` 에디터로 이동. API 응답 `{ document: {...} }` 래퍼 처리
+- [x] T023 [US3] Implement editor page in `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx` — 문서 로딩(GET /documents/:id → `{ document }` 래퍼), @markflow/editor 통합, editor-store 연동(setDocument → content 변경 감지), 프로토타입 에디터 레이아웃(toolbar + split pane or preview)
+- [x] T024 [US3] Implement auto-save in `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx` — content 변경 시 1초 디바운스 후 PATCH /documents/:id, saveStatus 상태 관리(unsaved→saving→saved/error), 헤더에 저장 상태 표시("저장됨"/"저장 중..."/"저장 실패"), useRef로 debounce timer 관리
 - [x] T025 [US3] Fix trash page in `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx` — 삭제된 문서 목록 표시(GET /trash → documents), 복원 버튼(POST /trash/:id/restore), 프로토타입 디자인 적용
 
 ### E2E Test for User Story 3
@@ -117,13 +117,13 @@
 
 ### Implementation for User Story 4
 
-- [x] T027 [P] [US4] Fix create workspace modal in `apps/web/components/create-workspace-modal.tsx` — 프로토타입 모달 디자인 적용, API 응답 `{ workspace: {...} }` 래퍼 처리 확인, slug 자동 생성 + 중복 검사 유지, 생성 후 `/${workspace.slug}` 이동
+- [x] T027 [P] [US4] Fix create workspace modal in `apps/web/components/create-workspace-modal.tsx` — 프로토타입 모달 디자인 적용, API 응답 `{ workspace: {...} }` 래퍼 처리 확인, name 중복 검사 유지 (slug 필드 제거됨), 생성 후 `/${encodeURIComponent(workspace.name)}` 이동
 - [x] T028 [P] [US4] Fix workspace settings page in `apps/web/app/(app)/[workspaceSlug]/settings/page.tsx` — 워크스페이스 정보 로딩(GET /workspaces/:id), 이름 변경 + 공개/비공개 토글, PATCH /workspaces/:id 저장, owner 권한 체크(usePermissions). 프로토타입 설정 페이지 디자인
 - [x] T029 [US4] Fix members management page in `apps/web/app/(app)/[workspaceSlug]/settings/members/page.tsx` — 멤버 목록 표시(GET /workspaces/:id/members → `{ members }` 래퍼), 역할 배지, 이메일 초대 폼(POST /invitations), 역할 변경(PATCH /members/:userId), 멤버 제거(DELETE /members/:userId). admin+ 권한 체크
 
 ### E2E Test for User Story 4
 
-- [x] T029-1 [US4] Write E2E test in `apps/web/tests/e2e/workspace-management.spec.ts` — 시나리오: 워크스페이스 생성 모달 → 이름/slug 입력 → 생성 확인 → 설정 페이지 진입 → 이름 변경 저장 → 멤버 페이지 → 이메일 초대 생성 확인
+- [x] T029-1 [US4] Write E2E test in `apps/web/tests/e2e/workspace-management.spec.ts` — 시나리오: 워크스페이스 생성 모달 → 이름 입력 → 생성 확인 → 설정 페이지 진입 → 이름 변경 저장 → 멤버 페이지 → 이메일 초대 생성 확인
 
 **Checkpoint**: 워크스페이스 생성 → 설정 변경 → 멤버 초대 플로우 동작
 

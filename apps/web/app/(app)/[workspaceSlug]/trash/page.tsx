@@ -27,7 +27,7 @@ export default function TrashPage({
 
   useEffect(() => {
     if (!currentWorkspace && workspaces.length > 0) {
-      const found = workspaces.find((ws) => ws.slug === workspaceSlug);
+      const found = workspaces.find((ws) => ws.name === decodeURIComponent(workspaceSlug));
       if (found) setCurrentWorkspace(found);
     }
   }, [currentWorkspace, workspaces, workspaceSlug, setCurrentWorkspace]);
@@ -59,7 +59,7 @@ export default function TrashPage({
 
   // Restore mutation
   const restoreMutation = useMutation({
-    mutationFn: (docId: string) =>
+    mutationFn: (docId: number) =>
       apiFetch<RestoreResponse>(
         `/workspaces/${wsId}/documents/${docId}/restore`,
         { method: 'POST' },

@@ -111,7 +111,7 @@
 
 - [x] T025 [US9] Create DocumentLinksModal component (prev/next/related inputs, doc search, cycle warning) in `apps/web/components/document-links-modal.tsx`
 - [x] T026 [US9] Extract inline relation editing from DocumentMetaPanel to use modal in `apps/web/components/document-meta-panel.tsx`
-- [x] T027 [US9] Add Prev/Next navigation cards at preview bottom in `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx`
+- [x] T027 [US9] Add Prev/Next navigation cards at preview bottom in `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
 
 **Checkpoint**: Document links editable via modal, preview bottom shows Prev/Next navigation
 
@@ -172,7 +172,7 @@
 
 - [x] T038 [US6] Create ImportExportModal component (import tab: type select + dropzone, export tab: scope + format) in `apps/web/components/import-export-modal.tsx`
 - [ ] T039 [P] [US6] Add import/export modal trigger to sidebar "가져오기/내보내기" item in `apps/web/components/sidebar.tsx`
-- [ ] T040 [P] [US6] Add export button to editor toolbar linking to modal in `apps/web/app/(app)/[workspaceSlug]/docs/[docId]/page.tsx`
+- [ ] T040 [P] [US6] Add export button to editor toolbar linking to modal in `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
 
 **Checkpoint**: Import via drag-drop works, export with scope selection downloads file
 

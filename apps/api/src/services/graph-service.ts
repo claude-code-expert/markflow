@@ -7,14 +7,14 @@ import {
 import type { Db } from '@markflow/db';
 
 interface GraphNode {
-  id: string;
+  id: number;
   title: string;
-  categoryId: string | null;
+  categoryId: number | null;
 }
 
 interface GraphEdge {
-  source: string;
-  target: string;
+  source: number;
+  target: number;
   type: 'prev' | 'next' | 'related';
 }
 
@@ -35,12 +35,12 @@ export function createGraphService(db: Db) {
       .from(documents)
       .where(
         and(
-          eq(documents.workspaceId, workspaceId),
+          eq(documents.workspaceId, Number(workspaceId)),
           eq(documents.isDeleted, false),
         ),
       );
 
-    const docIds = new Set(docs.map((d) => d.id));
+    const docIds = new Set<number>(docs.map((d) => d.id));
 
     const nodes: GraphNode[] = docs.map((d) => ({
       id: d.id,

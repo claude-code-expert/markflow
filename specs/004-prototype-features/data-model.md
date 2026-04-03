@@ -10,9 +10,9 @@ Guest Token for iframe embedding (US7).
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| id | UUID | PK, default random | 토큰 고유 식별자 |
-| workspaceId | UUID | FK → workspaces.id, NOT NULL | 소속 워크스페이스 |
-| creatorId | UUID | FK → users.id, NOT NULL | 발급자 |
+| id | BIGSERIAL | PK, auto-increment | 토큰 고유 식별자 |
+| workspaceId | BIGINT | FK → workspaces.id, NOT NULL | 소속 워크스페이스 |
+| creatorId | BIGINT | FK → users.id, NOT NULL | 발급자 |
 | label | VARCHAR(100) | NOT NULL | 토큰 라벨 (예: "외부 블로그 임베드") |
 | tokenHash | VARCHAR(255) | UNIQUE, NOT NULL | 토큰 해시 (bcrypt) |
 | scope | VARCHAR(20) | NOT NULL, CHECK ('read', 'read_write') | 권한 범위 |

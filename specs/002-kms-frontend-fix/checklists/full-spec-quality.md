@@ -24,10 +24,10 @@
 
 ## Requirement Consistency
 
-- [x] CHK011 - spec US1-AS2는 "/{workspaceSlug} 경로로 이동하며 문서 목록이 표시된다"이지만, 라우트 구조상 문서 목록은 `/{slug}/docs`임. 최종 목적지 경로가 spec과 plan/tasks 간에 일관되는가? [Conflict, Spec §US1-AS2 vs plan.md L69]
+- [x] CHK011 - spec US1-AS2는 "/{workspaceName}/doc 경로로 이동하며 문서 목록이 표시된다". 라우트 구조상 문서 목록은 `/{name}/doc`임. 최종 목적지 경로가 spec과 plan/tasks 간에 일관되는가? [Resolved — workspace slug 제거, name 기반 URL로 통일, /docs → /doc 변경]
 - [x] CHK012 - spec §FR-007은 "로그인/회원가입 페이지"만 명시하지만, 인증 플로우에 verify-email 페이지도 포함됨. FR-007의 범위와 tasks의 T010-1이 일관되는가? [Consistency, Spec §FR-007 vs tasks.md]
 - [x] CHK013 - spec Assumptions "기존 컴포넌트 파일 수정 방식으로 진행"이지만, plan.md에 `app-header.tsx` 신규 생성이 포함됨. 신규 파일 생성 허용 범위가 일관되게 정의되어 있는가? [Conflict, Spec §Assumptions vs plan.md L79]
-- [x] CHK014 - spec US4-AS1 워크스페이스 생성 후 이동 경로가 spec에 명시되어 있지 않음. tasks T027은 `/${workspace.slug}`로 이동하는데, US1-AS2의 docs 리다이렉트와 일관되는가? [Consistency, Spec §US4-AS1 vs tasks.md T027]
+- [x] CHK014 - spec US4-AS1 워크스페이스 생성 후 이동 경로가 spec에 명시됨. tasks T027은 `/${encodeURIComponent(workspace.name)}`로 이동하며, US1-AS2의 /doc 리다이렉트와 일관됨. [Resolved — slug 제거, name 기반 URL로 통일]
 
 ## Acceptance Criteria Quality
 
@@ -44,7 +44,7 @@
 ## Edge Case Coverage
 
 - [x] CHK021 - 극단적 길이의 입력(300자 문서 제목, 100자 워크스페이스 이름)에 대한 UI truncation/overflow 요구사항이 정의되어 있는가? [Edge Case, Gap]
-- [x] CHK022 - 한글 slug 자동 생성 규칙이 정의되어 있는가? 워크스페이스 이름이 "마크플로우 팀"일 때 slug 변환 로직(romanization vs 제거)이 spec에 명시되어 있는가? [Edge Case, Gap]
+- [x] CHK022 - 워크스페이스 slug 필드가 제거되어 name이 UNIQUE URL 식별자로 사용됨. 한글 이름은 URL에 URL-encoded 형태로 사용. slug 자동 생성 로직 불필요. [Resolved — slug 제거]
 - [x] CHK023 - 대량 문서(100+, 1000+) 목록에서의 페이지네이션/가상 스크롤 요구사항이 정의되어 있는가? FR-010 페이지네이션의 한 페이지 항목 수/UI가 spec에 있는가? [Edge Case, Spec §FR-010]
 
 ## Non-Functional Requirements

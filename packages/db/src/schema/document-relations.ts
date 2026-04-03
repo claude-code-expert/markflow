@@ -1,10 +1,10 @@
-import { pgTable, uuid, varchar, timestamp, unique, index } from 'drizzle-orm/pg-core';
+import { pgTable, bigserial, bigint, varchar, timestamp, unique, index } from 'drizzle-orm/pg-core';
 import { documents } from './documents';
 
 export const documentRelations = pgTable('document_relations', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sourceId: uuid('source_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
-  targetId: uuid('target_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  sourceId: bigint('source_id', { mode: 'number' }).notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  targetId: bigint('target_id', { mode: 'number' }).notNull().references(() => documents.id, { onDelete: 'cascade' }),
   type: varchar('type', { length: 20 }).$type<'prev' | 'next' | 'related'>().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [

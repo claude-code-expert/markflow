@@ -4,11 +4,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  FileText, Search, FolderOpen, Command, ChevronDown, Plus, Check, LayoutGrid,
+  ArrowDownAZ, ArrowDownWideNarrow, Briefcase, FileText, Search, FolderOpen, Command, ChevronDown, Plus, Check, LayoutGrid,
 } from 'lucide-react';
 import { useWorkspaceStore } from '../stores/workspace-store';
 import { CategoryTree, type Category as TreeCategory, type TreeDocument } from './category-tree';
 import { apiFetch } from '../lib/api';
+import { FolderContextMenu } from './folder-context-menu';
+import { DocContextMenu } from './doc-context-menu';
 
 /* ─── helpers ─── */
 
@@ -27,7 +29,8 @@ function extractWorkspaceSlug(pathname: string): string | null {
 
 function WorkspaceSelector({ slug }: { slug: string | null }) {
   const { workspaces, fetchWorkspaces } = useWorkspaceStore();
-  const current = workspaces.find((ws) => ws.slug === slug);
+  const decodedSlug = slug ? decodeURIComponent(slug) : null;
+  const current = workspaces.find((ws) => ws.name === decodedSlug);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -74,17 +77,18 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
       >
         <div style={{
           width: '28px', height: '28px', borderRadius: '6px',
-          background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: '12px', fontWeight: 700, flexShrink: 0,
+          background: current ? 'var(--accent)' : 'var(--surface-3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: current ? '#fff' : 'var(--text-2)', flexShrink: 0,
         }}>
-          {current ? current.name.charAt(0).toUpperCase() : 'M'}
+          <Briefcase size={14} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: '13.5px', fontWeight: 600, color: 'var(--text)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
           }}>
-            {current?.name ?? 'MarkFlow'}
+            {current?.name ?? '워크스페이스 선택'}
           </div>
         </div>
         <ChevronDown
@@ -111,10 +115,12 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
           overflowY: 'auto',
           padding: '4px',
         }}>
-          {workspaces.map((ws) => (
+          {workspaces.map((ws) => {
+            const isSelected = ws.name === decodedSlug;
+            return (
             <Link
               key={ws.id}
-              href={`/${ws.slug}/docs`}
+              href={`/${encodeURIComponent(ws.name)}/doc`}
               onClick={() => setOpen(false)}
               style={{
                 display: 'flex',
@@ -124,35 +130,36 @@ function WorkspaceSelector({ slug }: { slug: string | null }) {
                 borderRadius: 'var(--radius-sm)',
                 textDecoration: 'none',
                 color: 'inherit',
-                background: ws.slug === slug ? 'var(--accent-2)' : 'transparent',
+                background: isSelected ? 'var(--accent-2)' : 'transparent',
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = ws.slug === slug ? 'var(--accent-2)' : 'var(--surface-2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = ws.slug === slug ? 'var(--accent-2)' : 'transparent'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = isSelected ? 'var(--accent-2)' : 'var(--surface-2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'var(--accent-2)' : 'transparent'; }}
             >
               <div style={{
                 width: '24px', height: '24px', borderRadius: '5px',
-                background: ws.slug === slug ? 'var(--accent)' : 'var(--surface-3)',
+                background: isSelected ? 'var(--accent)' : 'var(--surface-3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: ws.slug === slug ? '#fff' : 'var(--text-2)',
-                fontSize: '11px', fontWeight: 700, flexShrink: 0,
+                color: isSelected ? '#fff' : 'var(--text-2)',
+                flexShrink: 0,
               }}>
-                {ws.name.charAt(0).toUpperCase()}
+                <Briefcase size={12} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: '13px', fontWeight: ws.slug === slug ? 600 : 400,
-                  color: ws.slug === slug ? 'var(--accent)' : 'var(--text)',
+                  fontSize: '13px', fontWeight: isSelected ? 600 : 400,
+                  color: isSelected ? 'var(--accent)' : 'var(--text)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const,
                 }}>
                   {ws.name}
                 </div>
               </div>
-              {ws.slug === slug && (
+              {isSelected && (
                 <Check size={14} color="var(--accent)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
               )}
             </Link>
-          ))}
+            );
+          })}
 
           {/* 워크스페이스 목록 전체 보기 */}
           <div style={{ borderTop: '1px solid var(--border)', marginTop: '4px', paddingTop: '4px' }}>
@@ -207,6 +214,11 @@ function SearchBar({ onClick }: { onClick?: () => void }) {
 
 /* ─── T017: Folder Tree Section ─── */
 
+type FolderSort = 'name' | 'date';
+
+const INDENT_PX = 16;
+const BASE_PL = 10;
+
 interface CategoryTreeResponse {
   categories: TreeCategory[];
   uncategorized: TreeDocument[];
@@ -260,13 +272,49 @@ function NewFolderInline({ onSubmit, onCancel }: { onSubmit: (name: string) => P
   );
 }
 
+function latestUpdatedAt(cat: TreeCategory): string {
+  const dates = cat.documents.map((d) => d.updatedAt);
+  for (const child of cat.children) {
+    const childLatest = latestUpdatedAt(child);
+    if (childLatest) dates.push(childLatest);
+  }
+  return dates.length > 0 ? dates.sort().reverse()[0]! : '';
+}
+
+function sortCategories(cats: TreeCategory[], sort: FolderSort): TreeCategory[] {
+  return [...cats].sort((a, b) => {
+    if (sort === 'name') return a.name.localeCompare(b.name, 'ko');
+    return latestUpdatedAt(b).localeCompare(latestUpdatedAt(a));
+  }).map((cat) => ({
+    ...cat,
+    children: sortCategories(cat.children, sort),
+  }));
+}
+
 function FolderTreeSection({ slug }: { slug: string }) {
   const [categories, setCategories] = useState<TreeCategory[]>([]);
   const [uncategorized, setUncategorized] = useState<TreeDocument[]>([]);
   const [showNewFolder, setShowNewFolder] = useState(false);
+  const [folderSort, setFolderSort] = useState<FolderSort>('name');
   const { workspaces } = useWorkspaceStore();
-  const wsId = workspaces.find((ws) => ws.slug === slug)?.id;
+  const wsId = workspaces.find((ws) => ws.name === decodeURIComponent(slug))?.id;
   const pathname = usePathname();
+
+  // Context menu state
+  const [folderMenu, setFolderMenu] = useState<{ category: TreeCategory; pos: { x: number; y: number } } | null>(null);
+  const [docMenu, setDocMenu] = useState<{ doc: TreeDocument; pos: { x: number; y: number } } | null>(null);
+
+  const handleFolderContextMenu = useCallback((e: React.MouseEvent, category: TreeCategory) => {
+    e.preventDefault();
+    setDocMenu(null);
+    setFolderMenu({ category, pos: { x: e.clientX, y: e.clientY } });
+  }, []);
+
+  const handleDocContextMenu = useCallback((e: React.MouseEvent, doc: TreeDocument) => {
+    e.preventDefault();
+    setFolderMenu(null);
+    setDocMenu({ doc, pos: { x: e.clientX, y: e.clientY } });
+  }, []);
 
   const loadData = useCallback(() => {
     if (!wsId) return;
@@ -304,12 +352,14 @@ function FolderTreeSection({ slug }: { slug: string }) {
     }
   };
 
-  const docsHref = `/${slug}/docs`;
+  const docsHref = `/${slug}/doc`;
   const isDocsActive = pathname !== null && (pathname === docsHref || pathname.startsWith(docsHref + '/'));
 
   // 현재 열린 문서 ID 추출
-  const docIdMatch = pathname?.match(/\/docs\/([^/]+)/);
-  const currentDocId = docIdMatch?.[1] ?? null;
+  const docIdMatch = pathname?.match(/\/doc\/([^/]+)/);
+  const currentDocId = docIdMatch?.[1] ? Number(docIdMatch[1]) : null;
+
+  const sortedCategories = sortCategories(categories, folderSort);
 
   return (
     <div style={{ padding: '0 6px' }}>
@@ -319,20 +369,38 @@ function FolderTreeSection({ slug }: { slug: string }) {
         color: 'var(--text-3)', textTransform: 'uppercase' as const, letterSpacing: '0.05em',
       }}>
         <span>폴더</span>
-        <button
-          onClick={() => setShowNewFolder((v) => !v)}
-          aria-label={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
-          title={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 22, height: 22, borderRadius: 'var(--radius-sm)',
-            color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
-            transition: 'transform 0.15s ease',
-            transform: showNewFolder ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        >
-          {showNewFolder ? <ChevronDown size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {/* 정렬 토글 */}
+          <button
+            onClick={() => setFolderSort((s) => (s === 'name' ? 'date' : 'name'))}
+            aria-label={folderSort === 'name' ? '날짜순 정렬' : '이름순 정렬'}
+            title={folderSort === 'name' ? '날짜순 정렬' : '이름순 정렬'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
+            }}
+          >
+            {folderSort === 'name'
+              ? <ArrowDownAZ size={12} strokeWidth={2.5} />
+              : <ArrowDownWideNarrow size={12} strokeWidth={2.5} />}
+          </button>
+          {/* 폴더 추가 */}
+          <button
+            onClick={() => setShowNewFolder((v) => !v)}
+            aria-label={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
+            title={showNewFolder ? '폴더 입력 닫기' : '폴더 만들기'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
+              transition: 'transform 0.15s ease',
+              transform: showNewFolder ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          >
+            {showNewFolder ? <ChevronDown size={12} strokeWidth={2.5} /> : <Plus size={12} strokeWidth={2.5} />}
+          </button>
+        </div>
       </div>
 
       {/* Inline new folder input */}
@@ -343,12 +411,13 @@ function FolderTreeSection({ slug }: { slug: string }) {
         />
       )}
 
-      {/* 전체 문서 링크 */}
+      {/* 전체 문서 링크 — depth 0 */}
       <Link
         href={docsHref}
         style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '7px 10px', borderRadius: 'var(--radius-sm)',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: `6px 10px`, paddingLeft: `${BASE_PL}px`,
+          borderRadius: 'var(--radius-sm)',
           textDecoration: 'none', fontSize: '13.5px',
           color: isDocsActive ? 'var(--accent)' : 'var(--text-2)',
           fontWeight: isDocsActive ? 500 : 400,
@@ -359,11 +428,11 @@ function FolderTreeSection({ slug }: { slug: string }) {
         전체 문서
       </Link>
 
-      {/* 미분류 문서 (카테고리 없는 문서) — "전체 문서" 하위 */}
+      {/* 미분류 문서 — depth 1 */}
       {uncategorized.length > 0 && (
-        <div style={{ paddingLeft: '14px' }}>
+        <div>
           {uncategorized.map((doc) => {
-            const docHref = `/${slug}/docs/${doc.id}`;
+            const docHref = `/${slug}/doc/${doc.id}`;
             const isDocActive = currentDocId === doc.id;
             return (
               <Link
@@ -371,7 +440,9 @@ function FolderTreeSection({ slug }: { slug: string }) {
                 href={docHref}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '5px 12px', borderRadius: 'var(--radius-sm)',
+                  padding: '5px 10px',
+                  paddingLeft: `${BASE_PL + INDENT_PX}px`,
+                  borderRadius: 'var(--radius-sm)',
                   textDecoration: 'none', fontSize: '13px',
                   fontWeight: isDocActive ? 500 : 400,
                   color: isDocActive ? 'var(--accent)' : 'var(--text-2)',
@@ -380,6 +451,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
                 }}
                 onMouseEnter={(e) => { if (!isDocActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = isDocActive ? 'var(--accent-2)' : 'transparent'; }}
+                onContextMenu={(e) => handleDocContextMenu(e, doc)}
               >
                 <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
                 <span style={{
@@ -395,11 +467,46 @@ function FolderTreeSection({ slug }: { slug: string }) {
       )}
 
       {/* 카테고리 트리 (문서 포함) */}
-      {categories.length > 0 && (
+      {sortedCategories.length > 0 && (
         <CategoryTree
-          categories={categories}
+          categories={sortedCategories}
           workspaceSlug={slug}
           currentDocId={currentDocId}
+          onContextMenu={handleFolderContextMenu}
+          onDocContextMenu={handleDocContextMenu}
+          onReorder={(orderedIds) => {
+            if (!wsId) return;
+            void apiFetch(`/workspaces/${wsId}/categories/reorder`, {
+              method: 'PUT',
+              body: { orderedIds },
+            }).then(() => loadData());
+          }}
+          basePl={BASE_PL}
+          indentPx={INDENT_PX}
+        />
+      )}
+
+      {/* Folder context menu */}
+      {folderMenu && wsId && (
+        <FolderContextMenu
+          category={folderMenu.category}
+          workspaceSlug={slug}
+          workspaceId={wsId}
+          position={folderMenu.pos}
+          onClose={() => setFolderMenu(null)}
+          onRefresh={loadData}
+        />
+      )}
+
+      {/* Document context menu */}
+      {docMenu && wsId && (
+        <DocContextMenu
+          doc={docMenu.doc}
+          workspaceSlug={slug}
+          workspaceId={wsId}
+          position={docMenu.pos}
+          onClose={() => setDocMenu(null)}
+          onRefresh={loadData}
         />
       )}
     </div>

@@ -1,8 +1,11 @@
 import {
   documents,
   documentVersions,
+  categories,
+  users,
   eq,
   and,
+  or,
   desc,
   asc,
   ilike,
@@ -14,6 +17,7 @@ import { logger } from '../utils/logger.js';
 import { generateSlug, ensureUniqueSlug } from '../utils/slug.js';
 
 const MAX_VERSIONS = 20;
+const EXCERPT_RADIUS = 60;
 
 interface ListOptions {
   categoryId?: string | null;
@@ -22,6 +26,24 @@ interface ListOptions {
   q?: string;
   page?: number;
   limit?: number;
+}
+
+/**
+ * Extract a short excerpt around the first occurrence of `q` in `text`.
+ * Returns an empty string if no match is found.
+ */
+function extractExcerpt(text: string, q: string): string {
+  if (!text || !q) return text.slice(0, EXCERPT_RADIUS * 2);
+  const lower = text.toLowerCase();
+  const idx = lower.indexOf(q.toLowerCase());
+  if (idx === -1) return text.slice(0, EXCERPT_RADIUS * 2);
+
+  const start = Math.max(0, idx - EXCERPT_RADIUS);
+  const end = Math.min(text.length, idx + q.length + EXCERPT_RADIUS);
+  let excerpt = text.slice(start, end);
+  if (start > 0) excerpt = '...' + excerpt;
+  if (end < text.length) excerpt = excerpt + '...';
+  return excerpt;
 }
 
 interface UpdateData {
@@ -37,17 +59,18 @@ export function createDocumentService(db: Db) {
     title: string,
     categoryId?: string | null,
   ) {
+    const numWorkspaceId = Number(workspaceId);
     const baseSlug = generateSlug(title);
-    const slug = await ensureUniqueSlug(db, workspaceId, baseSlug);
+    const slug = await ensureUniqueSlug(db, numWorkspaceId, baseSlug);
 
     const [document] = await db
       .insert(documents)
       .values({
-        workspaceId,
-        authorId,
+        workspaceId: numWorkspaceId,
+        authorId: Number(authorId),
         title,
         slug,
-        categoryId: categoryId ?? null,
+        categoryId: categoryId ? Number(categoryId) : null,
         content: '',
         currentVersion: 1,
       })
@@ -74,8 +97,8 @@ export function createDocumentService(db: Db) {
       .select()
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, Number(documentId)),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
       ))
       .limit(1);
@@ -98,7 +121,7 @@ export function createDocumentService(db: Db) {
     } = opts;
 
     const conditions = [
-      eq(documents.workspaceId, workspaceId),
+      eq(documents.workspaceId, Number(workspaceId)),
       eq(documents.isDeleted, false),
     ];
 
@@ -106,12 +129,20 @@ export function createDocumentService(db: Db) {
       if (categoryId === null) {
         conditions.push(sql`${documents.categoryId} IS NULL`);
       } else {
-        conditions.push(eq(documents.categoryId, categoryId));
+        conditions.push(eq(documents.categoryId, Number(categoryId)));
       }
     }
 
-    if (q) {
-      conditions.push(ilike(documents.title, `%${q}%`));
+    const isSearch = Boolean(q && q.trim());
+
+    if (isSearch) {
+      // Search both title and content
+      conditions.push(
+        or(
+          ilike(documents.title, `%${q}%`),
+          ilike(documents.content, `%${q}%`),
+        )!,
+      );
     }
 
     const whereClause = and(...conditions);
@@ -135,28 +166,68 @@ export function createDocumentService(db: Db) {
 
     // Fetch page
     const offset = (page - 1) * limit;
+
+    // When searching, rank title matches above content-only matches
+    const orderClauses = isSearch
+      ? [
+          // Title match first (0 = match, 1 = no match)
+          desc(sql`CASE WHEN ${documents.title} ILIKE ${'%' + q + '%'} THEN 0 ELSE 1 END`),
+          orderFn(sortColumn),
+        ]
+      : [orderFn(sortColumn)];
+
+    // Join categories to include category name for search results
     const rows = await db
-      .select()
+      .select({
+        id: documents.id,
+        workspaceId: documents.workspaceId,
+        categoryId: documents.categoryId,
+        authorId: documents.authorId,
+        title: documents.title,
+        slug: documents.slug,
+        content: documents.content,
+        currentVersion: documents.currentVersion,
+        isDeleted: documents.isDeleted,
+        deletedAt: documents.deletedAt,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        categoryName: categories.name,
+      })
       .from(documents)
+      .leftJoin(categories, eq(documents.categoryId, categories.id))
       .where(whereClause)
-      .orderBy(orderFn(sortColumn))
+      .orderBy(...orderClauses)
       .limit(limit)
       .offset(offset);
 
+    // Build response with excerpts for search queries
+    const enrichedDocs = rows.map((row) => {
+      const { categoryName, ...doc } = row;
+      if (isSearch && q) {
+        return {
+          ...doc,
+          categoryName,
+          excerpt: extractExcerpt(doc.content, q),
+        };
+      }
+      return { ...doc, categoryName };
+    });
+
     return {
-      documents: rows,
+      documents: enrichedDocs,
       total,
       page,
     };
   }
 
-  async function update(documentId: string, workspaceId: string, data: UpdateData) {
+  async function update(documentId: string, workspaceId: string, data: UpdateData, userId?: string) {
+    const numDocumentId = Number(documentId);
     const [existing] = await db
       .select()
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
       ))
       .limit(1);
@@ -189,16 +260,17 @@ export function createDocumentService(db: Db) {
       updates.currentVersion = newVersion;
 
       await db.insert(documentVersions).values({
-        documentId,
+        documentId: numDocumentId,
         version: newVersion,
         content: data.content!,
+        authorId: userId ? Number(userId) : null,
       });
 
       // FIFO: keep max MAX_VERSIONS, delete oldest
       const allVersions = await db
         .select({ id: documentVersions.id, version: documentVersions.version })
         .from(documentVersions)
-        .where(eq(documentVersions.documentId, documentId))
+        .where(eq(documentVersions.documentId, numDocumentId))
         .orderBy(desc(documentVersions.version));
 
       if (allVersions.length > MAX_VERSIONS) {
@@ -216,7 +288,7 @@ export function createDocumentService(db: Db) {
     const [updated] = await db
       .update(documents)
       .set(updates)
-      .where(eq(documents.id, documentId))
+      .where(eq(documents.id, numDocumentId))
       .returning();
 
     logger.info('Document updated', { documentId, workspaceId });
@@ -225,13 +297,14 @@ export function createDocumentService(db: Db) {
   }
 
   async function getVersions(documentId: string, workspaceId: string) {
+    const numDocumentId = Number(documentId);
     // Verify document exists in workspace
     const [doc] = await db
       .select({ id: documents.id })
       .from(documents)
       .where(and(
-        eq(documents.id, documentId),
-        eq(documents.workspaceId, workspaceId),
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, Number(workspaceId)),
       ))
       .limit(1);
 
@@ -239,19 +312,118 @@ export function createDocumentService(db: Db) {
       throw notFound('Document not found');
     }
 
-    const versions = await db
+    const rows = await db
       .select({
         id: documentVersions.id,
         version: documentVersions.version,
         content: documentVersions.content,
         createdAt: documentVersions.createdAt,
+        authorId: documentVersions.authorId,
+        authorName: users.name,
       })
       .from(documentVersions)
-      .where(eq(documentVersions.documentId, documentId))
+      .leftJoin(users, eq(documentVersions.authorId, users.id))
+      .where(eq(documentVersions.documentId, numDocumentId))
       .orderBy(desc(documentVersions.version));
 
-    return versions;
+    return rows.map(v => ({
+      id: v.id,
+      version: v.version,
+      content: v.content,
+      createdAt: v.createdAt,
+      createdBy: v.authorName ? { id: v.authorId, name: v.authorName } : null,
+    }));
   }
 
-  return { create, getById, list, update, getVersions };
+  async function restoreVersion(
+    documentId: string,
+    workspaceId: string,
+    versionNum: number,
+    userId: string,
+  ) {
+    const numDocumentId = Number(documentId);
+
+    // 1. Verify document exists in workspace
+    const [existing] = await db
+      .select()
+      .from(documents)
+      .where(and(
+        eq(documents.id, numDocumentId),
+        eq(documents.workspaceId, Number(workspaceId)),
+        eq(documents.isDeleted, false),
+      ))
+      .limit(1);
+
+    if (!existing) {
+      throw notFound('Document not found');
+    }
+
+    // 2. Find the target version
+    const [targetVersion] = await db
+      .select()
+      .from(documentVersions)
+      .where(and(
+        eq(documentVersions.documentId, numDocumentId),
+        eq(documentVersions.version, versionNum),
+      ))
+      .limit(1);
+
+    if (!targetVersion) {
+      throw notFound('Version not found');
+    }
+
+    // 3. Create a backup version with the current content
+    const backupVersionNum = existing.currentVersion + 1;
+    await db.insert(documentVersions).values({
+      documentId: numDocumentId,
+      version: backupVersionNum,
+      content: existing.content,
+      authorId: Number(userId),
+    });
+
+    // 4. Create a restored version
+    const restoredVersionNum = backupVersionNum + 1;
+    await db.insert(documentVersions).values({
+      documentId: numDocumentId,
+      version: restoredVersionNum,
+      content: targetVersion.content,
+      authorId: Number(userId),
+    });
+
+    // 5. Update document content to restored version
+    await db
+      .update(documents)
+      .set({
+        content: targetVersion.content,
+        currentVersion: restoredVersionNum,
+        updatedAt: new Date(),
+      })
+      .where(eq(documents.id, numDocumentId));
+
+    // FIFO: keep max MAX_VERSIONS, delete oldest
+    const allVersions = await db
+      .select({ id: documentVersions.id, version: documentVersions.version })
+      .from(documentVersions)
+      .where(eq(documentVersions.documentId, numDocumentId))
+      .orderBy(desc(documentVersions.version));
+
+    if (allVersions.length > MAX_VERSIONS) {
+      const toDelete = allVersions.slice(MAX_VERSIONS);
+      for (const v of toDelete) {
+        await db
+          .delete(documentVersions)
+          .where(eq(documentVersions.id, v.id));
+      }
+    }
+
+    logger.info('Document version restored', {
+      documentId,
+      fromVersion: versionNum,
+      newVersion: restoredVersionNum,
+    });
+
+    return { newVersion: restoredVersionNum };
+  }
+
+  return { create, getById, list, update, getVersions, restoreVersion };
 }

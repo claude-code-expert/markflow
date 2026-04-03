@@ -4,12 +4,13 @@ import React, { useEffect, useRef, useCallback } from 'react'
 import { EditorView, keymap, placeholder as placeholderExt, scrollPastEnd } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { autocompletion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
-import type { EditorPaneProps } from '../types'
+import type { EditorPaneProps, WikiLinkItem } from '../types'
 
 // Compartments allow hot-swapping extensions without full rebuild
 const themeCompartment = new Compartment()
@@ -105,11 +106,38 @@ const lightEditorTheme = EditorView.theme(
 // Combined light theme: editor chrome + syntax highlighting
 const lightTheme = [lightEditorTheme, syntaxHighlighting(lightHighlightStyle)]
 
+// ─── Wiki link [[completion source ────────────────────────────────────────────
+
+function createWikiLinkCompletion(
+  searchFn: (query: string) => Promise<WikiLinkItem[]>
+) {
+  return async (context: CompletionContext): Promise<CompletionResult | null> => {
+    const line = context.state.doc.lineAt(context.pos)
+    const textBefore = line.text.slice(0, context.pos - line.from)
+    const match = /\[\[([^\]]*)$/.exec(textBefore)
+    if (!match) return null
+
+    const query = match[1] ?? ''
+    const from = context.pos - query.length
+
+    const items = await searchFn(query)
+    if (items.length === 0) return null
+
+    return {
+      from,
+      options: items.map((item) => ({
+        label: item.title || `문서 #${item.id}`,
+        apply: `${item.title || `문서 #${item.id}`}]]`,
+      })),
+    }
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
   function EditorPane(
-    { value, onChange, theme, placeholder, readOnly = false, onScrollRatio, onImageFile },
+    { value, onChange, theme, placeholder, readOnly = false, onScrollRatio, onImageFile, onWikiLinkSearch },
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -143,6 +171,12 @@ export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
             placeholderCompartment.of(
               placeholderExt(placeholder ?? 'Start writing Markdown…')
             ),
+            ...(onWikiLinkSearch
+              ? [autocompletion({
+                  override: [createWikiLinkCompletion(onWikiLinkSearch)],
+                  activateOnTyping: true,
+                })]
+              : []),
             EditorView.updateListener.of((update) => {
               if (update.docChanged && !isExternalUpdate.current) {
                 onChange(update.state.doc.toString())
