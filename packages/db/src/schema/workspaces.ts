@@ -1,9 +1,9 @@
-import { pgTable, bigserial, bigint, varchar, boolean, timestamp, text } from 'drizzle-orm/pg-core';
+import { pgTable, bigserial, bigint, varchar, boolean, timestamp, text, unique } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const workspaces = pgTable('workspaces', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
-  name: varchar('name', { length: 100 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
   isRoot: boolean('is_root').notNull().default(false),
   isPublic: boolean('is_public').notNull().default(true),
   ownerId: bigint('owner_id', { mode: 'number' }).notNull().references(() => users.id),
@@ -11,4 +11,6 @@ export const workspaces = pgTable('workspaces', {
   themeCss: text('theme_css').notNull().default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  unique('uq_workspace_owner_name').on(table.ownerId, table.name),
+]);

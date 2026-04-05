@@ -27,13 +27,32 @@ export default function RootPage() {
   if (isLoading) return null;
   if (isAuthenticated) return null;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'MarkFlow',
+    description: '마크다운 기반 팀 지식 관리 플랫폼',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
+    author: { '@type': 'Organization', name: 'MarkFlow Team' },
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8F7F4]">
-      <NavBar />
-      <Hero />
-      <FeaturesGrid />
-      <PricingSection />
-      <Footer />
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="min-h-screen bg-[#F8F7F4]">
+        <NavBar />
+        <main>
+          <Hero />
+          <FeaturesGrid />
+          <PricingSection />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }

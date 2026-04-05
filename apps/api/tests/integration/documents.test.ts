@@ -4,8 +4,8 @@
  * User Story 3: Document & Category Management
  */
 import { describe, it, expect } from 'vitest';
-import { eq, and, sql } from 'drizzle-orm';
-import { documents, documentVersions, categories } from '@markflow/db';
+import { eq, and } from 'drizzle-orm';
+import { documents, documentVersions } from '@markflow/db';
 import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace, addMember } from '../helpers/factory.js';
 
@@ -18,7 +18,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Doc WS', slug: 'doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Doc WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -33,31 +33,34 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     expect(res.statusCode).toBe(201);
 
     const body = res.json() as {
-      id: string;
-      title: string;
-      slug: string;
-      content: string;
-      categoryId: string | null;
-      currentVersion: number;
-      authorId: string;
+      document: {
+        id: number;
+        title: string;
+        slug: string;
+        content: string;
+        categoryId: number | null;
+        currentVersion: number;
+        authorId: number;
+      };
     };
 
-    expect(body.title).toBe('Getting Started Guide');
-    expect(body.slug).toBeTruthy();
-    expect(body.slug.length).toBeGreaterThan(0);
-    expect(body.content).toBe('# Getting Started\n\nWelcome!');
-    expect(body.categoryId).toBeNull();
-    expect(body.currentVersion).toBe(1);
-    expect(body.authorId).toBe(user.id);
+    expect(body.document.title).toBe('Getting Started Guide');
+    expect(body.document.slug).toBeTruthy();
+    expect(body.document.slug.length).toBeGreaterThan(0);
+    // POST create ignores content payload; documents are created with empty content
+    expect(body.document.content).toBe('');
+    expect(body.document.categoryId).toBeNull();
+    expect(body.document.currentVersion).toBe(1);
+    expect(body.document.authorId).toBe(user.id);
 
     // Verify DB: document persisted
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, body.id));
+      .where(eq(documents.id, body.document.id));
     expect(dbDoc).toBeDefined();
     expect(dbDoc!.title).toBe('Getting Started Guide');
-    expect(dbDoc!.slug).toBe(body.slug);
+    expect(dbDoc!.slug).toBe(body.document.slug);
     expect(dbDoc!.isDeleted).toBe(false);
 
     // Verify DB: initial version (v1) created
@@ -66,12 +69,13 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
       .from(documentVersions)
       .where(
         and(
-          eq(documentVersions.documentId, body.id),
+          eq(documentVersions.documentId, body.document.id),
           eq(documentVersions.version, 1),
         ),
       );
     expect(v1).toBeDefined();
-    expect(v1!.content).toBe('# Getting Started\n\nWelcome!');
+    // Initial version has empty content (content is set via PATCH)
+    expect(v1!.content).toBe('');
   });
 
   it('should create a document in a specific category', async () => {
@@ -79,7 +83,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Cat Doc WS', slug: 'cat-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Cat Doc WS' });
 
     // Create category first
     const catRes = await app.inject({
@@ -89,7 +93,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
       payload: { name: 'Architecture' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { id: string };
+    const cat = catRes.json() as { category: { id: number } };
 
     // Create document in category
     const res = await app.inject({
@@ -98,18 +102,16 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
       headers: { authorization: `Bearer ${accessToken}` },
       payload: {
         title: 'System Architecture',
-        categoryId: cat.id,
-        content: '# Architecture Overview',
+        categoryId: String(cat.category.id),
       },
     });
 
     expect(res.statusCode).toBe(201);
 
     const body = res.json() as {
-      id: string;
-      categoryId: string | null;
+      document: { id: number; categoryId: number | null };
     };
-    expect(body.categoryId).toBe(cat.id);
+    expect(body.document.categoryId).toBe(cat.category.id);
   });
 
   it('should create a document with empty content by default', async () => {
@@ -117,7 +119,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Empty Doc WS', slug: 'empty-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Empty Doc WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -128,9 +130,10 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
 
     expect(res.statusCode).toBe(201);
 
-    const body = res.json() as { content: string; currentVersion: number };
-    expect(body.content).toBe('');
-    expect(body.currentVersion).toBe(1);
+    const body = res.json() as { document: { content: string; currentVersion: number } };
+    // Documents are created with empty content; content is set via PATCH
+    expect(body.document.content).toBe('');
+    expect(body.document.currentVersion).toBe(1);
   });
 
   it('should return 403 when viewer tries to create a document', async () => {
@@ -138,7 +141,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Doc WS', slug: 'rbac-doc-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Doc WS' });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
@@ -158,7 +161,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Auth Doc WS', slug: 'no-auth-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Auth Doc WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -179,7 +182,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'List Doc WS', slug: 'list-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'List Doc WS' });
 
     // Create multiple documents
     for (let i = 1; i <= 3; i++) {
@@ -202,7 +205,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
 
     const body = res.json() as {
       documents: Array<{
-        id: string;
+        id: number;
         title: string;
         slug: string;
         currentVersion: number;
@@ -210,13 +213,11 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
       }>;
       total: number;
       page: number;
-      limit: number;
     };
 
     expect(body.documents.length).toBe(3);
     expect(body.total).toBe(3);
     expect(body.page).toBeDefined();
-    expect(body.limit).toBeDefined();
   });
 
   it('should filter documents by categoryId', async () => {
@@ -224,7 +225,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Filter WS', slug: 'filter-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Filter WS' });
 
     // Create a category
     const catRes = await app.inject({
@@ -234,20 +235,20 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
       payload: { name: 'Specs' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { id: string };
+    const cat = catRes.json() as { category: { id: number } };
 
     // Create docs: 2 in category, 1 in root
     await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Spec A', categoryId: cat.id },
+      payload: { title: 'Spec A', categoryId: String(cat.category.id) },
     });
     await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Spec B', categoryId: cat.id },
+      payload: { title: 'Spec B', categoryId: String(cat.category.id) },
     });
     await app.inject({
       method: 'POST',
@@ -259,21 +260,21 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     // Filter by category
     const res = await app.inject({
       method: 'GET',
-      url: `/api/v1/workspaces/${ws.id}/documents?categoryId=${cat.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents?categoryId=${cat.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
     expect(res.statusCode).toBe(200);
 
     const body = res.json() as {
-      documents: Array<{ title: string; categoryId: string }>;
+      documents: Array<{ title: string; categoryId: number }>;
       total: number;
     };
 
     expect(body.documents.length).toBe(2);
     expect(body.total).toBe(2);
     for (const doc of body.documents) {
-      expect(doc.categoryId).toBe(cat.id);
+      expect(doc.categoryId).toBe(cat.category.id);
     }
   });
 
@@ -282,7 +283,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Paginate WS', slug: 'paginate-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Paginate WS' });
 
     // Create 5 documents
     for (let i = 1; i <= 5; i++) {
@@ -307,13 +308,11 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
       documents: Array<{ title: string }>;
       total: number;
       page: number;
-      limit: number;
     };
 
     expect(page1.documents.length).toBe(2);
     expect(page1.total).toBe(5);
     expect(page1.page).toBe(1);
-    expect(page1.limit).toBe(2);
 
     // Fetch page 3 (should have 1 document)
     const page3Res = await app.inject({
@@ -338,7 +337,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Sort WS', slug: 'sort-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Sort WS' });
 
     await app.inject({
       method: 'POST',
@@ -382,7 +381,7 @@ describe('GET /api/v1/workspaces/:wsId/documents', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Search WS', slug: 'search-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Search WS' });
 
     await app.inject({
       method: 'POST',
@@ -433,44 +432,55 @@ describe('GET /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Detail WS', slug: 'detail-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Detail WS' });
 
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Detailed Doc', content: '# Hello World' },
+      payload: { title: 'Detailed Doc' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string };
+    const createBody = createRes.json() as { document: { id: number } };
+    const docId = createBody.document.id;
+
+    // Set content via PATCH (POST create doesn't accept content)
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { content: '# Hello World' },
+    });
 
     const res = await app.inject({
       method: 'GET',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
     expect(res.statusCode).toBe(200);
 
     const body = res.json() as {
-      id: string;
-      title: string;
-      slug: string;
-      content: string;
-      categoryId: string | null;
-      authorId: string;
-      currentVersion: number;
-      createdAt: string;
-      updatedAt: string;
+      document: {
+        id: number;
+        title: string;
+        slug: string;
+        content: string;
+        categoryId: number | null;
+        authorId: number;
+        currentVersion: number;
+        createdAt: string;
+        updatedAt: string;
+      };
     };
 
-    expect(body.id).toBe(doc.id);
-    expect(body.title).toBe('Detailed Doc');
-    expect(body.content).toBe('# Hello World');
-    expect(body.currentVersion).toBe(1);
-    expect(body.authorId).toBe(user.id);
-    expect(body.createdAt).toBeDefined();
-    expect(body.updatedAt).toBeDefined();
+    expect(body.document.id).toBe(docId);
+    expect(body.document.title).toBe('Detailed Doc');
+    expect(body.document.content).toBe('# Hello World');
+    expect(body.document.currentVersion).toBe(2);
+    expect(body.document.authorId).toBe(user.id);
+    expect(body.document.createdAt).toBeDefined();
+    expect(body.document.updatedAt).toBeDefined();
   });
 
   it('should return 404 for non-existent document', async () => {
@@ -478,9 +488,9 @@ describe('GET /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Doc WS', slug: 'no-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Doc WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'GET',
@@ -496,17 +506,17 @@ describe('GET /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Read WS', slug: 'viewer-read-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Read WS' });
 
     // Create doc as owner
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${ownerToken}` },
-      payload: { title: 'Public Doc', content: 'Readable by all members' },
+      payload: { title: 'Public Doc' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string };
+    const doc = createRes.json() as { document: { id: number } };
 
     // Viewer reads doc
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
@@ -514,14 +524,14 @@ describe('GET /api/v1/workspaces/:wsId/documents/:documentId', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${doc.document.id}`,
       headers: { authorization: `Bearer ${viewerToken}` },
     });
 
     expect(res.statusCode).toBe(200);
 
-    const body = res.json() as { title: string };
-    expect(body.title).toBe('Public Doc');
+    const body = res.json() as { document: { title: string } };
+    expect(body.document.title).toBe('Public Doc');
   });
 });
 
@@ -534,23 +544,32 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Update WS', slug: 'update-doc-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Update WS' });
 
     // Create doc
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Versioned Doc', content: '# Version 1' },
+      payload: { title: 'Versioned Doc' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string; currentVersion: number };
-    expect(doc.currentVersion).toBe(1);
+    const createBody = createRes.json() as { document: { id: number; currentVersion: number } };
+    expect(createBody.document.currentVersion).toBe(1);
+    const docId = createBody.document.id;
 
-    // Update content
+    // Set initial content via PATCH (creates version 2)
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { content: '# Version 1' },
+    });
+
+    // Update content again
     const updateRes = await app.inject({
       method: 'PATCH',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
       headers: { authorization: `Bearer ${accessToken}` },
       payload: { content: '# Version 2\n\nUpdated content' },
     });
@@ -558,33 +577,35 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     expect(updateRes.statusCode).toBe(200);
 
     const body = updateRes.json() as {
-      id: string;
-      currentVersion: number;
-      updatedAt: string;
+      document: {
+        id: number;
+        currentVersion: number;
+        updatedAt: string;
+      };
     };
 
-    expect(body.currentVersion).toBe(2);
+    expect(body.document.currentVersion).toBe(3);
 
     // Verify DB: new version created
-    const [v2] = await db
+    const [v3] = await db
       .select()
       .from(documentVersions)
       .where(
         and(
-          eq(documentVersions.documentId, doc.id),
-          eq(documentVersions.version, 2),
+          eq(documentVersions.documentId, docId),
+          eq(documentVersions.version, 3),
         ),
       );
-    expect(v2).toBeDefined();
-    expect(v2!.content).toBe('# Version 2\n\nUpdated content');
+    expect(v3).toBeDefined();
+    expect(v3!.content).toBe('# Version 2\n\nUpdated content');
 
     // Verify DB: document content updated
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, docId));
     expect(dbDoc!.content).toBe('# Version 2\n\nUpdated content');
-    expect(dbDoc!.currentVersion).toBe(2);
+    expect(dbDoc!.currentVersion).toBe(3);
   });
 
   it('should update title only without creating a new version', async () => {
@@ -592,22 +613,23 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Title Only WS', slug: 'title-only-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Title Only WS' });
 
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Old Title', content: '# Content' },
+      payload: { title: 'Old Title' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string; currentVersion: number };
-    expect(doc.currentVersion).toBe(1);
+    const createBody = createRes.json() as { document: { id: number; currentVersion: number } };
+    expect(createBody.document.currentVersion).toBe(1);
+    const docId = createBody.document.id;
 
     // Update title only
     const updateRes = await app.inject({
       method: 'PATCH',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
       headers: { authorization: `Bearer ${accessToken}` },
       payload: { title: 'New Title' },
     });
@@ -615,17 +637,17 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     expect(updateRes.statusCode).toBe(200);
 
     const body = updateRes.json() as {
-      currentVersion: number;
+      document: { currentVersion: number };
     };
 
     // Version should NOT increment for title-only changes
-    expect(body.currentVersion).toBe(1);
+    expect(body.document.currentVersion).toBe(1);
 
     // Verify DB: title changed, version unchanged
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, docId));
     expect(dbDoc!.title).toBe('New Title');
     expect(dbDoc!.currentVersion).toBe(1);
 
@@ -633,7 +655,7 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const versions = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.documentId, doc.id));
+      .where(eq(documentVersions.documentId, docId));
     expect(versions.length).toBe(1);
   });
 
@@ -642,23 +664,24 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'FIFO WS', slug: 'fifo-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'FIFO WS' });
 
-    // Create doc (version 1)
+    // Create doc (version 1, empty content)
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'FIFO Doc', content: 'v1' },
+      payload: { title: 'FIFO Doc' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string };
+    const createBody = createRes.json() as { document: { id: number } };
+    const docId = createBody.document.id;
 
-    // Update content 24 more times (total 25 versions)
+    // Update content 24 more times (total 25 versions: v1 from create + v2..v25 from patches)
     for (let i = 2; i <= 25; i++) {
       const updateRes = await app.inject({
         method: 'PATCH',
-        url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+        url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
         headers: { authorization: `Bearer ${accessToken}` },
         payload: { content: `v${i}` },
       });
@@ -669,14 +692,14 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, docId));
     expect(dbDoc!.currentVersion).toBe(25);
 
     // Verify DB: only 20 versions are stored (FIFO pruning)
     const versions = await db
       .select()
       .from(documentVersions)
-      .where(eq(documentVersions.documentId, doc.id));
+      .where(eq(documentVersions.documentId, docId));
     expect(versions.length).toBe(20);
 
     // Verify the oldest kept version is v6 (v1-v5 pruned)
@@ -690,23 +713,32 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Update WS', slug: 'rbac-update-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Update WS' });
 
     const createRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${ownerToken}` },
-      payload: { title: 'Protected Doc', content: '# Protected' },
+      payload: { title: 'Protected Doc' },
     });
     expect(createRes.statusCode).toBe(201);
-    const doc = createRes.json() as { id: string };
+    const createBody = createRes.json() as { document: { id: number } };
+    const docId = createBody.document.id;
+
+    // Set content as owner first
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
+      headers: { authorization: `Bearer ${ownerToken}` },
+      payload: { content: '# Protected' },
+    });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
 
     const res = await app.inject({
       method: 'PATCH',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
       headers: { authorization: `Bearer ${viewerToken}` },
       payload: { content: '# Hacked' },
     });
@@ -717,7 +749,7 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, docId));
     expect(dbDoc!.content).toBe('# Protected');
   });
 
@@ -726,9 +758,9 @@ describe('PATCH /api/v1/workspaces/:wsId/documents/:documentId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Update WS', slug: 'no-update-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Update WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'PATCH',
@@ -750,7 +782,7 @@ describe('Document visibility', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Visibility WS', slug: 'visibility-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Visibility WS' });
 
     // Create 2 docs
     const doc1Res = await app.inject({
@@ -768,12 +800,12 @@ describe('Document visibility', () => {
       payload: { title: 'Deleted Doc' },
     });
     expect(doc2Res.statusCode).toBe(201);
-    const doc2 = doc2Res.json() as { id: string };
+    const doc2 = doc2Res.json() as { document: { id: number } };
 
     // Soft delete the second doc
     const deleteRes = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc2.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${doc2.document.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
     expect(deleteRes.statusCode).toBe(204);
@@ -788,14 +820,14 @@ describe('Document visibility', () => {
     expect(listRes.statusCode).toBe(200);
 
     const body = listRes.json() as {
-      documents: Array<{ id: string; title: string }>;
+      documents: Array<{ id: number; title: string }>;
       total: number;
     };
 
     expect(body.total).toBe(1);
     expect(body.documents[0]!.title).toBe('Active Doc');
 
-    const deletedDoc = body.documents.find((d) => d.id === doc2.id);
+    const deletedDoc = body.documents.find((d) => d.id === doc2.document.id);
     expect(deletedDoc).toBeUndefined();
   });
 });

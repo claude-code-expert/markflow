@@ -1,15 +1,11 @@
 import Link from 'next/link';
+import { MarkFlowLogo } from './../../components/mark-flow-logo';
 
 export function NavBar() {
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between px-8 h-[62px] bg-[#F8F7F4]/90 backdrop-blur-xl border-b border-[#E2E0D8]">
-      <Link href="/" className="flex items-center gap-2 font-[var(--font-sora)] text-xl font-bold text-[#1A1916]">
-        <span className="w-7 h-7 bg-[#1A56DB] rounded-[7px] flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-            <polyline points="2,12 5,6 8,14 11,2 14,8" />
-          </svg>
-        </span>
-        MarkFlow
+      <Link href="/" style={{ textDecoration: 'none' }}>
+        <MarkFlowLogo height={26} />
       </Link>
 
       <div className="flex items-center gap-1">

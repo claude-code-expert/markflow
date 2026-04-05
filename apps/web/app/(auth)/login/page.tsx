@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useWorkspaceStore } from '../../../stores/workspace-store';
 import { useAuthStore } from '../../../stores/auth-store';
 import { ApiError } from '../../../lib/api';
+import { MarkFlowLogo } from '../../../components/mark-flow-logo';
 
 /* ---------- Error messages by code ---------- */
 
@@ -60,23 +61,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 2,
     marginBottom: 28,
   } satisfies CSSProperties,
 
   logoSquare: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
     background: 'var(--accent)',
-    borderRadius: 'var(--radius-sm)',
+    borderRadius: 6,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#fff',
-    fontFamily: 'var(--font-heading)',
-    fontWeight: 700,
-    fontSize: 16,
-    lineHeight: 1,
+    margin: '0 1px',
   } satisfies CSSProperties,
 
   logoText: {
@@ -84,6 +81,14 @@ const styles = {
     fontWeight: 700,
     fontSize: 20,
     color: 'var(--text)',
+    letterSpacing: '-0.02em',
+  } satisfies CSSProperties,
+
+  logoTextAccent: {
+    fontFamily: 'var(--font-heading)',
+    fontWeight: 700,
+    fontSize: 20,
+    color: 'var(--accent)',
     letterSpacing: '-0.02em',
   } satisfies CSSProperties,
 
@@ -383,8 +388,7 @@ export default function LoginPage() {
     <div style={styles.card}>
       {/* Logo */}
       <div style={styles.logoWrap}>
-        <div style={styles.logoSquare}>M</div>
-        <span style={styles.logoText}>MarkFlow</span>
+        <MarkFlowLogo height={28} />
       </div>
 
       {/* Auth tabs */}

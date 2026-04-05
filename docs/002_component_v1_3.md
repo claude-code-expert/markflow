@@ -1,9 +1,12 @@
 # 002 — 컴포넌트 설계 (Component Specification)
 
-> **최종 수정:** 2026-03-26 (v1.2.0 반영)
-> **스택:** React 18/19 · TypeScript 5 · CodeMirror 6 · unified/remark/rehype · Tailwind CSS 4 · Zustand
-> **상태 범례:** ✅ 구현 완료 · 🚧 프로토타입 구현 · 📋 계획됨 (KMS)
-> **변경 이력:** v1.2.0 — DAGPipelineGraph·MiniDAGGraph·FolderContextMenu·NewFolderModal·NewDocModal 신규, CategoryTree 폴더 관리 UX 강화
+> **버전:** 1.3.0
+> **최종 수정:** 2026-04-04
+> **스택:** React 19.2.4 · Next.js 16.2.1 · TypeScript 5+ (strict) · CodeMirror 6 · unified/remark/rehype · Tailwind CSS 4 · Zustand 5.0.0 · @tanstack/react-query 5.72.0
+> **상태 범례:** ✅ 구현 완료 · 🚧 프로토타입 구현 · 📋 계획됨
+> **변경 이력:**
+> - v1.3.0 — 실제 구현된 38개 컴포넌트 전수 반영, Zustand 5개 스토어 구조 문서화, use-permissions 훅(16개 권한) 추가, 프레젠테이션·Join Request 컴포넌트 추가
+> - v1.2.0 — DAGPipelineGraph·MiniDAGGraph·FolderContextMenu·NewFolderModal·NewDocModal 신규, CategoryTree 폴더 관리 UX 강화
 
 ---
 
@@ -249,27 +252,126 @@ import '@markflow/editor/styles'  // → dist/index.css
 
 ---
 
-## Part B. KMS 앱 컴포넌트 (📋 계획됨)
+## Part B. KMS 앱 컴포넌트 (✅ Phase 1 구현 완료)
 
-> 아래는 KMS SaaS 구축 시 에디터 패키지 위에 추가될 컴포넌트 구조
+> Phase 1에서 실제 구현된 38개 컴포넌트를 카테고리별로 정리한다.
+
+### 1. 컴포넌트 인벤토리 (38개)
+
+#### 레이아웃 (3)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `sidebar` | 사이드바 네비게이션 (카테고리 트리, 그래프 뷰 링크 포함) | ✅ |
+| `app-header` | 앱 상단 헤더 (브레드크럼, 워크스페이스 전환) | ✅ |
+| `toast-provider` | 글로벌 토스트 알림 렌더러 | ✅ |
+
+#### 모달/다이얼로그 (10)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `create-workspace-modal` | 워크스페이스 생성 마법사 | ✅ |
+| `new-doc-modal` | 새 문서 생성 (제목, 폴더, 시작 방식) | ✅ |
+| `new-folder-modal` | 새 폴더 생성 (경로 미리보기 포함) | ✅ |
+| `search-modal` | 전역 검색 (`Ctrl+/`) | ✅ |
+| `profile-edit-modal` | 프로필 편집 (이름, 아바타, 비밀번호) | ✅ |
+| `import-export-modal` | Import/Export 기능 (.md, .zip) | ✅ |
+| `version-history-modal` | 버전 히스토리 전체 보기 | ✅ |
+| `document-links-modal` | 문서 링크 관리 (연관, Prev/Next) | ✅ |
+| `dag-structure-modal` | DAG 구조 전체 보기 | ✅ |
+| `confirm-dialog` | 범용 확인 다이얼로그 (삭제 확인 등) | ✅ |
+
+#### 문서 편집 패널 (4)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `document-meta-panel` | 문서 메타 정보 (태그, 링크, 미니 DAG) | ✅ |
+| `version-history-panel` | 버전 목록 + DiffViewer | ✅ |
+| `comment-panel` | 댓글 생성/삭제/중첩 스레드 | ✅ |
+| `link-preview` | URL OG 메타데이터 미리보기 | ✅ |
+
+#### 문서 관리 (4)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `category-tree` | 사이드바 카테고리/폴더 트리 | ✅ |
+| `doc-context-menu` | 문서 항목 우클릭 컨텍스트 메뉴 | ✅ |
+| `folder-context-menu` | 폴더 항목 컨텍스트 메뉴 (5개 항목) | ✅ |
+| `tag-input` | 태그 입력 UI (자동완성) | ✅ |
+
+#### 그래프 (3)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `dag-pipeline-graph` | DAG 전체 워크스페이스 파이프라인 그래프 | ✅ |
+| `dag-pipeline-nav` | 프리뷰 하단 Prev/Next DAG 내비게이션 | ✅ |
+| `mini-dag-diagram` | 메타 패널 내 미니 DAG | ✅ |
+
+#### 특수 기능 (2)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `presentation-mode` | 프레젠테이션 모드 (어노테이션, TOC, 폰트 조절) | ✅ |
+| `join-request-panel` | 가입 요청 관리 (승인/거절/일괄 처리) | ✅ |
+
+#### 랜딩 (5)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `nav-bar` | 랜딩 페이지 상단 네비게이션 | ✅ |
+| `hero` | 히어로 섹션 | ✅ |
+| `features-grid` | 기능 소개 그리드 | ✅ |
+| `pricing-section` | 요금제 안내 | ✅ |
+| `footer` | 푸터 | ✅ |
+
+#### 설정 (2)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `invite-status-tab` | 초대 현황 탭 (발송/재발송/취소) | ✅ |
+| `member-export-tab` | 멤버 내보내기 탭 (CSV/PDF, 기간 필터) | ✅ |
+
+#### 상태 표시 (3)
+
+| 컴포넌트 | 설명 | 상태 |
+|----------|------|------|
+| `loading` | 로딩 스피너/스켈레톤 | ✅ |
+| `error` | 에러 상태 표시 (재시도 버튼 포함) | ✅ |
+| `empty` | 빈 상태 안내 (가이드 액션 포함) | ✅ |
+
+---
+
+### 2. 컴포넌트 트리 (KMS 앱)
 
 ```
-App (Next.js App Router)
+App (Next.js 16.2.1 App Router)
 ├── layout.tsx
 │   ├── AuthProvider          # JWT 상태 관리
 │   ├── QueryProvider         # TanStack Query
-│   └── ThemeProvider         # 다크모드
+│   ├── ThemeProvider         # 다크모드
+│   └── ToastProvider         # 글로벌 토스트
 │
 ├── (auth)/
-│   ├── LoginPage → LoginForm, SocialLoginButtons
+│   ├── LoginPage → LoginForm
 │   ├── RegisterPage → RegisterForm
-│   └── ForgotPasswordPage → ResetPasswordForm  ← M7: 비밀번호 초기화 UX
+│   └── ForgotPasswordPage → ResetPasswordForm
+│
+├── (landing)/
+│   └── LandingPage
+│       ├── NavBar
+│       ├── Hero
+│       ├── FeaturesGrid
+│       ├── PricingSection
+│       └── Footer
 │
 ├── embed/
-│   └── doc/[documentId]/     ← M5: iframe embed 전용 라우트
+│   └── doc/[documentId]/
 │       └── EmbedPage
 │           ├── MarkdownEditor (readOnly 또는 편집 모드)
 │           └── EmbedBridge   (postMessage ↔ 부모 창 통신)
+│
+├── invite/[token]/
+│   └── InvitePage            # 초대 링크 수락
 │
 └── (app)/
     ├── WorkspaceSwitcher
@@ -278,138 +380,108 @@ App (Next.js App Router)
         │   ├── Sidebar
         │   │   ├── WorkspaceHeader
         │   │   ├── GlobalSearch (trigger)
-        │   │   ├── SidebarSectionLabel          ← 📁 NewFolder + ＋ NewDoc 버튼 포함
+        │   │   ├── SidebarSectionLabel
         │   │   ├── CategoryTree
-        │   │   │   ├── CategoryNode             ← hover ⋯ 버튼 포함
-        │   │   │   │   └── FolderContextMenu 🚧 ← 우클릭/⋯ 클릭 시 표시
-        │   │   │   └── DocumentNode
-        │   │   ├── GraphViewNavItem 🚧          ← 🔗 그래프 뷰 사이드바 항목
+        │   │   │   ├── CategoryNode → FolderContextMenu
+        │   │   │   └── DocumentNode → DocContextMenu
+        │   │   ├── GraphViewNavItem
         │   │   └── UserMenu
+        │   ├── AppHeader
         │   ├── MainContent (router outlet)
-        │   └── WorkspaceThemeInjector           ← <style> 동적 주입
+        │   └── WorkspaceThemeInjector
         │
         ├── doc/
         │   └── DocumentListPage → DocumentListToolbar, DocumentList/Grid
         │
         ├── graph/
-        │   └── GraphViewPage 🚧                ← B14 신규. DAG 전체 워크스페이스 뷰
-        │       ├── DAGToolbar                  ← 범례 + 통계 + 이동 버튼
-        │       └── DAGPipelineGraph 🚧         ← 카테고리·순서·태그 Row별 렌더링
+        │   └── GraphViewPage
+        │       ├── DAGToolbar
+        │       └── DAGPipelineGraph
+        │
+        ├── trash/
+        │   └── TrashPage → 휴지통 (복원/영구 삭제)
+        │
+        ├── settings/
+        │   └── SettingsPage
+        │       ├── MemberListTab
+        │       ├── JoinRequestPanel
+        │       ├── InviteStatusTab
+        │       ├── MemberExportTab
+        │       └── ThemeSettingsTab
         │
         └── doc/[docId]/
             └── EditorPage
                 ├── MarkdownEditor             ← @markflow/editor 패키지
                 ├── DocumentMetaPanel
-                │   ├── MiniDAGGraph 🚧        ← B13: 미니 DAG (LinkManager 대체)
-                │   ├── TagInput               ← M3: 태그 입력 UI
-                │   └── VersionHistoryPanel    ← M8: 버전 목록 + DiffViewer
+                │   ├── MiniDAGDiagram
+                │   ├── TagInput
+                │   └── VersionHistoryPanel
+                ├── CommentPanel
+                ├── PresentationMode           ← 전체화면 프레젠테이션
                 ├── PreviewPane
-                │   └── DAGPipelineNav 🚧      ← B5: Prev/Next 내비 → DAG 방식
-                └── CollaborationLayer (Yjs) → RemoteCursors
-```
-
-### 신규 컴포넌트 스펙 (v1.2.0) 🚧
-
-#### `FolderContextMenu`
-
-```typescript
-interface FolderContextMenuProps {
-  folderName: string
-  position: { x: number; y: number }
-  onClose: () => void
-  onAction: (action: 'new-doc' | 'new-subfolder' | 'rename' | 'move' | 'delete') => void
-}
-```
-
-| 항목 | 내용 |
-|------|------|
-| 표시 조건 | 폴더 항목 우클릭 또는 `⋯` 버튼 클릭 |
-| 위치 | `position: fixed` — 커서 좌표 기준, 뷰포트 경계 초과 방지 |
-| 닫힘 조건 | 외부 클릭, `mouseleave`, `Escape` 키 |
-| z-index | 2000 |
-
-#### `NewFolderModal`
-
-```typescript
-interface NewFolderModalProps {
-  parentFolder?: { id: string; name: string }  // 컨텍스트 메뉴에서 열 때 주입
-  onConfirm: (name: string, parentId: string | null) => void
-  onClose: () => void
-}
-```
-
-| 필드 | 동작 |
-|------|------|
-| 폴더 이름 | 입력 시 `folder-path-preview` 실시간 업데이트 |
-| 상위 위치 | `<select>` — 루트 및 기존 폴더 목록 |
-| 경로 미리보기 | `WorkspaceName / 상위폴더 / 입력중인이름` |
-
-#### `NewDocModal`
-
-```typescript
-interface NewDocModalProps {
-  defaultCategoryId?: string  // 폴더 컨텍스트에서 열 때 주입
-  onConfirm: (title: string, categoryId: string | null, mode: 'blank' | 'template') => void
-  onClose: () => void
-}
-```
-
-#### `DAGPipelineGraph`
-
-```typescript
-interface DAGStage {
-  type: 'root' | 'category' | 'prev' | 'current' | 'next' | 'related'
-  nodes: DAGNode[]
-  label?: string  // 그룹 박스 레이블
-}
-
-interface DAGNode {
-  id: string
-  title: string
-  icon: string
-  meta?: string
-  type: DAGStage['type']
-  onClick?: () => void
-}
-
-interface DAGPipelineGraphProps {
-  rows: DAGPipelineRow[]  // 카테고리별 Row 배열
-  compact?: boolean       // MiniDAG 모드
-}
-```
-
-| 모드 | 사용처 | 특징 |
-|------|--------|------|
-| 기본 | `GraphViewPage` | 다중 Row, 수평 스크롤 |
-| compact (`MiniDAGGraph`) | 메타 패널, 프리뷰 하단 | 단일 Row, 폰트·패딩 축소 |
-
-#### `DAGPipelineNav` (프리뷰 하단)
-
-```typescript
-interface DAGPipelineNavProps {
-  prevDoc?: { id: string; title: string }
-  currentDoc: { id: string; title: string }
-  nextDoc?: { id: string; title: string }
-  relatedDocs?: Array<{ id: string; title: string }>
-  onNavigate: (docId: string) => void
-}
+                │   └── DAGPipelineNav
+                └── LinkPreview
 ```
 
 ---
 
-### 상태 관리 (Zustand Stores — 계획)
+### 3. 상태 관리 (Zustand 5.0.0 — 5개 스토어)
 
-| Store | 주요 상태 |
-|-------|----------|
-| `useAuthStore` | user, accessToken, logout(), refreshToken() |
-| `useWorkspaceStore` | currentWorkspace, members, themeCss |
-| `useEditorStore` | documentId, saveStatus, queueSave() |
-| `useSidebarStore` | expandedCategoryIds, toggleCategory(), isSidebarOpen |
+| Store | 주요 메서드 | 설명 |
+|-------|------------|------|
+| **auth-store** | `login()`, `logout()`, `fetchUser()`, `setUser()` | JWT 인증 상태, 사용자 정보 |
+| **workspace-store** | `fetchWorkspaces()`, `setCurrentWorkspace()` | 워크스페이스 목록, 현재 활성 워크스페이스 |
+| **editor-store** | `setDocument()`, `setContent()`, `setTitle()`, `setSaveStatus()`, `reset()` | 문서 편집 상태, 자동 저장 |
+| **sidebar-store** (persist) | `toggleCategory()`, `toggleSidebar()`, `expandCategory()`, `collapseCategory()` | 사이드바 열림/닫힘, 카테고리 접기/펼치기 (localStorage 영속) |
+| **toast-store** | `addToast()`, `removeToast()`, `clearAll()` | 글로벌 토스트 알림 큐 |
 
-### 주요 훅 (계획)
+---
+
+### 4. `use-permissions` 훅
+
+**역할 레벨 (4단계)**
+
+| 역할 | 레벨 |
+|------|------|
+| Owner | 4 |
+| Admin | 3 |
+| Editor | 2 |
+| Viewer | 1 |
+
+**16개 세분화 권한**
+
+| 권한 | Owner (4) | Admin (3) | Editor (2) | Viewer (1) |
+|------|-----------|-----------|------------|------------|
+| `canViewDocuments` | ✅ | ✅ | ✅ | ✅ |
+| `canCreateDocuments` | ✅ | ✅ | ✅ | - |
+| `canEditDocuments` | ✅ | ✅ | ✅ | - |
+| `canDeleteDocuments` | ✅ | ✅ | ✅ | - |
+| `canManageTags` | ✅ | ✅ | ✅ | - |
+| `canManageLinks` | ✅ | ✅ | ✅ | - |
+| `canCreateComments` | ✅ | ✅ | ✅ | ✅ |
+| `canDeleteOwnComments` | ✅ | ✅ | ✅ | ✅ |
+| `canInviteMembers` | ✅ | ✅ | - | - |
+| `canManageMembers` | ✅ | ✅ | - | - |
+| `canApproveJoinRequests` | ✅ | ✅ | - | - |
+| `canManageEmbedTokens` | ✅ | ✅ | - | - |
+| `canEditWorkspaceSettings` | ✅ | ✅ | - | - |
+| `canEditTheme` | ✅ | ✅ | - | - |
+| `canDeleteWorkspace` | ✅ | - | - | - |
+| `canTransferOwnership` | ✅ | - | - | - |
+
+**사용 패턴**
+```typescript
+const { canEditDocuments, canInviteMembers, canDeleteWorkspace } = usePermissions()
+
+if (!canEditDocuments) return <ReadOnlyBanner />
+```
+
+---
+
+### 5. 주요 훅
 
 ```typescript
-// M6: 워크스페이스 테마 CSS 동적 주입 훅
+// 워크스페이스 테마 CSS 동적 주입 훅
 function useWorkspaceTheme(workspaceId: string, themeCss: string) {
   useEffect(() => {
     const id = `mf-ws-theme-${workspaceId}`
@@ -424,7 +496,7 @@ function useWorkspaceTheme(workspaceId: string, themeCss: string) {
   }, [workspaceId, themeCss])
 }
 
-// M5: iframe embed postMessage 브릿지 훅
+// iframe embed postMessage 브릿지 훅
 function useEmbedBridge(onContentChange: (content: string) => void) {
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -437,7 +509,9 @@ function useEmbedBridge(onContentChange: (content: string) => void) {
 }
 ```
 
-### 데이터 페칭 (TanStack Query — 계획)
+---
+
+### 6. 데이터 페칭 (TanStack Query 5.72.0)
 
 ```typescript
 const queryKeys = {
@@ -447,6 +521,25 @@ const queryKeys = {
   documents: (wsId: string, filters?) => ['workspaces', wsId, 'documents', filters] as const,
   document: (wsId: string, docId: string) => ['workspaces', wsId, 'documents', docId] as const,
   versions: (docId: string) => ['documents', docId, 'versions'] as const,
+  comments: (docId: string) => ['documents', docId, 'comments'] as const,
+  embedTokens: (wsId: string) => ['workspaces', wsId, 'embed-tokens'] as const,
+  joinRequests: (wsId: string) => ['workspaces', wsId, 'join-requests'] as const,
   search: (wsId: string, q: string) => ['search', wsId, q] as const,
+  trash: (wsId: string) => ['workspaces', wsId, 'trash'] as const,
 }
 ```
+
+---
+
+### 7. 기술 스택 확정
+
+| 기술 | 버전 | 비고 |
+|------|------|------|
+| React | 19.2.4 | |
+| Next.js | 16.2.1 | App Router |
+| TypeScript | 5+ | strict mode, `any` 금지 |
+| Zustand | 5.0.0 | 5개 스토어 |
+| @tanstack/react-query | 5.72.0 | 서버 상태 관리 |
+| Tailwind CSS | 4 | |
+| CodeMirror | 6 | 에디터 패키지 |
+| unified/remark/rehype | latest | 마크다운 파이프라인 |

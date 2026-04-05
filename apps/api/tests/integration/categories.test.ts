@@ -4,7 +4,7 @@
  * User Story 3: Document & Category Management
  */
 import { describe, it, expect } from 'vitest';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { categories, categoryClosure, documents } from '@markflow/db';
 import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace, addMember } from '../helpers/factory.js';
@@ -18,7 +18,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Cat WS', slug: 'cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Cat WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -30,21 +30,23 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     expect(res.statusCode).toBe(201);
 
     const body = res.json() as {
-      id: string;
-      name: string;
-      parentId: string | null;
-      workspaceId: string;
+      category: {
+        id: number;
+        name: string;
+        parentId: number | null;
+        workspaceId: number;
+      };
     };
 
-    expect(body.name).toBe('Requirements');
-    expect(body.parentId).toBeNull();
-    expect(body.workspaceId).toBe(ws.id);
+    expect(body.category.name).toBe('Requirements');
+    expect(body.category.parentId).toBeNull();
+    expect(body.category.workspaceId).toBe(ws.id);
 
     // Verify DB: category persisted
     const [dbCat] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, body.id));
+      .where(eq(categories.id, body.category.id));
     expect(dbCat).toBeDefined();
     expect(dbCat!.name).toBe('Requirements');
     expect(dbCat!.workspaceId).toBe(ws.id);
@@ -55,8 +57,8 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
       .from(categoryClosure)
       .where(
         and(
-          eq(categoryClosure.ancestorId, body.id),
-          eq(categoryClosure.descendantId, body.id),
+          eq(categoryClosure.ancestorId, body.category.id),
+          eq(categoryClosure.descendantId, body.category.id),
         ),
       );
     expect(selfClosure).toBeDefined();
@@ -68,7 +70,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Nested WS', slug: 'nested-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Nested WS' });
 
     // Create parent category
     const parentRes = await app.inject({
@@ -79,49 +81,47 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     });
 
     expect(parentRes.statusCode).toBe(201);
-    const parent = parentRes.json() as { id: string };
+    const parent = parentRes.json() as { category: { id: number } };
 
     // Create child category
     const childRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/categories`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { name: 'UI Components', parentId: parent.id },
+      payload: { name: 'UI Components', parentId: parent.category.id },
     });
 
     expect(childRes.statusCode).toBe(201);
 
     const child = childRes.json() as {
-      id: string;
-      name: string;
-      parentId: string | null;
+      category: { id: number; name: string; parentId: number | null };
     };
 
-    expect(child.name).toBe('UI Components');
-    expect(child.parentId).toBe(parent.id);
+    expect(child.category.name).toBe('UI Components');
+    expect(child.category.parentId).toBe(parent.category.id);
 
     // Verify DB: closure entries for parent-child relationship
     const closureEntries = await db
       .select()
       .from(categoryClosure)
-      .where(eq(categoryClosure.descendantId, child.id));
+      .where(eq(categoryClosure.descendantId, child.category.id));
 
     // Should have: self (depth=0) + parent->child (depth=1)
     expect(closureEntries.length).toBe(2);
 
     const parentClosure = closureEntries.find(
-      (e) => e.ancestorId === parent.id && e.descendantId === child.id,
+      (e) => e.ancestorId === parent.category.id && e.descendantId === child.category.id,
     );
     expect(parentClosure).toBeDefined();
     expect(parentClosure!.depth).toBe(1);
   });
 
-  it('should return 409 DUPLICATE_CATEGORY_NAME for duplicate name under same parent', async () => {
+  it('should return 409 DUPLICATE_NAME for duplicate name under same parent', async () => {
     const app = getApp();
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Dup WS', slug: 'dup-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Dup WS' });
 
     // Create first category
     const first = await app.inject({
@@ -143,7 +143,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     expect(duplicate.statusCode).toBe(409);
 
     const body = duplicate.json() as { error: { code: string } };
-    expect(body.error.code).toBe('DUPLICATE_CATEGORY_NAME');
+    expect(body.error.code).toBe('DUPLICATE_NAME');
   });
 
   it('should allow same name under different parents', async () => {
@@ -151,7 +151,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Diff Parent WS', slug: 'diff-parent-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Diff Parent WS' });
 
     // Create two parent categories
     const parentARes = await app.inject({
@@ -161,7 +161,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
       payload: { name: 'Parent A' },
     });
     expect(parentARes.statusCode).toBe(201);
-    const parentA = parentARes.json() as { id: string };
+    const parentA = parentARes.json() as { category: { id: number } };
 
     const parentBRes = await app.inject({
       method: 'POST',
@@ -170,14 +170,14 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
       payload: { name: 'Parent B' },
     });
     expect(parentBRes.statusCode).toBe(201);
-    const parentB = parentBRes.json() as { id: string };
+    const parentB = parentBRes.json() as { category: { id: number } };
 
     // Create child with same name under different parents
     const childA = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/categories`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { name: 'Overview', parentId: parentA.id },
+      payload: { name: 'Overview', parentId: parentA.category.id },
     });
     expect(childA.statusCode).toBe(201);
 
@@ -185,7 +185,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/categories`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { name: 'Overview', parentId: parentB.id },
+      payload: { name: 'Overview', parentId: parentB.category.id },
     });
     expect(childB.statusCode).toBe(201);
   });
@@ -195,7 +195,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Cat WS', slug: 'rbac-cat-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Cat WS' });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
@@ -215,7 +215,7 @@ describe('POST /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Auth WS', slug: 'no-auth-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Auth WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -236,7 +236,7 @@ describe('GET /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'List WS', slug: 'list-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'List WS' });
 
     // Create root categories
     const rootRes = await app.inject({
@@ -246,14 +246,14 @@ describe('GET /api/v1/workspaces/:wsId/categories', () => {
       payload: { name: 'Root Category' },
     });
     expect(rootRes.statusCode).toBe(201);
-    const root = rootRes.json() as { id: string };
+    const root = rootRes.json() as { category: { id: number } };
 
     // Create child category
     const childRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/categories`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { name: 'Child Category', parentId: root.id },
+      payload: { name: 'Child Category', parentId: root.category.id },
     });
     expect(childRes.statusCode).toBe(201);
 
@@ -268,10 +268,10 @@ describe('GET /api/v1/workspaces/:wsId/categories', () => {
 
     const body = listRes.json() as {
       categories: Array<{
-        id: string;
+        id: number;
         name: string;
-        parentId: string | null;
-        children?: Array<{ id: string; name: string }>;
+        parentId: number | null;
+        children?: Array<{ id: number; name: string }>;
       }>;
     };
 
@@ -279,7 +279,7 @@ describe('GET /api/v1/workspaces/:wsId/categories', () => {
     expect(body.categories.length).toBeGreaterThanOrEqual(1);
 
     // Root category should be present
-    const rootCat = body.categories.find((c) => c.id === root.id);
+    const rootCat = body.categories.find((c) => c.id === root.category.id);
     expect(rootCat).toBeDefined();
     expect(rootCat!.name).toBe('Root Category');
     expect(rootCat!.parentId).toBeNull();
@@ -290,7 +290,7 @@ describe('GET /api/v1/workspaces/:wsId/categories', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Empty WS', slug: 'empty-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Empty WS' });
 
     const res = await app.inject({
       method: 'GET',
@@ -314,7 +314,7 @@ describe('PATCH /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Rename WS', slug: 'rename-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Rename WS' });
 
     // Create category
     const createRes = await app.inject({
@@ -324,36 +324,36 @@ describe('PATCH /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'Old Name' },
     });
     expect(createRes.statusCode).toBe(201);
-    const cat = createRes.json() as { id: string };
+    const cat = createRes.json() as { category: { id: number } };
 
     // Rename
     const renameRes = await app.inject({
       method: 'PATCH',
-      url: `/api/v1/workspaces/${ws.id}/categories/${cat.id}`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${cat.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
       payload: { name: 'New Name' },
     });
 
     expect(renameRes.statusCode).toBe(200);
 
-    const body = renameRes.json() as { id: string; name: string };
-    expect(body.id).toBe(cat.id);
-    expect(body.name).toBe('New Name');
+    const body = renameRes.json() as { category: { id: number; name: string } };
+    expect(body.category.id).toBe(cat.category.id);
+    expect(body.category.name).toBe('New Name');
 
     // Verify DB
     const [dbCat] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, cat.id));
+      .where(eq(categories.id, cat.category.id));
     expect(dbCat!.name).toBe('New Name');
   });
 
-  it('should return 409 DUPLICATE_CATEGORY_NAME when renaming to duplicate name under same parent', async () => {
+  it('should return 409 DUPLICATE_NAME when renaming to duplicate name under same parent', async () => {
     const app = getApp();
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Dup Rename WS', slug: 'dup-rename-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Dup Rename WS' });
 
     // Create two root categories
     const first = await app.inject({
@@ -371,12 +371,12 @@ describe('PATCH /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'Beta' },
     });
     expect(second.statusCode).toBe(201);
-    const secondCat = second.json() as { id: string };
+    const secondCat = second.json() as { category: { id: number } };
 
     // Try to rename Beta to Alpha
     const renameRes = await app.inject({
       method: 'PATCH',
-      url: `/api/v1/workspaces/${ws.id}/categories/${secondCat.id}`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${secondCat.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
       payload: { name: 'Alpha' },
     });
@@ -384,7 +384,7 @@ describe('PATCH /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     expect(renameRes.statusCode).toBe(409);
 
     const body = renameRes.json() as { error: { code: string } };
-    expect(body.error.code).toBe('DUPLICATE_CATEGORY_NAME');
+    expect(body.error.code).toBe('DUPLICATE_NAME');
   });
 
   it('should return 404 for non-existent category', async () => {
@@ -392,9 +392,9 @@ describe('PATCH /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Not Found WS', slug: 'not-found-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Not Found WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'PATCH',
@@ -416,7 +416,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Delete Cat WS', slug: 'delete-cat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Delete Cat WS' });
 
     // Create category
     const createRes = await app.inject({
@@ -426,13 +426,14 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'To Be Deleted' },
     });
     expect(createRes.statusCode).toBe(201);
-    const cat = createRes.json() as { id: string };
+    const cat = createRes.json() as { category: { id: number } };
 
     // Delete
     const deleteRes = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/categories/${cat.id}`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${cat.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { confirmName: 'To Be Deleted' },
     });
 
     expect(deleteRes.statusCode).toBe(204);
@@ -441,14 +442,14 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const [dbCat] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, cat.id));
+      .where(eq(categories.id, cat.category.id));
     expect(dbCat).toBeUndefined();
 
     // Verify DB: closure entries removed
     const closureEntries = await db
       .select()
       .from(categoryClosure)
-      .where(eq(categoryClosure.descendantId, cat.id));
+      .where(eq(categoryClosure.descendantId, cat.category.id));
     expect(closureEntries.length).toBe(0);
   });
 
@@ -457,7 +458,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'SubCat WS', slug: 'subcat-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'SubCat WS' });
 
     // Create parent
     const parentRes = await app.inject({
@@ -467,22 +468,23 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'Parent With Child' },
     });
     expect(parentRes.statusCode).toBe(201);
-    const parent = parentRes.json() as { id: string };
+    const parent = parentRes.json() as { category: { id: number } };
 
     // Create child
     const childRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/categories`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { name: 'Child', parentId: parent.id },
+      payload: { name: 'Child', parentId: parent.category.id },
     });
     expect(childRes.statusCode).toBe(201);
 
     // Attempt to delete parent
     const deleteRes = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/categories/${parent.id}`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${parent.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { confirmName: 'Parent With Child' },
     });
 
     expect(deleteRes.statusCode).toBe(400);
@@ -494,7 +496,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const [dbParent] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, parent.id));
+      .where(eq(categories.id, parent.category.id));
     expect(dbParent).toBeDefined();
   });
 
@@ -503,7 +505,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Move Docs WS', slug: 'move-docs-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Move Docs WS' });
 
     // Create category
     const catRes = await app.inject({
@@ -513,24 +515,25 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'Category With Docs' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { id: string };
+    const cat = catRes.json() as { category: { id: number } };
 
     // Create a document in this category
     const docRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Orphan Doc', categoryId: cat.id },
+      payload: { title: 'Orphan Doc', categoryId: cat.category.id },
     });
     expect(docRes.statusCode).toBe(201);
-    const doc = docRes.json() as { id: string; categoryId: string };
-    expect(doc.categoryId).toBe(cat.id);
+    const doc = docRes.json() as { document: { id: number; categoryId: number } };
+    expect(doc.document.categoryId).toBe(cat.category.id);
 
     // Delete category with handleDocuments=move
     const deleteRes = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/categories/${cat.id}?handleDocuments=move`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${cat.category.id}?handleDocuments=move`,
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { confirmName: 'Category With Docs' },
     });
 
     expect(deleteRes.statusCode).toBe(204);
@@ -539,7 +542,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, doc.document.id));
     expect(dbDoc).toBeDefined();
     expect(dbDoc!.categoryId).toBeNull();
   });
@@ -549,7 +552,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Del WS', slug: 'rbac-del-cat-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Del WS' });
 
     // Create category as owner
     const catRes = await app.inject({
@@ -559,7 +562,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
       payload: { name: 'Protected' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { id: string };
+    const cat = catRes.json() as { category: { id: number } };
 
     // Viewer tries to delete
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
@@ -567,8 +570,9 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
 
     const res = await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/categories/${cat.id}`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${cat.category.id}`,
       headers: { authorization: `Bearer ${viewerToken}` },
+      payload: { confirmName: 'Protected' },
     });
 
     expect(res.statusCode).toBe(403);
@@ -577,7 +581,7 @@ describe('DELETE /api/v1/workspaces/:wsId/categories/:categoryId', () => {
     const [dbCat] = await db
       .select()
       .from(categories)
-      .where(eq(categories.id, cat.id));
+      .where(eq(categories.id, cat.category.id));
     expect(dbCat).toBeDefined();
   });
 });

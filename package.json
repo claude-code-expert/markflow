@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "dev": "lsof -ti:3002 -ti:4000 | xargs kill -9 2>/dev/null; BANNER='\\n\\033[1;36m  ✔ MarkFlow Dev Servers Ready\\033[0m\\n  ─────────────────────────────\\n  Web:  \\033[4mhttp://localhost:3002\\033[0m\\n  API:  \\033[4mhttp://localhost:4000/api/v1\\033[0m\\n  Demo: \\033[4mhttp://localhost:3000\\033[0m\\n'; (sleep 5 && printf \"$BANNER\") & (sleep 20 && printf \"$BANNER\") & turbo dev",
+    "dev": "lsof -ti:3000 -ti:3002 -ti:4000 | xargs kill -9 2>/dev/null; BANNER='\\n\\033[1;36m  ✔ MarkFlow Dev Servers Ready\\033[0m\\n  ─────────────────────────────\\n  Web:  \\033[4mhttp://localhost:3002\\033[0m\\n  API:  \\033[4mhttp://localhost:4000/api/v1\\033[0m\\n  Demo: \\033[4mhttp://localhost:3000\\033[0m\\n'; (sleep 5 && printf \"$BANNER\") & (sleep 20 && printf \"$BANNER\") & turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test"

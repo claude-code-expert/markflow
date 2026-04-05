@@ -10,6 +10,10 @@ function nextId() {
   return counter;
 }
 
+export function resetCounter() {
+  counter = 0;
+}
+
 interface CreateUserOptions {
   email?: string;
   name?: string;
@@ -29,7 +33,7 @@ export async function createUser(db: Db, options: CreateUserOptions = {}) {
     emailVerified: options.emailVerified ?? true,
   }).returning();
 
-  const accessToken = signAccessToken({ userId: user!.id, email: user!.email });
+  const accessToken = signAccessToken({ userId: String(user!.id), email: user!.email });
 
   return { user: user!, accessToken };
 }
@@ -41,11 +45,10 @@ interface CreateWorkspaceOptions {
   isPublic?: boolean;
 }
 
-export async function createWorkspace(db: Db, ownerId: string, options: CreateWorkspaceOptions = {}) {
+export async function createWorkspace(db: Db, ownerId: number, options: CreateWorkspaceOptions = {}) {
   const id = nextId();
   const [workspace] = await db.insert(workspaces).values({
     name: options.name ?? `Workspace ${id}`,
-    slug: options.slug ?? `workspace-${id}`,
     isRoot: options.isRoot ?? false,
     isPublic: options.isPublic ?? true,
     ownerId,
@@ -60,7 +63,7 @@ export async function createWorkspace(db: Db, ownerId: string, options: CreateWo
   return workspace!;
 }
 
-export async function addMember(db: Db, workspaceId: string, userId: string, role: 'admin' | 'editor' | 'viewer') {
+export async function addMember(db: Db, workspaceId: number, userId: number, role: 'admin' | 'editor' | 'viewer') {
   const [member] = await db.insert(workspaceMembers).values({
     workspaceId,
     userId,
@@ -78,8 +81,8 @@ interface CreateInvitationOptions {
 
 export async function createInvitation(
   db: Db,
-  workspaceId: string,
-  inviterId: string,
+  workspaceId: number,
+  inviterId: number,
   options: CreateInvitationOptions = {},
 ) {
   const id = nextId();
@@ -106,8 +109,8 @@ interface CreateJoinRequestOptions {
 
 export async function createJoinRequest(
   db: Db,
-  workspaceId: string,
-  userId: string,
+  workspaceId: number,
+  userId: number,
   options: CreateJoinRequestOptions = {},
 ) {
   const [joinRequest] = await db.insert(joinRequests).values({

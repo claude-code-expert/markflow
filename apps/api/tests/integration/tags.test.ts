@@ -16,7 +16,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/tags', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Tag WS', slug: 'tag-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Tag WS' });
 
     // Create document
     const docRes = await app.inject({
@@ -50,7 +50,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/tags', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Replace Tag WS', slug: 'replace-tag-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Replace Tag WS' });
 
     const docRes = await app.inject({
       method: 'POST',
@@ -89,7 +89,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/tags', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Max Tag WS', slug: 'max-tag-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Max Tag WS' });
 
     const docRes = await app.inject({
       method: 'POST',
@@ -121,7 +121,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/tags', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Tag WS', slug: 'rbac-tag-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Tag WS' });
 
     const docRes = await app.inject({
       method: 'POST',
@@ -150,7 +150,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/tags', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Clear Tag WS', slug: 'clear-tag-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Clear Tag WS' });
 
     const docRes = await app.inject({
       method: 'POST',
@@ -193,7 +193,7 @@ describe('GET /api/v1/workspaces/:wsId/tags', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'List Tag WS', slug: 'list-tag-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'List Tag WS' });
 
     // Create two docs and tag them
     const doc1Res = await app.inject({
@@ -256,7 +256,7 @@ describe('GET /api/v1/workspaces/:wsId/tags', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Tag WS', slug: 'viewer-tag-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Tag WS' });
 
     // Owner creates a doc and tags it
     const docRes = await app.inject({

@@ -15,7 +15,7 @@ describe('Load: 1,000 document workspace list', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db, { email: 'load-list@test.com' });
-    const workspace = await createWorkspace(db, user.id, { name: 'Load WS', slug: 'load-ws-list' });
+    const workspace = await createWorkspace(db, user.id, { name: 'Load WS' });
 
     // Bulk insert 1,000 documents
     const docValues = Array.from({ length: 1000 }, (_, i) => ({

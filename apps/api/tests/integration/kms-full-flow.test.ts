@@ -17,19 +17,19 @@ function auth(token: string) {
 }
 
 interface Doc {
-  id: string;
+  id: number;
   title: string;
   slug: string;
   content: string;
-  categoryId: string | null;
+  categoryId: number | null;
   currentVersion: number;
-  authorId: string;
+  authorId: number;
 }
 
 interface Cat {
-  id: string;
+  id: number;
   name: string;
-  parentId: string | null;
+  parentId: number | null;
 }
 
 describe('KMS Full-Flow Integration', () => {
@@ -39,7 +39,7 @@ describe('KMS Full-Flow Integration', () => {
 
     // ─── Setup ───
     const { user, accessToken: token } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Agent WS', slug: 'agent' });
+    const ws = await createWorkspace(db, user.id, { name: 'Agent WS' });
     const wsId = ws.id;
     const h = auth(token);
 
@@ -84,7 +84,7 @@ describe('KMS Full-Flow Integration', () => {
     });
     expect(treeRes.statusCode).toBe(200);
     const tree = treeRes.json() as {
-      categories: Array<{ id: string; name: string; children: Array<{ name: string }> }>;
+      categories: Array<{ id: number; name: string; children: Array<{ name: string }> }>;
     };
     expect(tree.categories.length).toBe(2);
     const devCat = tree.categories.find((c) => c.name === '개발');
@@ -104,7 +104,7 @@ describe('KMS Full-Flow Integration', () => {
     // ═══════════════════════════════════════════════
 
     // Create 5 documents in various categories
-    const createDoc = async (title: string, categoryId?: string) => {
+    const createDoc = async (title: string, categoryId?: number) => {
       const res = await app.inject({
         method: 'POST', url: `/api/v1/workspaces/${wsId}/documents`,
         headers: h, payload: { title, categoryId },
@@ -203,10 +203,10 @@ describe('KMS Full-Flow Integration', () => {
     });
     const tree2 = treeRes2.json() as {
       categories: Array<{
-        name: string; documents: Array<{ id: string }>;
-        children: Array<{ name: string; documents: Array<{ id: string }> }>;
+        name: string; documents: Array<{ id: number }>;
+        children: Array<{ name: string; documents: Array<{ id: number }> }>;
       }>;
-      uncategorized: Array<{ id: string }>;
+      uncategorized: Array<{ id: number }>;
     };
     expect(tree2.uncategorized.some((d) => d.id === docEditor.id)).toBe(true);
     const devCat2 = tree2.categories.find((c) => c.name === '개발');
@@ -220,7 +220,7 @@ describe('KMS Full-Flow Integration', () => {
     // Set relations: Agent → Structure (next), Agent ↔ SEO (related)
     const relSetRes = await app.inject({
       method: 'PUT', url: `/api/v1/workspaces/${wsId}/documents/${docAgent.id}/relations`,
-      headers: h, payload: { next: docStructure.id, related: [docSEO.id] },
+      headers: h, payload: { next: String(docStructure.id), related: [String(docSEO.id)] },
     });
     expect(relSetRes.statusCode).toBe(200);
 
@@ -230,8 +230,8 @@ describe('KMS Full-Flow Integration', () => {
     });
     expect(relGetRes.statusCode).toBe(200);
     const rels = relGetRes.json() as {
-      prev: { id: string } | null; next: { id: string } | null;
-      related: Array<{ id: string }>;
+      prev: { id: number } | null; next: { id: number } | null;
+      related: Array<{ id: number }>;
     };
     expect(rels.next?.id).toBe(docStructure.id);
     expect(rels.related.some((r) => r.id === docSEO.id)).toBe(true);
@@ -241,7 +241,7 @@ describe('KMS Full-Flow Integration', () => {
       method: 'GET', url: `/api/v1/workspaces/${wsId}/documents/${docStructure.id}/relations`, headers: h,
     });
     expect(relRevRes.statusCode).toBe(200);
-    expect((relRevRes.json() as { prev: { id: string } | null }).prev?.id).toBe(docAgent.id);
+    expect((relRevRes.json() as { prev: { id: number } | null }).prev?.id).toBe(docAgent.id);
 
     // ═══════════════════════════════════════════════
     // Phase 6: Version History with content (for diff)
@@ -265,7 +265,7 @@ describe('KMS Full-Flow Integration', () => {
     });
     expect(versionsRes.statusCode).toBe(200);
     const versions = (versionsRes.json() as {
-      versions: Array<{ id: string; version: number; content: string; createdAt: string }>;
+      versions: Array<{ id: number; version: number; content: string; createdAt: string }>;
     }).versions;
     expect(versions.length).toBe(4); // v1, v2, v3, v4
     expect(versions[0]!.version).toBe(4); // newest first
@@ -282,8 +282,8 @@ describe('KMS Full-Flow Integration', () => {
     });
     expect(graphRes.statusCode).toBe(200);
     const graph = graphRes.json() as {
-      nodes: Array<{ id: string; title: string }>;
-      edges: Array<{ source: string; target: string; type: string }>;
+      nodes: Array<{ id: number; title: string }>;
+      edges: Array<{ source: number; target: number; type: string }>;
     };
     expect(graph.nodes.length).toBe(5);
     expect(graph.edges.length).toBeGreaterThanOrEqual(2);
@@ -304,7 +304,7 @@ describe('KMS Full-Flow Integration', () => {
       method: 'GET', url: `/api/v1/workspaces/${wsId}/trash`, headers: h,
     });
     expect(trashRes.statusCode).toBe(200);
-    expect((trashRes.json() as { documents: Array<{ id: string }> }).documents.some(
+    expect((trashRes.json() as { documents: Array<{ id: number }> }).documents.some(
       (d) => d.id === docCommand.id,
     )).toBe(true);
 
@@ -312,7 +312,7 @@ describe('KMS Full-Flow Integration', () => {
     const listRes2 = await app.inject({
       method: 'GET', url: `/api/v1/workspaces/${wsId}/documents`, headers: h,
     });
-    expect((listRes2.json() as { documents: Array<{ id: string }> }).documents.some(
+    expect((listRes2.json() as { documents: Array<{ id: number }> }).documents.some(
       (d) => d.id === docCommand.id,
     )).toBe(false);
 
@@ -326,7 +326,7 @@ describe('KMS Full-Flow Integration', () => {
     const listRes3 = await app.inject({
       method: 'GET', url: `/api/v1/workspaces/${wsId}/documents`, headers: h,
     });
-    expect((listRes3.json() as { documents: Array<{ id: string }> }).documents.some(
+    expect((listRes3.json() as { documents: Array<{ id: number }> }).documents.some(
       (d) => d.id === docCommand.id,
     )).toBe(true);
 
@@ -343,7 +343,7 @@ describe('KMS Full-Flow Integration', () => {
     const trashRes2 = await app.inject({
       method: 'GET', url: `/api/v1/workspaces/${wsId}/trash`, headers: h,
     });
-    expect((trashRes2.json() as { documents: Array<{ id: string }> }).documents.some(
+    expect((trashRes2.json() as { documents: Array<{ id: number }> }).documents.some(
       (d) => d.id === docCommand.id,
     )).toBe(false);
 

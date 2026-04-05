@@ -29,16 +29,17 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.statusCode).toBe(201);
 
-    const body = res.json() as Record<string, unknown>;
+    const body = res.json() as { user: Record<string, unknown> };
 
     // User object must be returned
-    expect(body).toHaveProperty('userId');
-    expect(typeof body.userId).toBe('string');
+    expect(body).toHaveProperty('user');
+    expect(body.user).toHaveProperty('id');
+    expect(typeof body.user.id).toBe('number');
 
     // passwordHash must NEVER be exposed
-    expect(body).not.toHaveProperty('passwordHash');
-    expect(body).not.toHaveProperty('password_hash');
-    expect(body).not.toHaveProperty('password');
+    expect(body.user).not.toHaveProperty('passwordHash');
+    expect(body.user).not.toHaveProperty('password_hash');
+    expect(body.user).not.toHaveProperty('password');
 
     // Verify persisted in DB
     const db = getDb();
@@ -71,19 +72,19 @@ describe('POST /api/v1/auth/register', () => {
     });
 
     expect(res.statusCode).toBe(201);
-    const body = res.json() as { userId: string };
+    const body = res.json() as { user: { id: number } };
 
     // Root workspace should exist
     const userWorkspaces = await db
       .select()
       .from(workspaces)
-      .where(eq(workspaces.ownerId, body.userId));
+      .where(eq(workspaces.ownerId, body.user.id));
 
     expect(userWorkspaces.length).toBeGreaterThanOrEqual(1);
 
     const rootWs = userWorkspaces.find((ws) => ws.isRoot);
     expect(rootWs).toBeDefined();
-    expect(rootWs!.ownerId).toBe(body.userId);
+    expect(rootWs!.ownerId).toBe(body.user.id);
 
     // User should be an owner member of the root workspace
     const members = await db
@@ -91,7 +92,7 @@ describe('POST /api/v1/auth/register', () => {
       .from(workspaceMembers)
       .where(eq(workspaceMembers.workspaceId, rootWs!.id));
 
-    const ownerMember = members.find((m) => m.userId === body.userId);
+    const ownerMember = members.find((m) => m.userId === body.user.id);
     expect(ownerMember).toBeDefined();
     expect(ownerMember!.role).toBe('owner');
   });

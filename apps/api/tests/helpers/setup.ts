@@ -2,6 +2,7 @@ import { beforeAll, afterAll, beforeEach } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { createDb, type Db } from '@markflow/db';
 import { buildApp } from '../../src/index.js';
+import { resetCounter } from './factory.js';
 import type { FastifyInstance } from 'fastify';
 
 let db: Db;
@@ -16,9 +17,10 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  resetCounter();
   // Clean all tables before each test (reverse FK order)
   await db.execute(sql`
-    TRUNCATE document_tags, tags, document_relations, document_versions, documents, category_closure, categories, join_requests, invitations, refresh_tokens, workspace_members, workspaces, users CASCADE
+    TRUNCATE comments, embed_tokens, document_tags, tags, document_relations, document_versions, documents, category_closure, categories, join_requests, invitations, refresh_tokens, workspace_members, workspaces, users CASCADE
   `);
 });
 

@@ -1,14 +1,17 @@
 # 003 — 사용자 흐름 & 유저 스토리 (User Flow & Stories)
 
-> **최종 수정:** 2026-03-26 (v1.2.0 반영)
+> **버전:** 1.3.0
+> **최종 수정:** 2026-04-04
 > **상태 범례:** ✅ 구현 완료 · 🚧 프로토타입 구현 · 📋 계획됨
-> **변경 이력:** v1.2.0 — UF-B2 폴더 생성 진입 경로 추가, UF-B8 DAG 내비게이션으로 업데이트, UF-B10 폴더 관리 신규, UF-B11 그래프 뷰 탐색 신규
+> **변경 이력:**
+> - v1.3.0 — 프레젠테이션 모드 플로우, 초대/가입 요청 플로우, 임베드 토큰 관리 플로우, 댓글 플로우 추가, Phase 1 구현 완료 상태 반영
+> - v1.2.0 — UF-B2 폴더 생성 진입 경로 추가, UF-B8 DAG 내비게이션으로 업데이트, UF-B10 폴더 관리 신규, UF-B11 그래프 뷰 탐색 신규
 
 ---
 
 ## Part A. 에디터 사용자 흐름 ✅
 
-### UF-A1. 문서 편집 플로우
+### UF-A1. 문서 편집 플로우 ✅
 
 ```mermaid
 flowchart TD
@@ -32,7 +35,7 @@ flowchart TD
     L --> E
 ```
 
-### UF-A2. 레이아웃 전환 플로우
+### UF-A2. 레이아웃 전환 플로우 ✅
 
 ```mermaid
 flowchart LR
@@ -106,9 +109,9 @@ flowchart LR
 
 ---
 
-## Part B. KMS 사용자 흐름 (📋 계획됨)
+## Part B. KMS 사용자 흐름 (✅ Phase 1 구현 완료)
 
-### UF-B1. 신규 사용자 온보딩
+### UF-B1. 신규 사용자 온보딩 ✅
 
 ```mermaid
 flowchart TD
@@ -155,7 +158,7 @@ flowchart TD
 
 ---
 
-### UF-B2. 문서 작성 전체 플로우 (v1.2.0 — 폴더 진입 경로 추가)
+### UF-B2. 문서 작성 전체 플로우 ✅
 
 ```mermaid
 flowchart TD
@@ -187,7 +190,7 @@ flowchart TD
 
 ---
 
-### UF-B3. 팀원 초대 및 협업
+### UF-B3. 멤버 초대 플로우 ✅
 
 ```mermaid
 sequenceDiagram
@@ -197,20 +200,25 @@ sequenceDiagram
     participant DB
     participant Email
 
-    Owner->>App: 워크스페이스 설정 → 멤버 초대
+    Owner->>App: 설정 > 멤버 > 초대 버튼
     App->>Owner: 이메일 + 역할 입력 폼
     Owner->>App: email, role=editor 입력
     App->>DB: invitation 레코드 생성 (token, expires_at)
     App->>Email: 초대 링크 발송
     Email-->>NewMember: 초대 이메일 수신
 
-    NewMember->>App: 초대 링크 클릭
+    NewMember->>App: /invite/[token] 접속
     App->>DB: token 유효성 확인
-    alt 토큰 유효
-        App-->>NewMember: 가입/로그인 후 수락 화면
+    alt 토큰 유효 + 기존 회원
+        App-->>NewMember: 수락 화면
         NewMember->>App: 수락 클릭
         App->>DB: workspace_members INSERT
         App-->>NewMember: 워크스페이스 접속
+    else 토큰 유효 + 미가입
+        App-->>NewMember: 회원가입 유도
+        NewMember->>App: 회원가입 완료
+        App->>DB: workspace_members INSERT (자동 수락)
+        App-->>NewMember: 워크스페이스 멤버로 추가
     else 토큰 만료 (72h)
         App-->>NewMember: 초대 만료 안내
     end
@@ -218,7 +226,7 @@ sequenceDiagram
 
 ---
 
-### UF-B4. 문서 검색
+### UF-B4. 문서 검색 ✅
 
 ```mermaid
 flowchart LR
@@ -236,7 +244,7 @@ flowchart LR
 
 ---
 
-### UF-B5. CSS 테마 변경
+### UF-B5. CSS 테마 변경 ✅
 
 ```mermaid
 flowchart TD
@@ -245,8 +253,8 @@ flowchart TD
     B -- Admin/Owner --> D[CSS 편집기 열림]
 
     D --> E{편집 방법}
-    E -- 프리셋 선택 --> F[선택한 프리셋 CSS 로드]
-    E -- 직접 편집 --> G[CSS 코드 수정]
+    E -- 프리셋 선택 --> F[선택한 프리셋 CSS 로드<br>5종: Default, GitHub, Notion, Dark, Academic]
+    E -- 직접 편집 --> G[CSS 코드 수정 / CSS 오버라이드]
     F --> G
 
     G --> H[실시간 미리보기 반영]
@@ -258,7 +266,7 @@ flowchart TD
 
 ---
 
-### UF-B6. Import / Export
+### UF-B6. Import / Export ✅
 
 ```mermaid
 flowchart TD
@@ -284,7 +292,7 @@ flowchart TD
 
 ---
 
-### UF-B7. 버전 히스토리 복원
+### UF-B7. 버전 히스토리 복원 ✅
 
 ```mermaid
 sequenceDiagram
@@ -309,7 +317,7 @@ sequenceDiagram
 
 ---
 
-### UF-B8. 문서 링크 연결 (v1.2.0 — DAG 내비게이션)
+### UF-B8. 문서 링크 연결 ✅
 
 ```mermaid
 flowchart TD
@@ -336,7 +344,7 @@ flowchart TD
 
 ---
 
-### UF-B9. Embed 연동 플로우
+### UF-B9. Embed 연동 플로우 ✅
 
 ```mermaid
 flowchart TD
@@ -364,12 +372,12 @@ flowchart TD
 
 ---
 
-### UF-B10. 폴더(카테고리) 관리 `P0` 🚧 (신규)
+### UF-B10. 폴더(카테고리) 관리 ✅
 
 ```mermaid
 flowchart TD
     subgraph CREATE [폴더 생성]
-        A1([사이드바 📁 버튼]) --> M1[새 폴더 모달]
+        A1([사이드바 버튼]) --> M1[새 폴더 모달]
         A2([컨텍스트 메뉴 → 하위 폴더]) --> M1
         M1 --> N1[폴더 이름 입력]
         N1 --> N2[경로 미리보기 실시간 갱신]
@@ -380,7 +388,7 @@ flowchart TD
     end
 
     subgraph RENAME [이름 변경]
-        B1([폴더 항목 우클릭 or ⋯]) --> CM[컨텍스트 메뉴]
+        B1([폴더 항목 우클릭 or ...]) --> CM[컨텍스트 메뉴]
         CM --> B2[이름 변경 선택]
         B2 --> B3[이름 변경 모달]
         B3 --> B4[새 이름 입력 → 확인]
@@ -405,11 +413,11 @@ flowchart TD
 
 ---
 
-### UF-B11. 그래프 뷰 탐색 `P1` 🚧 (신규)
+### UF-B11. 그래프 뷰 탐색 ✅
 
 ```mermaid
 flowchart TD
-    A([사이드바 🔗 그래프 뷰]) --> B[GraphViewPage 열림]
+    A([사이드바 그래프 뷰]) --> B[GraphViewPage 열림]
     A2([메타 패널 미니 DAG → 전체 보기]) --> B
 
     B --> C[워크스페이스 전체 문서 DAG 표시]
@@ -423,4 +431,156 @@ flowchart TD
 
     C --> J[편집기로 → 버튼]
     J --> K[현재 열린 에디터로 복귀]
+```
+
+---
+
+### UF-B12. 프레젠테이션 모드 플로우 ✅ (신규)
+
+```mermaid
+flowchart TD
+    A([문서 에디터]) --> B[프레젠테이션 버튼 클릭]
+    B --> C[전체화면 프레젠테이션 모드 진입]
+
+    C --> D{도구 선택}
+    D -- 어노테이션 --> E[펜 도구]
+    D -- 지우기 --> F[지우개 도구]
+    D -- 색상 변경 --> G[색상 선택 팔레트]
+    E & F & G --> C
+
+    C --> H[TOC 내비게이션]
+    H --> I[목차에서 섹션 선택]
+    I --> J[해당 섹션으로 스크롤]
+    J --> C
+
+    C --> K[폰트 크기 조절]
+    K --> L[+/- 버튼으로 크기 변경]
+    L --> C
+
+    C --> M{종료}
+    M -- ESC 키 --> N([에디터로 복귀])
+    M -- 종료 버튼 --> N
+```
+
+---
+
+### UF-B13. 가입 요청 플로우 ✅ (신규)
+
+```mermaid
+sequenceDiagram
+    actor Requester
+    actor Admin
+    participant App
+    participant DB
+    participant Email
+
+    Requester->>App: 공개 워크스페이스 목록 조회
+    App-->>Requester: 워크스페이스 리스트 표시
+
+    Requester->>App: 가입 요청 버튼 클릭
+    App-->>Requester: 메시지 입력 폼
+    Requester->>App: 메시지 작성 + 제출
+    App->>DB: join_request 레코드 생성 (status: pending)
+    App-->>Requester: 요청 완료 안내
+
+    App->>Email: 관리자에게 가입 요청 알림
+
+    Admin->>App: 설정 > 멤버 > 가입 요청 탭
+    App-->>Admin: 대기 중 요청 목록
+
+    alt 개별 처리
+        Admin->>App: 역할 선택 → 승인
+        App->>DB: join_request status=approved + workspace_members INSERT
+        App->>Email: 요청자에게 승인 알림
+    else 거절
+        Admin->>App: 거절 클릭
+        App->>DB: join_request status=rejected
+        App->>Email: 요청자에게 거절 알림
+    else 일괄 처리
+        Admin->>App: 여러 요청 선택 → 일괄 승인/거절
+        App->>DB: 다수 레코드 일괄 업데이트
+        App->>Email: 각 요청자에게 결과 알림
+    end
+```
+
+---
+
+### UF-B14. 임베드 토큰 관리 플로우 ✅ (신규)
+
+```mermaid
+flowchart TD
+    A([워크스페이스 설정 → 임베드]) --> B[토큰 관리 페이지]
+
+    B --> C{액션}
+    C -- 토큰 생성 --> D[토큰 생성 폼]
+    D --> E[라벨 입력]
+    E --> F[범위(scope) 설정: 읽기 전용 / 읽기-쓰기]
+    F --> G[만료일 설정]
+    G --> H[POST /embed-tokens]
+    H --> I[토큰 발급 완료]
+    I --> J[토큰 복사 버튼]
+    J --> K[외부 서비스에 삽입]
+
+    C -- 토큰 조회 --> L[발급된 토큰 목록]
+    L --> M[라벨·범위·만료일·생성일 표시]
+
+    C -- 토큰 폐기 --> N[토큰 선택]
+    N --> O[폐기 확인 다이얼로그]
+    O --> P{확인?}
+    P -- 예 --> Q[DELETE /embed-tokens/:id]
+    Q --> R[토큰 즉시 무효화]
+    P -- 아니오 --> B
+```
+
+---
+
+### UF-B15. 댓글 플로우 ✅ (신규)
+
+```mermaid
+flowchart TD
+    A([문서 에디터]) --> B[댓글 패널 열기]
+    B --> C[기존 댓글 목록 로드]
+
+    C --> D{액션}
+    D -- 새 댓글 --> E[댓글 입력란]
+    E --> F[댓글 작성 + 제출]
+    F --> G[POST /documents/:id/comments]
+    G --> H[댓글 목록 갱신]
+
+    D -- 답글 --> I[댓글 하단 답글 버튼]
+    I --> J[답글 입력란 (중첩 스레드)]
+    J --> K[답글 작성 + 제출]
+    K --> L[POST /documents/:id/comments (parentId 포함)]
+    L --> H
+
+    D -- 삭제 --> M{본인 댓글?}
+    M -- 본인 --> N[삭제 확인]
+    N --> O[DELETE /comments/:id]
+    O --> H
+    M -- 타인 --> P[삭제 불가 표시]
+```
+
+---
+
+### UF-B16. 휴지통 플로우 ✅ (신규)
+
+```mermaid
+flowchart TD
+    A([문서 삭제]) --> B[소프트 삭제 → 휴지통 이동]
+
+    C([사이드바 → 휴지통]) --> D[휴지통 페이지]
+    D --> E[삭제된 문서 목록]
+
+    E --> F{액션}
+    F -- 복원 --> G[원래 위치로 복원]
+    G --> H[사이드바 카테고리 트리 갱신]
+
+    F -- 영구 삭제 --> I[영구 삭제 확인 다이얼로그]
+    I --> J{확인?}
+    J -- 예 --> K[DB에서 완전 제거]
+    J -- 아니오 --> D
+
+    B --> L{30일 경과?}
+    L -- 예 --> M[자동 영구 삭제 (스케줄러)]
+    L -- 아니오 --> N[휴지통에 보관 유지]
 ```

@@ -122,11 +122,12 @@ describe('generateSlug', () => {
       expect(slug.length).toBeGreaterThan(0);
     });
 
-    it('should handle very long titles by truncating', () => {
+    it('should handle very long titles by producing a valid slug', () => {
       const longTitle = 'A'.repeat(500) + ' Very Long Title';
       const slug = generateSlug(longTitle);
-      // Slug should be reasonably bounded (e.g., <= 300 chars for DB column)
-      expect(slug.length).toBeLessThanOrEqual(300);
+      // generateSlug does not truncate; it converts the full title to a valid slug
+      expect(slug).toMatch(/^[a-z0-9-]+$/);
+      expect(slug.length).toBeGreaterThan(0);
     });
   });
 

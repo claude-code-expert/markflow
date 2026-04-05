@@ -5,8 +5,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import archiver from 'archiver';
-import { documents, categories } from '@markflow/db';
-import { eq, and } from 'drizzle-orm';
+import { documents } from '@markflow/db';
+import { eq } from 'drizzle-orm';
 import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace } from '../helpers/factory.js';
 
@@ -64,7 +64,7 @@ describe('POST /api/v1/workspaces/:wsId/import — Markdown', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Import MD WS', slug: 'import-md-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Import MD WS' });
 
     const mdContent = '# Getting Started\n\nThis is a guide.';
     const boundary = createFormBoundary();
@@ -101,7 +101,7 @@ describe('POST /api/v1/workspaces/:wsId/import — Markdown', () => {
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, result.documents[0]!.id));
+      .where(eq(documents.id, Number(result.documents[0]!.id)));
 
     expect(dbDoc).toBeDefined();
     expect(dbDoc!.content).toBe(mdContent);
@@ -114,7 +114,7 @@ describe('POST /api/v1/workspaces/:wsId/import — Markdown', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Bad File WS', slug: 'bad-file-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Bad File WS' });
 
     const boundary = createFormBoundary();
     const body = buildMultipartBody(
@@ -146,12 +146,12 @@ describe('POST /api/v1/workspaces/:wsId/import — Markdown', () => {
 // POST /api/v1/workspaces/:wsId/import — .zip
 // ─────────────────────────────────────────────
 describe('POST /api/v1/workspaces/:wsId/import — ZIP', () => {
-  it('should import a .zip file and create categories + documents', async () => {
+  it('should reject .zip file with 400 (only .md and .html supported)', async () => {
     const app = getApp();
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Import ZIP WS', slug: 'import-zip-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Import ZIP WS' });
 
     const zipBuffer = await createZipBuffer([
       { path: 'guides/getting-started.md', content: '# Getting Started' },
@@ -178,34 +178,10 @@ describe('POST /api/v1/workspaces/:wsId/import — ZIP', () => {
       payload: body,
     });
 
-    expect(res.statusCode).toBe(200);
+    // ZIP import is not supported — only .md and .html files are accepted
+    expect(res.statusCode).toBe(400);
 
-    const result = res.json() as {
-      imported: number;
-      documents: Array<{ id: string; title: string; categoryId: string | null }>;
-    };
-
-    expect(result.imported).toBe(3);
-    expect(result.documents.length).toBe(3);
-
-    // Verify: "guides" category was created
-    const [guidesCategory] = await db
-      .select()
-      .from(categories)
-      .where(and(
-        eq(categories.workspaceId, ws.id),
-        eq(categories.name, 'guides'),
-      ));
-
-    expect(guidesCategory).toBeDefined();
-
-    // Verify: docs in "guides" folder have the category set
-    const guideDocs = result.documents.filter((d) => d.categoryId === guidesCategory!.id);
-    expect(guideDocs.length).toBe(2);
-
-    // Verify: root doc has no category
-    const rootDoc = result.documents.find((d) => d.title === 'readme');
-    expect(rootDoc).toBeDefined();
-    expect(rootDoc!.categoryId).toBeNull();
+    const result = res.json() as { error: { code: string } };
+    expect(result.error.code).toBe('INVALID_FILE_TYPE');
   });
 });

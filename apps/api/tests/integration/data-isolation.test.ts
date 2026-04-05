@@ -19,11 +19,11 @@ describe('Workspace data isolation', () => {
 
     // User A owns workspace 1
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-1' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     // User B owns workspace 2
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-1' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     // User A tries to access workspace 2
     const res = await app.inject({
@@ -40,7 +40,7 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA } = await createUser(db);
-    const ws1 = await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-2' });
+    const ws1 = await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { accessToken: tokenB } = await createUser(db);
 
@@ -58,10 +58,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-3' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-3' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const res = await app.inject({
       method: 'GET',
@@ -77,10 +77,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-4' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-4' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const res = await app.inject({
       method: 'PATCH',
@@ -97,10 +97,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-5' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-5' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const res = await app.inject({
       method: 'DELETE',
@@ -117,10 +117,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-6' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-6' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const res = await app.inject({
       method: 'POST',
@@ -140,10 +140,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-7' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-7', isPublic: true });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', isPublic: true });
 
     const res = await app.inject({
       method: 'GET',
@@ -159,10 +159,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-8' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-8' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const { user: memberInWs2 } = await createUser(db);
     await addMember(db, ws2.id, memberInWs2.id, 'editor');
@@ -182,10 +182,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-9' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-9' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const { user: memberInWs2 } = await createUser(db);
     await addMember(db, ws2.id, memberInWs2.id, 'viewer');
@@ -204,10 +204,10 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-10' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-10', isPublic: true });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', isPublic: true });
 
     const { user: requester } = await createUser(db);
     const joinReq = await createJoinRequest(db, ws2.id, requester.id);
@@ -227,16 +227,16 @@ describe('Workspace data isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    await createWorkspace(db, userA.id, { name: 'WS A', slug: 'iso-ws-a-11' });
+    await createWorkspace(db, userA.id, { name: 'WS A' });
 
     const { user: userB } = await createUser(db);
-    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B', slug: 'iso-ws-b-11' });
+    const ws2 = await createWorkspace(db, userB.id, { name: 'WS B' });
 
     const res = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws2.id}/transfer`,
       headers: { authorization: `Bearer ${tokenA}` },
-      payload: { newOwnerId: userA.id },
+      payload: { newOwnerId: String(userA.id) },
     });
 
     expect(res.statusCode).toBe(403);
@@ -252,13 +252,13 @@ describe('Cross-workspace member isolation', () => {
     const db = getDb();
 
     const { user: userA, accessToken: tokenA } = await createUser(db);
-    const wsA = await createWorkspace(db, userA.id, { name: 'Only A', slug: 'cross-only-a' });
+    const wsA = await createWorkspace(db, userA.id, { name: 'Only A' });
 
-    const { user: userB } = await createUser(db);
-    const wsB = await createWorkspace(db, userB.id, { name: 'Only B', slug: 'cross-only-b' });
+    const { user: userB, accessToken: tokenB } = await createUser(db);
+    const wsB = await createWorkspace(db, userB.id, { name: 'Only B' });
 
     // Shared workspace
-    const wsShared = await createWorkspace(db, userA.id, { name: 'Shared', slug: 'cross-shared' });
+    const wsShared = await createWorkspace(db, userA.id, { name: 'Shared' });
     await addMember(db, wsShared.id, userB.id, 'editor');
 
     // User A's workspace list
@@ -269,18 +269,27 @@ describe('Cross-workspace member isolation', () => {
     });
 
     expect(resA.statusCode).toBe(200);
-    const bodyA = resA.json() as Array<{ id: string }>;
-    const idsA = bodyA.map((w) => w.id);
+    const bodyA = resA.json() as { workspaces: Array<{ id: number }> };
+    const idsA = bodyA.workspaces.map((w) => w.id);
 
     expect(idsA).toContain(wsA.id);
     expect(idsA).toContain(wsShared.id);
     expect(idsA).not.toContain(wsB.id); // User A should NOT see User B's workspace
 
     // User B's workspace list
-    const { accessToken: tokenB } = await createUser(db, { email: userB.email });
-    // Note: we need userB's token — recreating won't work as email is taken.
-    // Instead, use the signAccessToken directly from factory pattern.
-    // For simplicity, let's create a new user and use their token for B's perspective.
+    const resB = await app.inject({
+      method: 'GET',
+      url: '/api/v1/workspaces',
+      headers: { authorization: `Bearer ${tokenB}` },
+    });
+
+    expect(resB.statusCode).toBe(200);
+    const bodyB = resB.json() as { workspaces: Array<{ id: number }> };
+    const idsB = bodyB.workspaces.map((w) => w.id);
+
+    expect(idsB).toContain(wsB.id);
+    expect(idsB).toContain(wsShared.id);
+    expect(idsB).not.toContain(wsA.id); // User B should NOT see User A's workspace
   });
 
   it('admin of workspace 1 has no privileges in workspace 2', async () => {
@@ -288,13 +297,13 @@ describe('Cross-workspace member isolation', () => {
     const db = getDb();
 
     const { user: ownerA } = await createUser(db);
-    const ws1 = await createWorkspace(db, ownerA.id, { name: 'WS 1', slug: 'priv-ws-1' });
+    const ws1 = await createWorkspace(db, ownerA.id, { name: 'WS 1' });
 
     const { user: adminOfWs1, accessToken: adminToken } = await createUser(db);
     await addMember(db, ws1.id, adminOfWs1.id, 'admin');
 
     const { user: ownerB } = await createUser(db);
-    const ws2 = await createWorkspace(db, ownerB.id, { name: 'WS 2', slug: 'priv-ws-2' });
+    const ws2 = await createWorkspace(db, ownerB.id, { name: 'WS 2' });
 
     // Admin of WS1 tries to access WS2 detail
     const resDetail = await app.inject({
@@ -330,10 +339,10 @@ describe('Cross-workspace member isolation', () => {
     const db = getDb();
 
     const { user: ownerA, accessToken: ownerAToken } = await createUser(db);
-    await createWorkspace(db, ownerA.id, { name: 'Owner A WS', slug: 'owner-a-ws' });
+    await createWorkspace(db, ownerA.id, { name: 'Owner A WS' });
 
     const { user: ownerB } = await createUser(db);
-    const wsB = await createWorkspace(db, ownerB.id, { name: 'Owner B WS', slug: 'owner-b-ws' });
+    const wsB = await createWorkspace(db, ownerB.id, { name: 'Owner B WS' });
 
     // Owner A tries admin-level actions on workspace B
     const resUpdate = await app.inject({
@@ -356,7 +365,7 @@ describe('Cross-workspace member isolation', () => {
       method: 'POST',
       url: `/api/v1/workspaces/${wsB.id}/transfer`,
       headers: { authorization: `Bearer ${ownerAToken}` },
-      payload: { newOwnerId: ownerA.id },
+      payload: { newOwnerId: String(ownerA.id) },
     });
     expect(resTransfer.statusCode).toBe(403);
   });

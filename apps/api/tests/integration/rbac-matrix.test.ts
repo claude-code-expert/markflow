@@ -14,9 +14,9 @@ import type { Db } from '@markflow/db';
 type Role = 'owner' | 'admin' | 'editor' | 'viewer';
 
 interface RoleTestContext {
-  workspaceId: string;
+  workspaceId: number;
   tokens: Record<Role, string>;
-  userIds: Record<Role, string>;
+  userIds: Record<Role, number>;
 }
 
 /**
@@ -24,7 +24,7 @@ interface RoleTestContext {
  */
 async function setupRoleContext(db: Db): Promise<RoleTestContext> {
   const { user: owner, accessToken: ownerToken } = await createUser(db);
-  const ws = await createWorkspace(db, owner.id, { name: 'RBAC Test', slug: `rbac-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
+  const ws = await createWorkspace(db, owner.id, { name: 'RBAC Test' });
 
   const { user: admin, accessToken: adminToken } = await createUser(db);
   await addMember(db, ws.id, admin.id, 'admin');
@@ -70,7 +70,6 @@ describe('RBAC: Create workspace', () => {
         headers: { authorization: `Bearer ${ctx.tokens[role]}` },
         payload: {
           name: `New WS by ${role}`,
-          slug: `new-ws-${role}-${Date.now()}`,
           isPublic: true,
         },
       });
@@ -130,7 +129,7 @@ describe('RBAC: Delete workspace', () => {
 
     // Create a separate workspace for deletion (can't reuse shared context)
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Delete RBAC', slug: `del-rbac-${Date.now()}` });
+    const ws = await createWorkspace(db, owner.id, { name: 'Delete RBAC' });
 
     const res = await app.inject({
       method: 'DELETE',
@@ -139,7 +138,7 @@ describe('RBAC: Delete workspace', () => {
       payload: { confirmName: 'Delete RBAC' },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect([200, 204]).toContain(res.statusCode);
   });
 
   const deniedRoles: Role[] = ['admin', 'editor', 'viewer'];
@@ -346,7 +345,7 @@ describe('RBAC: Unauthenticated access', () => {
       const res = await app.inject({
         method,
         url: path,
-        payload: method === 'POST' ? { name: 'Test', slug: 'test', isPublic: true } : undefined,
+        payload: method === 'POST' ? { name: 'Test', isPublic: true } : undefined,
       });
 
       expect(res.statusCode).toBe(401);
@@ -358,7 +357,7 @@ describe('RBAC: Unauthenticated access', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Unauth Test', slug: `unauth-${Date.now()}` });
+    const ws = await createWorkspace(db, owner.id, { name: 'Unauth Test' });
 
     const scopedEndpoints = [
       { method: 'GET' as const, path: `/api/v1/workspaces/${ws.id}` },

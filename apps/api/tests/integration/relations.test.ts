@@ -7,10 +7,10 @@ import { describe, it, expect } from 'vitest';
 import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace, addMember } from '../helpers/factory.js';
 
-// Helper to create a document quickly
+// Helper to create a document quickly — returns id as string for use in relation payloads
 async function createDocument(
   app: ReturnType<typeof getApp>,
-  wsId: string,
+  wsId: number,
   accessToken: string,
   title: string,
 ) {
@@ -21,7 +21,9 @@ async function createDocument(
     payload: { title },
   });
   expect(res.statusCode).toBe(201);
-  return (res.json() as { document: { id: string; title: string } }).document;
+  const doc = (res.json() as { document: { id: number; title: string } }).document;
+  // Convert numeric id to string for use in relation API payloads
+  return { id: String(doc.id), title: doc.title };
 }
 
 // ─────────────────────────────────────────────
@@ -33,7 +35,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Rel WS', slug: 'rel-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Rel WS' });
 
     const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
     const docB = await createDocument(app, ws.id, accessToken, 'Doc B');
@@ -54,17 +56,17 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     expect(res.statusCode).toBe(200);
 
     const body = res.json() as {
-      prev: { id: string; title: string } | null;
-      next: { id: string; title: string } | null;
-      related: Array<{ id: string; title: string }>;
+      prev: { id: number; title: string } | null;
+      next: { id: number; title: string } | null;
+      related: Array<{ id: number; title: string }>;
     };
 
-    expect(body.prev?.id).toBe(docB.id);
+    expect(String(body.prev?.id)).toBe(docB.id);
     expect(body.prev?.title).toBe('Doc B');
-    expect(body.next?.id).toBe(docC.id);
+    expect(String(body.next?.id)).toBe(docC.id);
     expect(body.next?.title).toBe('Doc C');
     expect(body.related).toHaveLength(1);
-    expect(body.related[0]?.id).toBe(docD.id);
+    expect(String(body.related[0]?.id)).toBe(docD.id);
   });
 
   it('should create bidirectional prev/next relations', async () => {
@@ -72,7 +74,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Bidi WS', slug: 'bidi-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Bidi WS' });
 
     const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
     const docB = await createDocument(app, ws.id, accessToken, 'Doc B');
@@ -94,11 +96,11 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
 
     expect(bRelRes.statusCode).toBe(200);
     const bRels = bRelRes.json() as {
-      prev: { id: string } | null;
-      next: { id: string } | null;
+      prev: { id: number } | null;
+      next: { id: number } | null;
     };
 
-    expect(bRels.prev?.id).toBe(docA.id);
+    expect(String(bRels.prev?.id)).toBe(docA.id);
   });
 
   it('should enforce max 20 related documents limit', async () => {
@@ -106,7 +108,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Max Rel WS', slug: 'max-rel-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Max Rel WS' });
 
     const mainDoc = await createDocument(app, ws.id, accessToken, 'Main Doc');
 
@@ -134,7 +136,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Clear WS', slug: 'clear-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Clear WS' });
 
     const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
     const docB = await createDocument(app, ws.id, accessToken, 'Doc B');
@@ -163,11 +165,11 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     });
 
     const body = res.json() as {
-      related: Array<{ id: string }>;
+      related: Array<{ id: number }>;
     };
 
     expect(body.related).toHaveLength(1);
-    expect(body.related[0]?.id).toBe(docC.id);
+    expect(String(body.related[0]?.id)).toBe(docC.id);
   });
 
   it('should return 403 when viewer tries to set relations', async () => {
@@ -175,7 +177,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Rel WS', slug: 'rbac-rel-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'RBAC Rel WS' });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
@@ -198,8 +200,8 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws1 = await createWorkspace(db, user.id, { name: 'WS1', slug: 'ws1-rel' });
-    const ws2 = await createWorkspace(db, user.id, { name: 'WS2', slug: 'ws2-rel' });
+    const ws1 = await createWorkspace(db, user.id, { name: 'WS1' });
+    const ws2 = await createWorkspace(db, user.id, { name: 'WS2' });
 
     const docA = await createDocument(app, ws1.id, accessToken, 'Doc A');
     const docB = await createDocument(app, ws2.id, accessToken, 'Doc B');
@@ -219,7 +221,7 @@ describe('PUT /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Self Rel WS', slug: 'self-rel-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Self Rel WS' });
 
     const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
 
@@ -245,7 +247,7 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Empty Rel WS', slug: 'empty-rel-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Empty Rel WS' });
 
     const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
 
@@ -273,7 +275,7 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'View Rel WS', slug: 'view-rel-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'View Rel WS' });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');

@@ -17,17 +17,25 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/export', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Export MD WS', slug: 'export-md-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Export MD WS' });
 
-    // Create a document with content
+    // Create a document
     const docRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'API Guide', content: '# API Guide\n\nWelcome to the API docs.' },
+      payload: { title: 'API Guide' },
     });
     expect(docRes.statusCode).toBe(201);
-    const doc = docRes.json() as { document: { id: string; slug: string } };
+    const doc = docRes.json() as { document: { id: number; slug: string } };
+
+    // Set content via PATCH (POST create does not accept content)
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${doc.document.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { content: '# API Guide\n\nWelcome to the API docs.' },
+    });
 
     // Export it
     const res = await app.inject({
@@ -47,9 +55,9 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/export', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Export WS', slug: 'no-export-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Export WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'GET',
@@ -65,16 +73,24 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/export', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Export WS', slug: 'viewer-export-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Viewer Export WS' });
 
     const docRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${ownerToken}` },
-      payload: { title: 'Exportable Doc', content: '# Content' },
+      payload: { title: 'Exportable Doc' },
     });
     expect(docRes.statusCode).toBe(201);
-    const doc = docRes.json() as { document: { id: string } };
+    const doc = docRes.json() as { document: { id: number } };
+
+    // Set content via PATCH
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${doc.document.id}`,
+      headers: { authorization: `Bearer ${ownerToken}` },
+      payload: { content: '# Content' },
+    });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
@@ -99,7 +115,7 @@ describe('GET /api/v1/workspaces/:wsId/categories/:catId/export', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'Export ZIP WS', slug: 'export-zip-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'Export ZIP WS' });
 
     // Create category
     const catRes = await app.inject({
@@ -109,7 +125,7 @@ describe('GET /api/v1/workspaces/:wsId/categories/:catId/export', () => {
       payload: { name: 'Guides' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { category: { id: string } };
+    const cat = catRes.json() as { category: { id: number } };
 
     // Create docs in category
     await app.inject({
@@ -118,8 +134,7 @@ describe('GET /api/v1/workspaces/:wsId/categories/:catId/export', () => {
       headers: { authorization: `Bearer ${accessToken}` },
       payload: {
         title: 'Setup Guide',
-        content: '# Setup\n\nFollow these steps.',
-        categoryId: cat.category.id,
+        categoryId: String(cat.category.id),
       },
     });
 
@@ -129,8 +144,7 @@ describe('GET /api/v1/workspaces/:wsId/categories/:catId/export', () => {
       headers: { authorization: `Bearer ${accessToken}` },
       payload: {
         title: 'Deploy Guide',
-        content: '# Deploy\n\nDeploy instructions.',
-        categoryId: cat.category.id,
+        categoryId: String(cat.category.id),
       },
     });
 
@@ -166,9 +180,9 @@ describe('GET /api/v1/workspaces/:wsId/categories/:catId/export', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Cat Export WS', slug: 'no-cat-export-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Cat Export WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'GET',

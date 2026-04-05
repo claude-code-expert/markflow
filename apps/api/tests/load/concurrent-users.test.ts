@@ -9,9 +9,9 @@ import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace } from '../helpers/factory.js';
 
 interface UserContext {
-  userId: string;
+  userId: number;
   accessToken: string;
-  workspaceId: string;
+  workspaceId: number;
 }
 
 describe('Load: 50 concurrent users', () => {
@@ -28,7 +28,6 @@ describe('Load: 50 concurrent users', () => {
       });
       const workspace = await createWorkspace(db, user.id, {
         name: `Concurrent WS ${i}`,
-        slug: `concurrent-ws-${i}`,
       });
       contexts.push({
         userId: user.id,
@@ -91,7 +90,6 @@ describe('Load: 50 concurrent users', () => {
     });
     const workspace = await createWorkspace(db, owner.id, {
       name: 'Concurrent Doc WS',
-      slug: 'concurrent-doc-ws',
     });
 
     const userTokens: string[] = [ownerToken];

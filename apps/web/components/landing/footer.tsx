@@ -1,25 +1,39 @@
+import { MarkFlowLogo } from '../mark-flow-logo';
+
 const footerLinks = [
   {
     title: 'Product',
-    links: ['Features', 'Pricing', 'Changelog'],
+    links: [
+      { label: 'Features', href: '/#features' },
+      { label: 'Pricing', href: '/#pricing' },
+      { label: 'Changelog', href: '#' },
+    ],
   },
   {
     title: 'Developer',
-    links: ['Docs', 'API Reference', 'NPM Package'],
+    links: [
+      { label: 'Docs', href: '#' },
+      { label: 'API Reference', href: '#' },
+      { label: 'NPM Package', href: '#' },
+    ],
   },
   {
     title: 'Company',
-    links: ['About', 'Blog', 'Privacy'],
+    links: [
+      { label: 'About', href: '#' },
+      { label: 'Blog', href: '#' },
+      { label: 'Privacy', href: '#' },
+    ],
   },
 ];
 
 export function Footer() {
   return (
-    <footer className="bg-[#1A1916] text-white/70 py-12 px-8">
+    <footer className="bg-[#1A1916] text-white/70 py-12 px-8" role="contentinfo">
       <div className="max-w-[1100px] mx-auto">
         <div className="flex flex-col md:flex-row justify-between mb-10 gap-8">
           <div>
-            <div className="font-[var(--font-sora)] text-lg font-bold text-white mb-2.5">MarkFlow</div>
+            <div className="mb-2.5"><MarkFlowLogo height={22} dark /></div>
             <p className="text-[13px] max-w-[260px] leading-relaxed">
               마크다운이 곧 AI 시대의 표준 문서 형식입니다. MarkFlow는 그 중심에 있습니다.
             </p>
@@ -29,10 +43,13 @@ export function Footer() {
               <h4 className="text-white/90 text-[13px] font-semibold mb-3">{section.title}</h4>
               <ul className="space-y-2">
                 {section.links.map((link) => (
-                  <li key={link}>
-                    <span className="text-[13px] text-white/60 hover:text-white cursor-pointer transition-colors">
-                      {link}
-                    </span>
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="text-[13px] text-white/60 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </a>
                   </li>
                 ))}
               </ul>

@@ -12,7 +12,11 @@ node_modules
 
 # testing
 /coverage
-
+.env.local
+.env.example.local
+.env.development.local
+.env.test.local
+.env.production.local
 # next.js
 .next/
 /out/

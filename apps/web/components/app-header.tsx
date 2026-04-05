@@ -22,6 +22,7 @@ import { useAuthStore } from '../stores/auth-store';
 import { useSidebarStore } from '../stores/sidebar-store';
 import { useWorkspaceStore } from '../stores/workspace-store';
 import { ProfileEditModal } from './profile-edit-modal';
+import { MarkFlowLogo } from './mark-flow-logo';
 
 function Breadcrumb() {
   const pathname = usePathname();
@@ -332,8 +333,7 @@ export function AppHeader({ onSearchClick, onNewDoc }: { onSearchClick?: () => v
           href="/workspaces"
           style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '16px', borderRight: '1px solid var(--border)', textDecoration: 'none', color: 'inherit' }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/markflow-logo.svg?v=2" alt="MarkFlow" style={{ display: 'block', height: '36px', width: 'auto', objectFit: 'contain' }} />
+          <MarkFlowLogo height={24} showTagline />
         </Link>
 
         <Breadcrumb />

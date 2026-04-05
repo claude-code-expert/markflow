@@ -70,7 +70,7 @@ describe('GET /api/v1/auth/verify-email', () => {
     expect(body.error.code).toBe('INVALID_TOKEN');
   });
 
-  it('should return 400 INVALID_TOKEN when no token is provided', async () => {
+  it('should return 400 MISSING_TOKEN when no token is provided', async () => {
     const app = getApp();
 
     const res = await app.inject({
@@ -81,7 +81,7 @@ describe('GET /api/v1/auth/verify-email', () => {
     expect(res.statusCode).toBe(400);
 
     const body = res.json() as { error: { code: string } };
-    expect(body.error.code).toBe('INVALID_TOKEN');
+    expect(body.error.code).toBe('MISSING_TOKEN');
   });
 
   it('should return 410 TOKEN_EXPIRED for an expired verification token', async () => {

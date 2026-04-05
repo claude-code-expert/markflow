@@ -1,9 +1,11 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Sora, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import { ToastProvider } from '../components/toast-provider';
 import { DevAgentation } from '../components/dev-agentation';
 import './globals.css';
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://markflow.dev';
 
 const dmSans = DM_Sans({
   variable: '--font-dm-sans',
@@ -20,9 +22,51 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin', 'latin-ext'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+  ],
+};
+
 export const metadata: Metadata = {
-  title: 'MarkFlow KMS',
-  description: '팀 지식 관리 플랫폼',
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: 'MarkFlow — 팀 지식 관리 플랫폼',
+    template: '%s | MarkFlow',
+  },
+  description: '마크다운 기반 팀 지식 관리 플랫폼. 문서 작성, 카테고리 구조화, 실시간 미리보기, 그래프 시각화를 한곳에서.',
+  keywords: ['지식관리', 'KMS', '마크다운', '위키', '문서관리', 'MarkFlow', '팀 협업'],
+  authors: [{ name: 'MarkFlow Team' }],
+  creator: 'MarkFlow',
+  icons: {
+    icon: [
+      { url: '/markflow.ico', sizes: 'any' },
+      { url: '/markflow-icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/markflow-icon-512.png',
+  },
+  manifest: '/manifest.webmanifest',
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    siteName: 'MarkFlow',
+    title: 'MarkFlow — 팀 지식 관리 플랫폼',
+    description: '마크다운 기반 팀 지식 관리 플랫폼. 문서 작성, 카테고리 구조화, 실시간 미리보기, 그래프 시각화를 한곳에서.',
+    url: BASE_URL,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'MarkFlow — 마크다운 기반 팀 지식 관리 플랫폼' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MarkFlow — 팀 지식 관리 플랫폼',
+    description: '마크다운 기반 팀 지식 관리 플랫폼',
+    images: ['/og-image.png'],
+  },
+  alternates: {
+    canonical: BASE_URL,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

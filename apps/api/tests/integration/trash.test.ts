@@ -4,8 +4,8 @@
  * User Story 3: Document & Category Management
  */
 import { describe, it, expect } from 'vitest';
-import { eq, and } from 'drizzle-orm';
-import { documents, documentVersions, categories } from '@markflow/db';
+import { eq } from 'drizzle-orm';
+import { documents, documentVersions } from '@markflow/db';
 import { getApp, getDb } from '../helpers/setup.js';
 import { createUser, createWorkspace, addMember } from '../helpers/factory.js';
 
@@ -24,12 +24,10 @@ async function createWorkspaceWithDocument(options?: {
   const { user, accessToken } = await createUser(db);
   const ws = await createWorkspace(db, user.id, {
     name: `Trash WS ${Date.now()}`,
-    slug: `trash-ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   });
 
   const payload: Record<string, string | undefined> = {
     title: options?.title ?? 'Trashable Doc',
-    content: options?.content ?? '# Content',
   };
   if (options?.categoryId) {
     payload.categoryId = options.categoryId;
@@ -43,11 +41,21 @@ async function createWorkspaceWithDocument(options?: {
   });
 
   expect(docRes.statusCode).toBe(201);
-  const doc = docRes.json() as { id: string };
+  const doc = docRes.json() as { document: { id: number } };
+
+  // If content is provided, set it via PATCH
+  if (options?.content) {
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/v1/workspaces/${ws.id}/documents/${doc.document.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { content: options.content },
+    });
+  }
 
   return {
     workspaceId: ws.id,
-    documentId: doc.id,
+    documentId: doc.document.id,
     userId: user.id,
     accessToken,
   };
@@ -86,9 +94,9 @@ describe('DELETE /api/v1/workspaces/:wsId/documents/:documentId (soft delete)', 
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Del WS', slug: 'no-del-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Del WS' });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'DELETE',
@@ -103,7 +111,7 @@ describe('DELETE /api/v1/workspaces/:wsId/documents/:documentId (soft delete)', 
     const app = getApp();
     const db = getDb();
 
-    const { workspaceId, documentId, accessToken: ownerToken } = await createWorkspaceWithDocument();
+    const { workspaceId, documentId } = await createWorkspaceWithDocument();
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, workspaceId, viewer.id, 'viewer');
@@ -131,7 +139,6 @@ describe('DELETE /api/v1/workspaces/:wsId/documents/:documentId (soft delete)', 
 describe('GET /api/v1/workspaces/:wsId/trash', () => {
   it('should list deleted documents', async () => {
     const app = getApp();
-    const db = getDb();
 
     const { workspaceId, documentId, accessToken } = await createWorkspaceWithDocument();
 
@@ -154,7 +161,7 @@ describe('GET /api/v1/workspaces/:wsId/trash', () => {
 
     const body = trashRes.json() as {
       documents: Array<{
-        id: string;
+        id: number;
         title: string;
         deletedAt: string;
       }>;
@@ -173,7 +180,7 @@ describe('GET /api/v1/workspaces/:wsId/trash', () => {
     const db = getDb();
 
     const { user, accessToken } = await createUser(db);
-    const ws = await createWorkspace(db, user.id, { name: 'No Trash WS', slug: 'no-trash-ws' });
+    const ws = await createWorkspace(db, user.id, { name: 'No Trash WS' });
 
     const res = await app.inject({
       method: 'GET',
@@ -231,7 +238,7 @@ describe('POST /api/v1/workspaces/:wsId/trash/:docId/restore', () => {
     });
 
     const listBody = listRes.json() as {
-      documents: Array<{ id: string }>;
+      documents: Array<{ id: number }>;
     };
     const restored = listBody.documents.find((d) => d.id === documentId);
     expect(restored).toBeDefined();
@@ -244,7 +251,6 @@ describe('POST /api/v1/workspaces/:wsId/trash/:docId/restore', () => {
     const { user, accessToken } = await createUser(db);
     const ws = await createWorkspace(db, user.id, {
       name: 'Restore Root WS',
-      slug: `restore-root-${Date.now()}`,
     });
 
     // Create category
@@ -255,36 +261,38 @@ describe('POST /api/v1/workspaces/:wsId/trash/:docId/restore', () => {
       payload: { name: 'Temporary' },
     });
     expect(catRes.statusCode).toBe(201);
-    const cat = catRes.json() as { id: string };
+    const cat = catRes.json() as { category: { id: number; name: string } };
 
     // Create document in category
     const docRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${ws.id}/documents`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { title: 'Orphan After Restore', categoryId: cat.id },
+      payload: { title: 'Orphan After Restore', categoryId: String(cat.category.id) },
     });
     expect(docRes.statusCode).toBe(201);
-    const doc = docRes.json() as { id: string };
+    const doc = docRes.json() as { document: { id: number } };
+    const docId = doc.document.id;
 
     // Soft delete the document
     await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/documents/${doc.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${docId}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
-    // Delete the category (with handleDocuments=move so other docs move to root)
+    // Delete the category (requires confirmName in body)
     await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/categories/${cat.id}?handleDocuments=move`,
+      url: `/api/v1/workspaces/${ws.id}/categories/${cat.category.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { confirmName: cat.category.name },
     });
 
     // Restore the document — its original category no longer exists
     const restoreRes = await app.inject({
       method: 'POST',
-      url: `/api/v1/workspaces/${ws.id}/trash/${doc.id}/restore`,
+      url: `/api/v1/workspaces/${ws.id}/trash/${docId}/restore`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
@@ -294,7 +302,7 @@ describe('POST /api/v1/workspaces/:wsId/trash/:docId/restore', () => {
     const [dbDoc] = await db
       .select()
       .from(documents)
-      .where(eq(documents.id, doc.id));
+      .where(eq(documents.id, docId));
     expect(dbDoc).toBeDefined();
     expect(dbDoc!.isDeleted).toBe(false);
     expect(dbDoc!.categoryId).toBeNull();
@@ -307,10 +315,9 @@ describe('POST /api/v1/workspaces/:wsId/trash/:docId/restore', () => {
     const { user, accessToken } = await createUser(db);
     const ws = await createWorkspace(db, user.id, {
       name: 'No Restore WS',
-      slug: `no-restore-${Date.now()}`,
     });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'POST',
@@ -380,10 +387,9 @@ describe('DELETE /api/v1/workspaces/:wsId/trash/:docId (permanent delete)', () =
     const { user, accessToken } = await createUser(db);
     const ws = await createWorkspace(db, user.id, {
       name: 'No Perm Del WS',
-      slug: `no-perm-del-${Date.now()}`,
     });
 
-    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const fakeId = 999999;
 
     const res = await app.inject({
       method: 'DELETE',
@@ -431,7 +437,6 @@ describe('Trash isolation', () => {
     const { user, accessToken } = await createUser(db);
     const ws = await createWorkspace(db, user.id, {
       name: 'Isolation WS',
-      slug: `isolation-${Date.now()}`,
     });
 
     // Create two docs
@@ -450,12 +455,12 @@ describe('Trash isolation', () => {
       payload: { title: 'Trashable Document' },
     });
     expect(trashableRes.statusCode).toBe(201);
-    const trashable = trashableRes.json() as { id: string };
+    const trashable = trashableRes.json() as { document: { id: number } };
 
     // Soft delete one
     await app.inject({
       method: 'DELETE',
-      url: `/api/v1/workspaces/${ws.id}/documents/${trashable.id}`,
+      url: `/api/v1/workspaces/${ws.id}/documents/${trashable.document.id}`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
 
@@ -469,7 +474,7 @@ describe('Trash isolation', () => {
     expect(listRes.statusCode).toBe(200);
 
     const listBody = listRes.json() as {
-      documents: Array<{ id: string; title: string }>;
+      documents: Array<{ id: number; title: string }>;
       total: number;
     };
     expect(listBody.total).toBe(1);
@@ -483,7 +488,7 @@ describe('Trash isolation', () => {
     });
 
     const trashBody = trashRes.json() as {
-      documents: Array<{ id: string; title: string }>;
+      documents: Array<{ id: number; title: string }>;
     };
     expect(trashBody.documents.length).toBe(1);
     expect(trashBody.documents[0]!.title).toBe('Trashable Document');

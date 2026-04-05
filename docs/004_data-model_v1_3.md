@@ -1,16 +1,20 @@
 # 004 — 데이터 모델 (Data Model & ERD)
 
-> **버전:** 1.2.0
-> **최종 수정:** 2026-03-26
+> **버전:** 1.3.0
+> **최종 수정:** 2026-04-04
 > **DB:** PostgreSQL 16 · **ORM:** Drizzle ORM
 > **상태:** 📋 계획됨 (KMS SaaS 구축 시 적용)
 > **변경 이력:**
+> - v1.3.0 — 실제 구현 기준 스키마 동기화: ID 타입 uuid→bigserial 전체 교체, OAUTH_ACCOUNTS Phase 3 이연, documents.start_mode 미구현 상태 명시, workspaces 테이블 slug 제거 및 theme_preset/theme_css 추가, categories.order_index 추가, document_versions.author_id 추가, comments/embed_tokens 테이블 상세화, 인덱스 전략 반영
 > - v1.2.0 — `CATEGORY_CLOSURE` 테이블 신규 추가 (무제한 중첩 계층 조회 최적화), `DOCUMENTS`에 `start_mode` 컬럼 추가, `DOCUMENT_RELATIONS`에 DAG 관련 무결성 규칙 보강, 마이그레이션 파일 `0012` 추가
 > - v1.1.0 — `WORKSPACE_JOIN_REQUESTS` 테이블 신규 추가, ERD 관계 업데이트
 
 ---
 
 ## 1. 전체 ERD
+
+> **테이블 수:** 17개 (comments, embed_tokens 포함)
+> **ERD.svg:** v1.3 기준으로 업데이트됨
 
 ```mermaid
 erDiagram
@@ -48,6 +52,7 @@ erDiagram
         text name UK
         text description
         bigint owner_id FK
+        varchar theme_preset
         text theme_css
         boolean is_public
         boolean is_root
@@ -93,7 +98,7 @@ erDiagram
         bigint parent_id FK
         text name
         text slug
-        real order_index
+        double_precision order_index
         timestamp created_at
         timestamp updated_at
     }
@@ -173,17 +178,27 @@ erDiagram
 
     COMMENTS {
         bigserial id PK
-        bigint doc_id FK
+        bigint document_id FK
         bigint author_id FK
-        bigint parent_id FK
-        jsonb selection
         text content
-        boolean resolved
+        bigint parent_id FK
         timestamp created_at
         timestamp updated_at
     }
 
-    USERS ||--o{ OAUTH_ACCOUNTS : "has"
+    EMBED_TOKENS {
+        bigserial id PK
+        bigint workspace_id FK
+        bigint creator_id FK
+        varchar label
+        varchar token_hash UK
+        varchar scope
+        timestamp expires_at
+        timestamp revoked_at
+        timestamp created_at
+    }
+
+    USERS ||--o{ OAUTH_ACCOUNTS : "has (Phase 3)"
     USERS ||--o{ REFRESH_TOKENS : "has"
     USERS ||--o{ WORKSPACES : "owns"
     USERS ||--o{ WORKSPACE_MEMBERS : "belongs to"
@@ -192,6 +207,7 @@ erDiagram
     WORKSPACES ||--o{ DOCUMENTS : "contains"
     WORKSPACES ||--o{ INVITATIONS : "sends"
     WORKSPACES ||--o{ WORKSPACE_JOIN_REQUESTS : "receives"
+    WORKSPACES ||--o{ EMBED_TOKENS : "has"
     USERS ||--o{ WORKSPACE_JOIN_REQUESTS : "submits"
     CATEGORIES ||--o{ CATEGORIES : "parent-child"
     CATEGORIES ||--o{ CATEGORY_CLOSURE : "closure"
@@ -200,8 +216,10 @@ erDiagram
     DOCUMENTS ||--o{ DOCUMENT_RELATIONS : "related to"
     DOCUMENTS ||--o{ DOCUMENT_TAGS : "tagged with"
     DOCUMENTS ||--o{ COMMENTS : "has"
+    COMMENTS ||--o{ COMMENTS : "nested thread"
     USERS ||--o{ DOCUMENTS : "authors"
     USERS ||--o{ COMMENTS : "writes"
+    USERS ||--o{ EMBED_TOKENS : "creates"
     USERS ||--o{ ACTIVITY_LOGS : "generates"
     DOCUMENTS ||--o{ ACTIVITY_LOGS : "logged for"
 ```
@@ -228,21 +246,56 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users(email);
 ```
 
-### 2.2 workspaces
+### 2.2 oauth_accounts (Phase 3 예정 — 현재 미구현)
+
+> **참고:** OAuth 소셜 로그인은 Phase 3에서 구현 예정이다. 현재 Phase 1에서는 이메일/비밀번호 인증만 지원하며, 이 테이블은 스키마에 생성되지 않는다. Phase 3 구현 시 아래 DDL을 기반으로 마이그레이션을 작성한다.
+
+```sql
+-- Phase 3 예정 — 현재 미구현
+CREATE TABLE oauth_accounts (
+    id                  BIGSERIAL   PRIMARY KEY,
+    user_id             BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider            TEXT        NOT NULL,  -- 'google', 'github', etc.
+    provider_account_id TEXT        NOT NULL,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (provider, provider_account_id)
+);
+
+CREATE INDEX idx_oauth_user ON oauth_accounts(user_id);
+```
+
+### 2.3 refresh_tokens
+
+```sql
+CREATE TABLE refresh_tokens (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash  TEXT        NOT NULL UNIQUE,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    revoked     BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_refresh_user    ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_expires ON refresh_tokens(expires_at);
+```
+
+### 2.4 workspaces
 
 ```sql
 CREATE TABLE workspaces (
-    id          BIGSERIAL   PRIMARY KEY,
-    name        TEXT        NOT NULL UNIQUE CHECK (char_length(name) BETWEEN 2 AND 50),
-    description TEXT,
-    owner_id    BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    theme_css   TEXT        DEFAULT '',
-    is_public   BOOLEAN     NOT NULL DEFAULT FALSE,
+    id            BIGSERIAL    PRIMARY KEY,
+    name          TEXT         NOT NULL UNIQUE CHECK (char_length(name) BETWEEN 2 AND 50),
+    description   TEXT,
+    owner_id      BIGINT       NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    theme_preset  VARCHAR(20)  NOT NULL DEFAULT 'default',  -- 테마 프리셋 식별자
+    theme_css     TEXT         NOT NULL DEFAULT '',          -- 커스텀 CSS 오버라이드
+    is_public     BOOLEAN      NOT NULL DEFAULT FALSE,
     -- Root 워크스페이스 여부. 회원가입 시 자동 생성되는 개인 워크스페이스.
     -- name = 'My Notes', is_root = TRUE
-    is_root     BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    is_root       BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_workspaces_owner  ON workspaces(owner_id);
@@ -250,9 +303,11 @@ CREATE INDEX idx_workspaces_name   ON workspaces(name);
 CREATE INDEX idx_workspaces_public ON workspaces(is_public) WHERE is_public = TRUE;
 ```
 
+> **v1.3.0 변경:** `slug` 컬럼 제거 — 실제 구현에서는 `name`이 UNIQUE이며 URL 식별자로 사용된다. `theme_preset` 컬럼 추가 (테마 프리셋 식별자), `theme_css`를 `NOT NULL DEFAULT ''`로 변경.
+
 > **Root 워크스페이스 생성 규칙:** 회원가입 완료(이메일 인증 후) 시점에 서버가 자동으로 `is_root = TRUE` 워크스페이스를 1개 생성한다. `name`은 UNIQUE이며 URL에 사용된다. 사용자는 이 워크스페이스를 삭제할 수 없고, 이름은 변경 가능하다.
 
-### 2.3 workspace_members
+### 2.5 workspace_members
 
 ```sql
 CREATE TYPE workspace_role AS ENUM ('owner', 'admin', 'editor', 'viewer');
@@ -269,7 +324,7 @@ CREATE INDEX idx_wm_user_id      ON workspace_members(user_id);
 CREATE INDEX idx_wm_workspace_id ON workspace_members(workspace_id);
 ```
 
-### 2.4 invitations
+### 2.6 invitations
 
 ```sql
 CREATE TABLE invitations (
@@ -289,7 +344,7 @@ CREATE INDEX idx_inv_token     ON invitations(token);
 CREATE INDEX idx_inv_email     ON invitations(email);
 ```
 
-### 2.5 workspace_join_requests ✨ (신규 — v1.1.0)
+### 2.7 workspace_join_requests (v1.1.0)
 
 > 비멤버 사용자가 공개 워크스페이스에 가입 신청을 제출하는 엔티티.  
 > Admin/Owner가 신청을 검토하여 승인 또는 거절한다.
@@ -315,6 +370,14 @@ CREATE INDEX idx_jreq_workspace_status ON workspace_join_requests(workspace_id, 
 CREATE INDEX idx_jreq_requester        ON workspace_join_requests(requester_id);
 ```
 
+> **v1.3.0 인덱스 추가:** `idx_join_requests_unique_pending` — pending 상태에 대한 partial unique index로 동일 워크스페이스-사용자 조합에 pending 신청이 1건만 존재하도록 보장.
+
+```sql
+CREATE UNIQUE INDEX idx_join_requests_unique_pending
+    ON workspace_join_requests(workspace_id, requester_id)
+    WHERE status = 'pending';
+```
+
 **비즈니스 규칙**
 
 | 규칙 | 설명 |
@@ -336,28 +399,30 @@ DELETE /workspaces/:id/join-requests/:reqId   신청 취소 (requester 본인)
 GET    /me/join-requests                      내 신청 현황 조회 (requester)
 ```
 
-### 2.6 categories
+### 2.8 categories
 
 ```sql
 CREATE TABLE categories (
-    id            BIGSERIAL   PRIMARY KEY,
-    workspace_id  BIGINT      NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-    parent_id     BIGINT      REFERENCES categories(id) ON DELETE SET NULL,
-    name          TEXT        NOT NULL CHECK (char_length(name) BETWEEN 1 AND 100),
-    slug          TEXT        NOT NULL,
-    order_index   REAL        NOT NULL DEFAULT 0,  -- Fractional Indexing
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (workspace_id, parent_id, name)
+    id            BIGSERIAL        PRIMARY KEY,
+    workspace_id  BIGINT           NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    parent_id     BIGINT           REFERENCES categories(id) ON DELETE SET NULL,
+    name          TEXT             NOT NULL CHECK (char_length(name) BETWEEN 1 AND 100),
+    slug          TEXT             NOT NULL,
+    order_index   DOUBLE PRECISION NOT NULL DEFAULT 0,  -- Fractional Indexing
+    created_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    UNIQUE NULLS NOT DISTINCT (workspace_id, parent_id, name)
 );
 
 CREATE INDEX idx_categories_workspace ON categories(workspace_id);
 CREATE INDEX idx_categories_parent    ON categories(parent_id);
 ```
 
+> **v1.3.0 변경:** `order_index` 타입이 `REAL`에서 `DOUBLE PRECISION`으로 변경되어 Fractional Indexing의 정밀도가 향상되었다. UQ 제약에 `NULLS NOT DISTINCT` 추가 — `parent_id`가 NULL인 루트 카테고리에서도 동일 이름 중복을 방지한다.
+
 > **설계 메모:** `order_index`는 Fractional Indexing 방식. 재정렬 시 전체 레코드 업데이트 없이 중간값 삽입. 정밀도 부족 시 전체 재인덱싱.
 
-### 2.6a category_closure ✨ (신규 — v1.2.0)
+### 2.8a category_closure (v1.2.0)
 
 무제한 중첩 폴더의 계층 관계를 빠르게 조회하기 위한 Closure Table.
 
@@ -394,7 +459,7 @@ ORDER BY cc.depth DESC;
 > **삭제 트리거:** `ON DELETE CASCADE`로 자동 정리.  
 > **이동 처리:** 부모 변경 시 기존 closure 행 삭제 후 재삽입 (트랜잭션 내 처리).
 
-### 2.7 documents
+### 2.9 documents
 
 ```sql
 CREATE TABLE documents (
@@ -408,7 +473,8 @@ CREATE TABLE documents (
     current_version  INTEGER     NOT NULL DEFAULT 1,
     is_deleted       BOOLEAN     NOT NULL DEFAULT FALSE,
     deleted_at       TIMESTAMPTZ,
-    start_mode       TEXT        NOT NULL DEFAULT 'blank' CHECK (start_mode IN ('blank','template')),  -- v1.2.0
+    -- v1.2.0 기획됨, 현재 미구현. Phase 2에서 템플릿 기능과 함께 구현 예정.
+    -- start_mode    TEXT        NOT NULL DEFAULT 'blank' CHECK (start_mode IN ('blank','template')),
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (workspace_id, slug)
@@ -424,12 +490,21 @@ CREATE INDEX idx_doc_fts ON documents
 CREATE INDEX idx_doc_trgm_title   ON documents USING gin(title   gin_trgm_ops);
 CREATE INDEX idx_doc_trgm_content ON documents USING gin(content gin_trgm_ops);
 
-CREATE INDEX idx_doc_ws_cat_updated ON documents(workspace_id, category_id, updated_at DESC)
-    WHERE is_deleted = FALSE;
-CREATE INDEX idx_doc_deleted ON documents(is_deleted);
+-- 활성 문서 조회 최적화
+CREATE INDEX idx_documents_active ON documents(workspace_id, category_id, updated_at DESC)
+    WHERE NOT is_deleted;
+
+-- 삭제된 문서 조회 (휴지통)
+CREATE INDEX idx_documents_deleted ON documents(workspace_id, deleted_at)
+    WHERE is_deleted;
+
+-- 워크스페이스 내 slug 유일성
+CREATE UNIQUE INDEX uq_document_workspace_slug ON documents(workspace_id, slug);
 ```
 
-### 2.8 document_versions
+> **v1.3.0 변경:** `start_mode` 컬럼은 v1.2.0에서 기획되었으나 현재 미구현 상태이다. DDL에서 주석 처리하여 스키마에 포함되지 않음을 명시한다. 인덱스 이름을 실제 구현에 맞게 `idx_documents_active`, `idx_documents_deleted`로 변경하고 조건식을 `WHERE NOT is_deleted` / `WHERE is_deleted`로 통일했다.
+
+### 2.10 document_versions
 
 ```sql
 CREATE TABLE document_versions (
@@ -437,15 +512,18 @@ CREATE TABLE document_versions (
     doc_id      BIGINT      NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     version_num INTEGER     NOT NULL,
     content     TEXT        NOT NULL,
-    author_id   BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+    author_id   BIGINT      REFERENCES users(id) ON DELETE SET NULL,  -- 버전 생성자 (nullable)
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (doc_id, version_num)
 );
 
+CREATE UNIQUE INDEX uq_document_version ON document_versions(document_id, version);
 CREATE INDEX idx_dv_doc_id ON document_versions(doc_id, version_num DESC);
 ```
 
-### 2.9 document_relations
+> **v1.3.0 변경:** `author_id`를 nullable FK로 변경 (`ON DELETE SET NULL`). 사용자 삭제 시에도 버전 히스토리가 보존되어야 하므로 `RESTRICT` 대신 `SET NULL`을 사용한다.
+
+### 2.11 document_relations
 
 ```sql
 CREATE TYPE relation_type AS ENUM ('related', 'prev', 'next');
@@ -462,11 +540,28 @@ CREATE TABLE document_relations (
 -- 연관 문서 최대 20개 제한 (rel_type='related' 기준)
 -- 애플리케이션 레이어에서 INSERT 전 COUNT 검사로 적용
 
-CREATE INDEX idx_dr_doc_id  ON document_relations(doc_id);
-CREATE INDEX idx_dr_related ON document_relations(related_doc_id);
+CREATE INDEX idx_document_relations_source ON document_relations(doc_id);
+CREATE INDEX idx_document_relations_target ON document_relations(related_doc_id);
 ```
 
-### 2.10 link_previews
+> **v1.3.0 변경:** 인덱스 이름을 `idx_document_relations_source`, `idx_document_relations_target`으로 변경하여 실제 구현과 동기화.
+
+### 2.12 document_tags
+
+```sql
+CREATE TABLE document_tags (
+    doc_id  BIGINT  NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    tag     TEXT    NOT NULL CHECK (char_length(tag) BETWEEN 1 AND 50),
+    PRIMARY KEY (doc_id, tag)
+);
+
+CREATE INDEX idx_document_tags_document ON document_tags(doc_id);
+CREATE INDEX idx_document_tags_tag      ON document_tags(tag);
+```
+
+> **v1.3.0 변경:** 인덱스 `idx_document_tags_document`, `idx_document_tags_tag` 추가. 태그 기반 문서 검색 및 문서별 태그 조회 최적화.
+
+### 2.13 link_previews
 
 ```sql
 CREATE TYPE preview_type AS ENUM ('website', 'video', 'internal');
@@ -486,26 +581,55 @@ CREATE TABLE link_previews (
 CREATE INDEX idx_lp_expires ON link_previews(expires_at);
 ```
 
-### 2.11 comments
+### 2.14 comments
 
 ```sql
 CREATE TABLE comments (
-    id          BIGSERIAL   PRIMARY KEY,
-    doc_id      BIGINT      NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    author_id   BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    parent_id   BIGINT      REFERENCES comments(id) ON DELETE CASCADE,
-    selection   JSONB,      -- { from: number, to: number, text: string }
-    content     TEXT        NOT NULL CHECK (char_length(content) BETWEEN 1 AND 5000),
-    resolved    BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id           BIGSERIAL   PRIMARY KEY,
+    document_id  BIGINT      NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    author_id    BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content      TEXT        NOT NULL CHECK (char_length(content) BETWEEN 1 AND 5000),
+    parent_id    BIGINT      REFERENCES comments(id) ON DELETE CASCADE,  -- self-ref, nullable (nested threads)
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_comments_doc    ON comments(doc_id);
-CREATE INDEX idx_comments_parent ON comments(parent_id);
+CREATE INDEX idx_comments_document ON comments(document_id);
 ```
 
-### 2.12 activity_logs & notifications (Phase 3 사전 설계)
+> **v1.3.0 변경:** FK 컬럼명을 `doc_id`에서 `document_id`로 변경하여 실제 구현과 동기화. `selection`, `resolved` 컬럼 제거 (현재 미구현). `parent_id`로 중첩 댓글(nested threads) 지원. 인덱스 이름을 `idx_comments_document`로 변경.
+
+### 2.15 embed_tokens (v1.3.0)
+
+> 워크스페이스 문서를 외부에 임베드할 때 사용하는 토큰 관리 테이블.  
+> 토큰은 해시된 상태로 저장되며, 만료 및 폐기(revoke) 처리를 지원한다.
+
+```sql
+CREATE TABLE embed_tokens (
+    id            BIGSERIAL    PRIMARY KEY,
+    workspace_id  BIGINT       NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    creator_id    BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    label         VARCHAR(100) NOT NULL,                       -- 토큰 식별용 라벨
+    token_hash    VARCHAR(255) NOT NULL UNIQUE,                -- SHA-256 해시된 토큰
+    scope         VARCHAR(20)  NOT NULL CHECK (scope IN ('read', 'read_write')),  -- 권한 범위
+    expires_at    TIMESTAMPTZ  NOT NULL,                       -- 만료 시각
+    revoked_at    TIMESTAMPTZ,                                 -- 폐기 시각 (NULL = 활성)
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_embed_tokens_workspace ON embed_tokens(workspace_id);
+```
+
+**비즈니스 규칙**
+
+| 규칙 | 설명 |
+|------|------|
+| 토큰 생성 권한 | Admin 이상만 생성 가능 |
+| 토큰 검증 | `token_hash` 매칭 + `expires_at > NOW()` + `revoked_at IS NULL` |
+| 폐기 처리 | `revoked_at = NOW()` 업데이트 (삭제하지 않음 — 감사 추적용) |
+| scope 제한 | `read`: 문서 조회만 / `read_write`: 조회 + 편집 |
+
+### 2.16 activity_logs & notifications (Phase 3 사전 설계)
 
 ```sql
 CREATE TYPE activity_action AS ENUM (
@@ -541,7 +665,32 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 
 ---
 
-## 3. 데이터 무결성 규칙
+## 3. 인덱스 전략
+
+> **총 인덱스 수:** 16개 (FTS/Trigram 제외, B-tree/partial index 기준)
+
+| # | 인덱스 이름 | 테이블 | 컬럼 / 조건 | 용도 |
+|---|------------|--------|-------------|------|
+| 1 | `idx_documents_active` | documents | `(workspace_id, category_id, updated_at)` WHERE NOT is_deleted | 활성 문서 목록 조회 |
+| 2 | `idx_documents_deleted` | documents | `(workspace_id, deleted_at)` WHERE is_deleted | 휴지통 문서 조회 |
+| 3 | `uq_document_workspace_slug` | documents | `(workspace_id, slug)` UNIQUE | 워크스페이스 내 slug 유일성 |
+| 4 | `uq_document_version` | document_versions | `(document_id, version)` UNIQUE | 문서별 버전 유일성 |
+| 5 | `idx_closure_ancestor` | category_closure | `(ancestor_id)` | 하위 계층 조회 |
+| 6 | `idx_closure_descendant` | category_closure | `(descendant_id)` | 상위 경로(breadcrumb) 조회 |
+| 7 | `idx_comments_document` | comments | `(document_id)` | 문서별 댓글 조회 |
+| 8 | `idx_embed_tokens_workspace` | embed_tokens | `(workspace_id)` | 워크스페이스별 토큰 조회 |
+| 9 | `idx_refresh_user` | refresh_tokens | `(user_id)` | 사용자별 토큰 조회 |
+| 10 | `idx_refresh_expires` | refresh_tokens | `(expires_at)` | 만료 토큰 정리 |
+| 11 | `idx_document_tags_document` | document_tags | `(doc_id)` | 문서별 태그 조회 |
+| 12 | `idx_document_tags_tag` | document_tags | `(tag)` | 태그별 문서 검색 |
+| 13 | `idx_document_relations_source` | document_relations | `(doc_id)` | 소스 문서 기준 관계 조회 |
+| 14 | `idx_document_relations_target` | document_relations | `(related_doc_id)` | 타겟 문서 기준 관계 조회 |
+| 15 | `idx_join_requests_unique_pending` | workspace_join_requests | `(workspace_id, requester_id)` WHERE status = 'pending' | pending 중복 방지 (partial unique) |
+| 16 | 기타 (`idx_users_email`, `idx_workspaces_*`, `idx_wm_*`, `idx_inv_*`, 등) | 각 테이블 | — | 기본 조회 최적화 |
+
+---
+
+## 4. 데이터 무결성 규칙
 
 | 규칙 | 구현 방법 |
 |------|-----------|
@@ -558,10 +707,11 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 | 가입 신청 중복 방지 | `UNIQUE (workspace_id, requester_id)` 제약 → 409 반환 |
 | 가입 신청 가능 조건 | `is_public = TRUE` 이고 미멤버인 경우만 허용 — 앱 레이어 검증 |
 | 공개 워크스페이스 검색 | `is_public` 인덱스 활용 — `GET /workspaces?public=true&q=keyword` |
+| Embed 토큰 검증 | `token_hash` 매칭 + `expires_at > NOW()` + `revoked_at IS NULL` |
 
 ---
 
-## 4. 마이그레이션 전략
+## 5. 마이그레이션 전략
 
 ```
 migrations/
@@ -571,12 +721,15 @@ migrations/
 ├── 0004_documents.sql
 ├── 0005_versions_relations.sql
 ├── 0006_invitations.sql
-├── 0007_join_requests.sql             ← v1.1.0 신규 ✨
+├── 0007_join_requests.sql             ← v1.1.0 신규
 ├── 0008_link_previews.sql
 ├── 0009_comments.sql
 ├── 0010_search_indexes.sql            ← pg_trgm + simple FTS
 ├── 0011_activity_notifications.sql    ← Phase 3 사전 준비
-└── 0012_category_closure.sql          ← v1.2.0 신규 ✨ Closure Table
+├── 0012_category_closure.sql          ← v1.2.0 Closure Table
+├── 0013_embed_tokens.sql              ← v1.3.0 신규 — Embed Token 테이블
+├── 0014_workspaces_theme_preset.sql   ← v1.3.0 — theme_preset 컬럼 추가
+└── 0015_index_sync.sql                ← v1.3.0 — 인덱스 이름/조건 실제 구현 동기화
 ```
 
 - **도구:** Drizzle ORM `drizzle-kit`

@@ -35,22 +35,24 @@ describe('GET /api/v1/users/me', () => {
     expect(res.statusCode).toBe(200);
 
     const body = res.json() as {
-      id: string;
-      email: string;
-      name: string;
-      avatarUrl: string | null;
-      emailVerified: boolean;
-      createdAt: string;
+      user: {
+        id: number;
+        email: string;
+        name: string;
+        avatarUrl: string | null;
+        emailVerified: boolean;
+        createdAt: string;
+      };
     };
 
-    expect(body.id).toBe(user.id);
-    expect(body.email).toBe('me@example.com');
-    expect(body.name).toBe('Current User');
-    expect(body.emailVerified).toBe(true);
-    expect(body.createdAt).toBeDefined();
+    expect(body.user.id).toBe(user.id);
+    expect(body.user.email).toBe('me@example.com');
+    expect(body.user.name).toBe('Current User');
+    expect(body.user.emailVerified).toBe(true);
+    expect(body.user.createdAt).toBeDefined();
 
     // Sensitive fields must NOT be exposed
-    const bodyRaw = body as Record<string, unknown>;
+    const bodyRaw = body.user as Record<string, unknown>;
     expect(bodyRaw).not.toHaveProperty('passwordHash');
     expect(bodyRaw).not.toHaveProperty('password_hash');
     expect(bodyRaw).not.toHaveProperty('emailVerifyToken');
@@ -110,9 +112,9 @@ describe('PATCH /api/v1/users/me', () => {
 
     expect(res.statusCode).toBe(200);
 
-    const body = res.json() as { id: string; name: string; email: string };
-    expect(body.name).toBe('New Name');
-    expect(body.email).toBe('update-name@example.com');
+    const body = res.json() as { user: { id: number; name: string; email: string } };
+    expect(body.user.name).toBe('New Name');
+    expect(body.user.email).toBe('update-name@example.com');
 
     // Verify DB is updated
     const [dbUser] = await db
@@ -147,8 +149,8 @@ describe('PATCH /api/v1/users/me', () => {
 
     expect(res.statusCode).toBe(200);
 
-    const body = res.json() as { id: string; avatarUrl: string };
-    expect(body.avatarUrl).toBe(newAvatarUrl);
+    const body = res.json() as { user: { id: number; avatarUrl: string } };
+    expect(body.user.avatarUrl).toBe(newAvatarUrl);
 
     // Verify DB is updated
     const [dbUser] = await db

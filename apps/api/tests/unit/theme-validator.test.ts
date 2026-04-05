@@ -1,14 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-// CSS validator will be implemented at apps/api/src/utils/css-validator.ts
-// Import will resolve once the module is created
-// import { validateThemeCss } from '../../src/utils/css-validator.js';
-
-// Inline stub for TDD — replace with actual import when implemented
-function validateThemeCss(css: string): { valid: boolean; rejected: string[] } {
-  // This is a placeholder that should FAIL tests
-  return { valid: true, rejected: [] };
-}
+import { validateThemeCss } from '../../src/utils/css-validator.js';
 
 describe('CSS Theme Validator', () => {
   it('accepts valid --mf-* variables', () => {

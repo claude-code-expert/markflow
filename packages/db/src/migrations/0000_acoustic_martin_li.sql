@@ -3,6 +3,7 @@ CREATE TABLE "categories" (
 	"workspace_id" bigint NOT NULL,
 	"name" varchar(100) NOT NULL,
 	"parent_id" bigint,
+	"order_index" double precision DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "uq_category_name_parent" UNIQUE NULLS NOT DISTINCT("workspace_id","parent_id","name")
 );
@@ -12,6 +13,16 @@ CREATE TABLE "category_closure" (
 	"descendant_id" bigint NOT NULL,
 	"depth" integer NOT NULL,
 	CONSTRAINT "category_closure_ancestor_id_descendant_id_pk" PRIMARY KEY("ancestor_id","descendant_id")
+);
+--> statement-breakpoint
+CREATE TABLE "comments" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"document_id" bigint NOT NULL,
+	"author_id" bigint NOT NULL,
+	"content" text NOT NULL,
+	"parent_id" bigint,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "document_relations" (
@@ -28,6 +39,7 @@ CREATE TABLE "document_versions" (
 	"document_id" bigint NOT NULL,
 	"version" integer NOT NULL,
 	"content" text NOT NULL,
+	"author_id" bigint,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "uq_document_version" UNIQUE("document_id","version")
 );
@@ -143,16 +155,20 @@ CREATE TABLE "workspaces" (
 	"theme_css" text DEFAULT '' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "workspaces_name_unique" UNIQUE("name")
+	CONSTRAINT "uq_workspace_owner_name" UNIQUE("owner_id","name")
 );
 --> statement-breakpoint
 ALTER TABLE "categories" ADD CONSTRAINT "categories_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "categories" ADD CONSTRAINT "categories_parent_id_categories_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "category_closure" ADD CONSTRAINT "category_closure_ancestor_id_categories_id_fk" FOREIGN KEY ("ancestor_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "category_closure" ADD CONSTRAINT "category_closure_descendant_id_categories_id_fk" FOREIGN KEY ("descendant_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "comments" ADD CONSTRAINT "comments_document_id_documents_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."documents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "comments" ADD CONSTRAINT "comments_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "comments" ADD CONSTRAINT "comments_parent_id_comments_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."comments"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_relations" ADD CONSTRAINT "document_relations_source_id_documents_id_fk" FOREIGN KEY ("source_id") REFERENCES "public"."documents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_relations" ADD CONSTRAINT "document_relations_target_id_documents_id_fk" FOREIGN KEY ("target_id") REFERENCES "public"."documents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "document_versions" ADD CONSTRAINT "document_versions_document_id_documents_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."documents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_versions" ADD CONSTRAINT "document_versions_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -172,6 +188,7 @@ ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_user_id_users_
 ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_closure_ancestor" ON "category_closure" USING btree ("ancestor_id");--> statement-breakpoint
 CREATE INDEX "idx_closure_descendant" ON "category_closure" USING btree ("descendant_id");--> statement-breakpoint
+CREATE INDEX "idx_comments_document" ON "comments" USING btree ("document_id");--> statement-breakpoint
 CREATE INDEX "idx_document_relations_source" ON "document_relations" USING btree ("source_id");--> statement-breakpoint
 CREATE INDEX "idx_document_relations_target" ON "document_relations" USING btree ("target_id");--> statement-breakpoint
 CREATE INDEX "idx_documents_active" ON "documents" USING btree ("workspace_id","category_id","updated_at") WHERE NOT is_deleted;--> statement-breakpoint

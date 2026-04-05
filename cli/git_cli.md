@@ -54,7 +54,7 @@
 | 스테이징된 변경 확인 | `git diff --staged` | `git diff --staged` |
 | 커밋 로그 | `git log --oneline` | `git log --oneline -10` |
 | 그래프 형태 로그 | `git log --oneline --graph --all` | `git log --oneline --graph --all` |
-
+wls
 ### Fetch / Pull / Push
 
 | 명령어 | 문법 | 예시 |

@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { apiFetch, ApiError } from '../../../lib/api';
+import { MarkFlowLogo } from '../../../components/mark-flow-logo';
 import { RegisterResponse } from '../../../lib/types';
 
 interface RegisterPayload {
@@ -103,22 +104,18 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-    gap: 10,
+    gap: 2,
   } satisfies CSSProperties,
 
   logoBox: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
     borderRadius: 6,
     background: 'var(--accent)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#fff',
-    fontFamily: 'var(--font-heading, sans-serif)',
-    fontWeight: 700,
-    fontSize: 16,
-    lineHeight: 1,
+    margin: '0 1px',
   } satisfies CSSProperties,
 
   logoText: {
@@ -126,6 +123,13 @@ const styles = {
     fontWeight: 700,
     fontSize: 18,
     color: 'var(--text)',
+  } satisfies CSSProperties,
+
+  logoTextAccent: {
+    fontFamily: 'var(--font-heading, sans-serif)',
+    fontWeight: 700,
+    fontSize: 18,
+    color: 'var(--accent)',
   } satisfies CSSProperties,
 
   tabRow: {
@@ -332,8 +336,7 @@ export default function RegisterPage() {
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logoWrap}>
-          <span style={styles.logoBox}>M</span>
-          <span style={styles.logoText}>MarkFlow</span>
+          <MarkFlowLogo height={26} />
         </div>
 
         <div style={styles.successWrap}>

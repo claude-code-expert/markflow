@@ -35,9 +35,11 @@
     "@types/archiver": "^6.0.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/unzipper": "^0.10.11",
     "tsup": "^8",
     "tsx": "^4",
     "typescript": "^5",
+    "unzipper": "^0.12.3",
     "vitest": "^3"
   }
 }

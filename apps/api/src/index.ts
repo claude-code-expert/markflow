@@ -128,4 +128,6 @@ async function start() {
   }
 }
 
-start();
+if (!process.env['VITEST']) {
+  start();
+}

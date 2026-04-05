@@ -18,7 +18,7 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     const db = getDb();
 
     const { user: owner, accessToken: ownerToken } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Invite WS', slug: 'invite-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Invite WS' });
 
     const res = await app.inject({
       method: 'POST',
@@ -33,27 +33,29 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     expect(res.statusCode).toBe(201);
 
     const body = res.json() as {
-      id: string;
-      token: string;
-      email: string;
-      role: string;
-      workspaceId: string;
-      expiresAt: string;
+      invitation: {
+        id: number;
+        token: string;
+        email: string;
+        role: string;
+        workspaceId: number;
+        expiresAt: string;
+      };
     };
 
-    expect(body.token).toBeDefined();
-    expect(typeof body.token).toBe('string');
-    expect(body.token.length).toBeGreaterThan(0);
-    expect(body.email).toBe('invitee@example.com');
-    expect(body.role).toBe('editor');
-    expect(body.workspaceId).toBe(ws.id);
-    expect(body.expiresAt).toBeDefined();
+    expect(body.invitation.token).toBeDefined();
+    expect(typeof body.invitation.token).toBe('string');
+    expect(body.invitation.token.length).toBeGreaterThan(0);
+    expect(body.invitation.email).toBe('invitee@example.com');
+    expect(body.invitation.role).toBe('editor');
+    expect(body.invitation.workspaceId).toBe(ws.id);
+    expect(body.invitation.expiresAt).toBeDefined();
 
     // Verify DB: invitation persisted
     const [dbInvitation] = await db
       .select()
       .from(invitations)
-      .where(eq(invitations.id, body.id));
+      .where(eq(invitations.id, body.invitation.id));
     expect(dbInvitation).toBeDefined();
     expect(dbInvitation!.status).toBe('pending');
     expect(dbInvitation!.email).toBe('invitee@example.com');
@@ -64,7 +66,7 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Admin Invite', slug: 'admin-invite' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Admin Invite' });
 
     const { user: admin, accessToken: adminToken } = await createUser(db);
     await addMember(db, ws.id, admin.id, 'admin');
@@ -87,7 +89,7 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'No Editor Invite', slug: 'no-editor-invite' });
+    const ws = await createWorkspace(db, owner.id, { name: 'No Editor Invite' });
 
     const { user: editor, accessToken: editorToken } = await createUser(db);
     await addMember(db, ws.id, editor.id, 'editor');
@@ -110,7 +112,7 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'No Viewer Invite', slug: 'no-viewer-invite' });
+    const ws = await createWorkspace(db, owner.id, { name: 'No Viewer Invite' });
 
     const { user: viewer, accessToken: viewerToken } = await createUser(db);
     await addMember(db, ws.id, viewer.id, 'viewer');
@@ -133,7 +135,7 @@ describe('POST /api/v1/workspaces/:id/invitations', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'No Auth Invite', slug: 'no-auth-invite' });
+    const ws = await createWorkspace(db, owner.id, { name: 'No Auth Invite' });
 
     const res = await app.inject({
       method: 'POST',
@@ -157,7 +159,7 @@ describe('GET /api/v1/invitations/:token', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Token View', slug: 'token-view' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Token View' });
 
     const invitation = await createInvitation(db, ws.id, owner.id, {
       email: 'viewer-target@example.com',
@@ -173,17 +175,19 @@ describe('GET /api/v1/invitations/:token', () => {
     expect(res.statusCode).toBe(200);
 
     const body = res.json() as {
-      workspaceName: string;
-      email: string;
-      role: string;
-      inviterName?: string;
-      expiresAt: string;
+      invitation: {
+        workspaceName: string;
+        email: string;
+        role: string;
+        inviterName?: string;
+        expiresAt: string;
+      };
     };
 
-    expect(body.workspaceName).toBeDefined();
-    expect(body.email).toBe('viewer-target@example.com');
-    expect(body.role).toBe('viewer');
-    expect(body.expiresAt).toBeDefined();
+    expect(body.invitation.workspaceName).toBeDefined();
+    expect(body.invitation.email).toBe('viewer-target@example.com');
+    expect(body.invitation.role).toBe('viewer');
+    expect(body.invitation.expiresAt).toBeDefined();
   });
 
   it('should return 404 for non-existent token', async () => {
@@ -202,7 +206,7 @@ describe('GET /api/v1/invitations/:token', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Expired', slug: 'expired-invite' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Expired' });
 
     const expiredInvitation = await createInvitation(db, ws.id, owner.id, {
       email: 'expired@example.com',
@@ -231,7 +235,7 @@ describe('POST /api/v1/invitations/:token/accept', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Accept WS', slug: 'accept-ws' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Accept WS' });
 
     const { user: invitee, accessToken: inviteeToken } = await createUser(db, {
       email: 'accept-me@example.com',
@@ -276,7 +280,7 @@ describe('POST /api/v1/invitations/:token/accept', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Expired Accept', slug: 'expired-accept' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Expired Accept' });
 
     const { accessToken: inviteeToken } = await createUser(db, {
       email: 'expired-accept@example.com',
@@ -302,7 +306,7 @@ describe('POST /api/v1/invitations/:token/accept', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'Already Member', slug: 'already-member' });
+    const ws = await createWorkspace(db, owner.id, { name: 'Already Member' });
 
     const { user: existingMember, accessToken: memberToken } = await createUser(db, {
       email: 'already@example.com',
@@ -331,7 +335,7 @@ describe('POST /api/v1/invitations/:token/accept', () => {
     const db = getDb();
 
     const { user: owner } = await createUser(db);
-    const ws = await createWorkspace(db, owner.id, { name: 'No Auth Accept', slug: 'no-auth-accept' });
+    const ws = await createWorkspace(db, owner.id, { name: 'No Auth Accept' });
 
     const invitation = await createInvitation(db, ws.id, owner.id, {
       email: 'noauth-accept@example.com',
