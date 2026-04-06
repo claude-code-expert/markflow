@@ -103,10 +103,12 @@ export function ImportExportModal({
         const formatParam = exportFormat !== 'md' ? `?format=${exportFormat}` : '';
         url = `${API_BASE}/workspaces/${workspaceId}/documents/${selectedDocId}/export${formatParam}`;
         const ext = exportFormat === 'html' ? '.html' : exportFormat === 'pdf' ? '.pdf' : '.md';
-        defaultFilename = `document${ext}`;
+        const docName = allDocs.find((d) => String(d.id) === selectedDocId)?.title ?? 'document';
+        defaultFilename = `${docName}${ext}`;
       } else if (exportScope === 'category' && selectedCatId) {
         url = `${API_BASE}/workspaces/${workspaceId}/categories/${selectedCatId}/export`;
-        defaultFilename = `category.zip`;
+        const catName = flatCats.find((c) => String(c.id) === selectedCatId)?.path ?? 'category';
+        defaultFilename = `${catName}.zip`;
       }
 
       if (!url) {
