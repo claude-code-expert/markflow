@@ -127,9 +127,11 @@ export default function GraphPage() {
     return edges.find(e => e.source === selectedDocId && e.type === 'next')?.target ?? null;
   }, [edges, selectedDocId]);
 
-  // Node click → select + open preview
-  const handleNodeClick = useCallback(async (docId: number) => {
-    setSelectedDocId(docId);
+  // Single click → node navigation only (no modal)
+  const handleSelectDoc = useCallback((docId: number) => { setSelectedDocId(docId); }, []);
+
+  // Right click → open preview modal
+  const handleRightClickDoc = useCallback(async (docId: number) => {
     if (!wsId) return;
     try {
       const res = await apiFetch<{ document: DocumentDetail }>(`/workspaces/${wsId}/documents/${docId}`);
@@ -137,9 +139,6 @@ export default function GraphPage() {
       setPreviewOpen(true);
     } catch { /* preview unavailable */ }
   }, [wsId]);
-
-  // Sidebar select (no preview)
-  const handleSidebarSelect = useCallback((docId: number) => { setSelectedDocId(docId); }, []);
 
   // Group docs for sidebar
   const groupedDocs = useMemo(() => {
@@ -187,8 +186,8 @@ export default function GraphPage() {
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Prev/Next */}
-          <NavBtn dark={dark} disabled={!prevDocId} onClick={() => prevDocId && handleSidebarSelect(prevDocId)} title="이전 문서"><ChevronLeft size={14} /></NavBtn>
-          <NavBtn dark={dark} disabled={!nextDocId} onClick={() => nextDocId && handleSidebarSelect(nextDocId)} title="다음 문서"><ChevronRight size={14} /></NavBtn>
+          <NavBtn dark={dark} disabled={!prevDocId} onClick={() => prevDocId && handleSelectDoc(prevDocId)} title="이전 문서"><ChevronLeft size={14} /></NavBtn>
+          <NavBtn dark={dark} disabled={!nextDocId} onClick={() => nextDocId && handleSelectDoc(nextDocId)} title="다음 문서"><ChevronRight size={14} /></NavBtn>
           <Sep dark={dark} />
           {/* Theme toggle */}
           <div style={{
@@ -231,7 +230,8 @@ export default function GraphPage() {
               edges={edges}
               categories={categoryInfos}
               selectedDocId={selectedDocId}
-              onSelectDoc={(docId) => void handleNodeClick(docId)}
+              onSelectDoc={handleSelectDoc}
+              onRightClickDoc={(docId) => void handleRightClickDoc(docId)}
               tagLinks={tagLinks}
               dark={dark}
             />
@@ -258,7 +258,7 @@ export default function GraphPage() {
             fontSize: '10px', color: dark ? 'rgba(255,255,255,0.13)' : 'var(--text-3)',
             whiteSpace: 'nowrap', fontFamily: 'monospace', zIndex: 10,
           }}>
-            노드 클릭 → 프리뷰 · 드래그 → 캔버스 이동 · 더블클릭 → 초기화
+            클릭 → 노드 이동 · 우클릭 → 문서 프리뷰 · 드래그 → 캔버스 이동 · 더블클릭 → 초기화
           </div>
         </div>
 
@@ -293,7 +293,7 @@ export default function GraphPage() {
                   {docs.map(d => (
                     <div
                       key={d.id}
-                      onClick={() => handleSidebarSelect(d.id)}
+                      onClick={() => handleSelectDoc(d.id)}
                       style={{
                         padding: '7px 14px 7px 26px', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '8px',

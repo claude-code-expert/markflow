@@ -28,6 +28,7 @@ interface MindMapCanvasProps {
   categories: CategoryInfo[];
   selectedDocId: number;
   onSelectDoc: (docId: number) => void;
+  onRightClickDoc?: (docId: number) => void;
   tagLinks?: { fromId: number; toId: number }[];
   dark?: boolean;
 }
@@ -347,7 +348,7 @@ function spawnParticles(branches: Branch[]): Particle[] {
 
 /* ─── Component ─── */
 
-export function MindMapCanvas({ nodes, edges, categories, selectedDocId, onSelectDoc, tagLinks = [], dark = false }: MindMapCanvasProps) {
+export function MindMapCanvas({ nodes, edges, categories, selectedDocId, onSelectDoc, onRightClickDoc, tagLinks = [], dark = false }: MindMapCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({
     offX: 0, offY: 0,
@@ -594,6 +595,22 @@ export function MindMapCanvas({ nodes, edges, categories, selectedDocId, onSelec
     }
   }, [onSelectDoc]);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    const s = stateRef.current;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    for (const t of s.clickTargets) {
+      if (mx >= t.x && mx <= t.x + t.w && my >= t.y && my <= t.y + t.h && t.docId !== null) {
+        e.preventDefault();
+        onRightClickDoc?.(t.docId);
+        return;
+      }
+    }
+  }, [onRightClickDoc]);
+
   const handleDblClick = useCallback(() => {
     stateRef.current.offX = 0; stateRef.current.offY = 0;
     rebuild();
@@ -609,6 +626,7 @@ export function MindMapCanvas({ nodes, edges, categories, selectedDocId, onSelec
         onMouseUp={handleMouseUp}
         onMouseLeave={() => { stateRef.current.dragging = false; stateRef.current.hoverId = null; }}
         onDoubleClick={handleDblClick}
+        onContextMenu={handleContextMenu}
       />
     </div>
   );
