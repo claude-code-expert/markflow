@@ -27,9 +27,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "react-grab": "^0.1.29",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "react-grab": "^0.1.29",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3"
