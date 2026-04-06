@@ -41,8 +41,6 @@ export interface MarkdownEditorProps {
   themeVars?: Record<string, string>
   /** Custom image upload handler. If not provided, uses built-in Cloudflare R2 uploader (requires Worker URL via settings). */
   onImageUpload?: (file: File) => Promise<string>
-  /** Called when image upload is attempted but no uploader is configured. If provided, suppresses the built-in ImageUploadGuide modal. */
-  onImageUploadGuide?: () => void
   /** Wiki link search callback. Called when user types [[ to autocomplete document links. */
   onWikiLinkSearch?: (query: string) => Promise<WikiLinkItem[]>
 }

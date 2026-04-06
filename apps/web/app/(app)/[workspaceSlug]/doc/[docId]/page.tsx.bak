@@ -401,11 +401,6 @@ export default function DocEditorPage() {
                 <Presentation size={14} />
               </button>
             </Tooltip>
-            <Tooltip label="이미지 저장소">
-              <button type="button" onClick={() => { setShowStorageGuide((v) => !v); if (!showStorageGuide) setActivePanel(null); }} style={{ ...iconBtnStyle, background: showStorageGuide ? 'var(--accent-2)' : 'transparent', color: showStorageGuide ? 'var(--accent)' : 'var(--text-3)' }}>
-                <HardDrive size={14} />
-              </button>
-            </Tooltip>
             <div style={sepStyle} />
             <Tooltip label="댓글">
               <button type="button" onClick={() => togglePanel('comment')} style={{ ...iconBtnStyle, background: activePanel === 'comment' ? 'var(--accent-2)' : 'transparent', color: activePanel === 'comment' ? 'var(--accent)' : 'var(--text-3)' }}>

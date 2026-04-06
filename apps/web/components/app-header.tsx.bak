@@ -370,26 +370,24 @@ export function AppHeader({ onSearchClick, onNewDoc }: { onSearchClick?: () => v
           </Tooltip>
         )}
 
-        <Tooltip label="검색" shortcut="⌘K">
-          <button
-            aria-label="검색 (⌘K)"
-            onClick={onSearchClick}
-            style={{
-              width: '34px',
-              height: '34px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              color: 'var(--text-3)',
-            }}
-          >
-            <Search size={16} />
-          </button>
-        </Tooltip>
+        <button
+          aria-label="검색 (⌘K)"
+          onClick={onSearchClick}
+          style={{
+            width: '34px',
+            height: '34px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 'var(--radius-sm)',
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--text-3)',
+          }}
+        >
+          <Search size={16} />
+        </button>
 
         {user && <ProfileMenu />}
       </div>

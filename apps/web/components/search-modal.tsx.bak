@@ -122,6 +122,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
           res.documents.map((d) => ({
             id: d.id,
             title: d.title,
+            slug: d.slug,
             categoryPath: d.categoryName ?? null,
             excerpt: d.excerpt ?? d.content.slice(0, 100),
           }))

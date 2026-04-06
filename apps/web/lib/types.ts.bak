@@ -34,6 +34,7 @@ export interface Document {
   workspaceId: number;
   authorId: number;
   title: string;
+  slug: string;
   content: string;
   categoryId: number | null;
   currentVersion: number;

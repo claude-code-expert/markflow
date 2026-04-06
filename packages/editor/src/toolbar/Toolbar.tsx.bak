@@ -26,9 +26,9 @@ interface BtnProps {
 function Btn({ title, onClick, active, children }: BtnProps) {
   return (
     <button
+      title={title}
       onClick={onClick}
       className={`mf-toolbar-btn ${active ? 'mf-toolbar-btn-active' : ''}`}
-      data-tooltip={title}
     >
       {children}
     </button>

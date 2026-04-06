@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useRef, type FormEvent } from 'react';
+import Link from 'next/link';
 import { apiFetch, ApiError } from '../lib/api';
 import { useAuthStore } from '../stores/auth-store';
+import { useWorkspaceStore } from '../stores/workspace-store';
+import { createUploader, validateAvatarFile, getWorkerUrl, ImageUploadError } from '../lib/image-upload';
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -19,31 +22,36 @@ interface UpdateUserResponse {
   updatedAt: string;
 }
 
-const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png']);
-const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
-
 export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
   const { user, setUser } = useAuthStore();
+  const { currentWorkspace } = useWorkspaceStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasWorkerUrl = Boolean(getWorkerUrl());
 
   const [name, setName] = useState(user?.name ?? '');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showStorageGuide, setShowStorageGuide] = useState(false);
 
   if (!open) return null;
+
+  function handleAvatarClick() {
+    if (!hasWorkerUrl) {
+      // 설정 안 됐으면 파일 선택 대신 설정 페이지로 안내
+      setShowStorageGuide(true);
+      return;
+    }
+    fileInputRef.current?.click();
+  }
 
   function handleAvatarSelect(file: File | undefined) {
     if (!file) return;
 
-    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-      setError('JPG 또는 PNG 파일만 업로드할 수 있습니다.');
-      return;
-    }
-
-    if (file.size > MAX_AVATAR_SIZE) {
-      setError('파일 크기는 2MB 이하여야 합니다.');
+    const validation = validateAvatarFile(file);
+    if (!validation.valid) {
+      setError(validation.error ?? '파일 검증 실패');
       return;
     }
 
@@ -72,32 +80,33 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
     setIsSubmitting(true);
 
     try {
-      // Update name
-      const updatedUser = await apiFetch<UpdateUserResponse>('/users/me', {
-        method: 'PATCH',
-        body: { name: name.trim() },
-      });
-
-      // Upload avatar if selected
+      // Avatar를 R2 Worker로 업로드 후 URL 획득
+      let avatarUrl: string | undefined;
       if (avatarFile) {
-        const formData = new FormData();
-        formData.append('avatar', avatarFile);
-
-        const avatarResult = await apiFetch<{ avatarUrl: string }>(
-          '/users/me/avatar',
-          {
-            method: 'PUT',
-            body: formData,
-          },
-        );
-        updatedUser.avatarUrl = avatarResult.avatarUrl;
+        const uploader = createUploader();
+        if (!uploader) {
+          setShowStorageGuide(true);
+          setIsSubmitting(false);
+          return;
+        }
+        avatarUrl = await uploader(avatarFile);
       }
 
-      setUser(updatedUser);
+      // name + avatarUrl을 한 번의 PATCH로 통합
+      const body: Record<string, string> = { name: name.trim() };
+      if (avatarUrl) body.avatarUrl = avatarUrl;
 
+      const updatedUser = await apiFetch<UpdateUserResponse>('/users/me', {
+        method: 'PATCH',
+        body,
+      });
+
+      setUser(updatedUser);
       onClose();
     } catch (err) {
-      if (err instanceof ApiError) {
+      if (err instanceof ImageUploadError) {
+        setError(err.message);
+      } else if (err instanceof ApiError) {
         setError(err.message);
       } else {
         setError('프로필 수정 중 오류가 발생했습니다.');
@@ -150,6 +159,15 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+            {error.includes('이미지 저장소') && currentWorkspace && (
+              <Link
+                href={`/${encodeURIComponent(currentWorkspace.name)}/settings/storage`}
+                className="mt-2 block font-medium text-blue-600 underline hover:text-blue-800"
+                onClick={onClose}
+              >
+                이미지 저장소 설정으로 이동 →
+              </Link>
+            )}
           </div>
         )}
 
@@ -170,7 +188,7 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
               )}
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleAvatarClick}
                 className="absolute -bottom-1 -right-1 rounded-full border-2 border-white bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200"
                 aria-label="사진 변경"
               >
@@ -198,13 +216,30 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png"
+              accept="image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={(e) => handleAvatarSelect(e.target.files?.[0])}
             />
             <p className="text-xs text-gray-500">
-              JPG, PNG (최대 2MB)
+              JPG, PNG, WebP (최대 5MB)
             </p>
+
+            {/* 저장소 미설정 시 가이드 */}
+            {showStorageGuide && currentWorkspace && (
+              <div className="mt-2 w-full max-w-xs rounded-lg border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-800">
+                <p className="mb-2 font-semibold">이미지 저장소 설정이 필요합니다</p>
+                <p className="mb-2 text-amber-700">
+                  프로필 사진을 업로드하려면 먼저 Cloudflare R2 이미지 저장소를 연결해야 합니다.
+                </p>
+                <Link
+                  href={`/${encodeURIComponent(currentWorkspace.name)}/settings/storage`}
+                  className="inline-block rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+                  onClick={onClose}
+                >
+                  저장소 설정하기 →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Name */}

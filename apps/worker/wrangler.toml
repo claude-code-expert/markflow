@@ -19,7 +19,8 @@ bucket_name = "markflow-images"       # R2 버킷 이름 (직접 생성 필요)
 # R2 버킷의 공개 URL (아래 중 하나 선택):
 #   - R2 커스텀 도메인: https://images.yourdomain.com
 #   - R2 퍼블릭 개발 URL: https://pub-xxxxxxxx.r2.dev
-PUBLIC_URL = "https://pub-YOUR_BUCKET_ID.r2.dev"
+PUBLIC_URL = "https://pub-1ae817f8a4814599bf1a8a838b4e5e15.r2.dev"
+
 
 # CORS 허용 오리진 (쉼표 구분, "*"이면 전체 허용)
 # ALLOWED_ORIGINS = "*"

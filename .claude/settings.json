@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev*)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm format*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm db:generate*)",
+      "Bash(pnpm db:studio*)",
+      "Bash(pnpm --filter *)",
+      "Bash(pnpm install*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(pnpm audit fix --force*)",
+      "Bash(npm audit fix --force*)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf .git*)",
+      "Bash(rm -rf ~*)",
+      "Bash(*DROP TABLE*)",
+      "Bash(*DROP DATABASE*)",
+      "Bash(*TRUNCATE*)",
+      "Read(.env.local)",
+      "Edit(.env.local)",
+      "Write(.env.local)",
+      "Edit(migrations/*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); echo \"$cmd\" | grep -iE '(DROP\\s+TABLE|DROP\\s+DATABASE|TRUNCATE)' >/dev/null 2>&1 && echo '❌ DROP/TRUNCATE 명령은 금지되어 있습니다.' >&2 && exit 2 || exit 0"
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); echo \"$cmd\" | grep -iE 'DELETE\\s+FROM' >/dev/null 2>&1 && ! echo \"$cmd\" | grep -iE 'WHERE' >/dev/null 2>&1 && echo '❌ DELETE FROM은 WHERE 절 없이 사용 금지입니다.' >&2 && exit 2 || exit 0"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -E '(^|\\|\\||&&|;)\\s*git\\s+(commit|push)' >/dev/null 2>&1 && echo '❌ git commit/push는 사용자의 명시적 요청 없이 실행할 수 없습니다.' >&2 && exit 2 || exit 0"
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -E '\\.(env|env\\.local|env\\.production)' >/dev/null 2>&1 && echo '❌ .env 파일은 사용자가 직접 관리합니다.' >&2 && exit 2 || exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); case \"$f\" in */schema.ts|*/drizzle.config.ts|*/next.config.ts|*.env|*.env.*) echo '⚠️ 보호된 파일입니다. 수정하려면 사용자 확인이 필요합니다: '$f >&2; exit 2;; esac"
+          },
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // \"\"'); [ -n \"$f\" ] && [ -f \"$f\" ] && cp \"$f\" \"$f.bak\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_response.filePath // .tool_input.file_path // \"\"'); [ -n \"$f\" ] && pnpm exec eslint --fix \"$f\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm exec tsc --noEmit 2>&1 | tail -30"
+          }
+        ]
+      }
+    ]
+  }
+}

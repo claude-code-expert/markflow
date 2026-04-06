@@ -79,13 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           {children}
           <ToastProvider />
-          {process.env.NODE_ENV === 'development' && (
-            <Script
-              src="//unpkg.com/react-grab/dist/index.global.js"
-              crossOrigin="anonymous"
-              strategy="beforeInteractive"
-            />
-          )}
+          <DevAgentation />
         </Providers>
       </body>
     </html>

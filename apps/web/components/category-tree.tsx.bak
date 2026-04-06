@@ -8,6 +8,7 @@ import { useSidebarStore } from '../stores/sidebar-store';
 export interface TreeDocument {
   id: number;
   title: string;
+  slug: string;
   updatedAt: string;
 }
 

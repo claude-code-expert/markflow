@@ -180,6 +180,7 @@ export function createDocumentService(db: Db) {
         categoryId: documents.categoryId,
         authorId: documents.authorId,
         title: documents.title,
+        slug: documents.slug,
         content: documents.content,
         currentVersion: documents.currentVersion,
         isDeleted: documents.isDeleted,

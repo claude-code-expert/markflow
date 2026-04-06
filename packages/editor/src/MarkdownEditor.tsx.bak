@@ -255,11 +255,11 @@ export function MarkdownEditor({
   const handleImageUploadClick = useCallback(() => {
     const uploader = resolveUploader()
     if (!uploader) {
-      openGuide()
+      setGuideOpen(true)
       return
     }
     fileInputRef.current?.click()
-  }, [resolveUploader, openGuide])
+  }, [resolveUploader])
 
   const handleGuideGoToSettings = useCallback(() => {
     setGuideOpen(false)

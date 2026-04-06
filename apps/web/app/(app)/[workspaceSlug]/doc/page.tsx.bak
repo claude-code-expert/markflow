@@ -567,57 +567,55 @@ export default function DocsPage() {
                 background: 'var(--surface)',
               }}
             >
-              <Tooltip label="그리드" position="top">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('grid')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 34,
-                    height: 32,
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: viewMode === 'grid' ? 'var(--text)' : 'var(--text-3)',
-                    background:
-                      viewMode === 'grid' ? 'var(--surface-2, #F1F0EC)' : 'transparent',
-                    transition: 'all .12s',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                  </svg>
-                </button>
-              </Tooltip>
-              <Tooltip label="리스트" position="top">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('list')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 34,
-                    height: 32,
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: viewMode === 'list' ? 'var(--text)' : 'var(--text-3)',
-                    background:
-                      viewMode === 'list' ? 'var(--surface-2, #F1F0EC)' : 'transparent',
-                    transition: 'all .12s',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                  </svg>
-                </button>
-              </Tooltip>
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                title="그리드"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 34,
+                  height: 32,
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: viewMode === 'grid' ? 'var(--text)' : 'var(--text-3)',
+                  background:
+                    viewMode === 'grid' ? 'var(--surface-2, #F1F0EC)' : 'transparent',
+                  transition: 'all .12s',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                title="리스트"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 34,
+                  height: 32,
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: viewMode === 'list' ? 'var(--text)' : 'var(--text-3)',
+                  background:
+                    viewMode === 'list' ? 'var(--surface-2, #F1F0EC)' : 'transparent',
+                  transition: 'all .12s',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
             </div>
 
             {/* Page size selector */}

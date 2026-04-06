@@ -34,6 +34,7 @@ export function createExportService(db: Db) {
       .select({
         id: documents.id,
         title: documents.title,
+        slug: documents.slug,
         content: documents.content,
       })
       .from(documents)
@@ -170,6 +171,7 @@ export function createExportService(db: Db) {
       .select({
         id: documents.id,
         title: documents.title,
+        slug: documents.slug,
         content: documents.content,
       })
       .from(documents)

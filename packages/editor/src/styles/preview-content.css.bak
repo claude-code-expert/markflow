@@ -10,10 +10,6 @@
   line-height: var(--mf-line-height);
 }
 
-.mf-preview > :first-child {
-  margin-top: 0;
-}
-
 .mf-preview h1,
 .mf-preview h2,
 .mf-preview h3,

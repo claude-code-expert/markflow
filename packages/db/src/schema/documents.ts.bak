@@ -17,6 +17,7 @@ export const documents = pgTable('documents', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
+  unique('uq_document_workspace_slug').on(table.workspaceId, table.slug),
   index('idx_documents_active').on(table.workspaceId, table.categoryId, table.updatedAt)
     .where(sql`NOT is_deleted`),
   index('idx_documents_deleted').on(table.workspaceId, table.deletedAt)

@@ -311,7 +311,7 @@ export function createCategoryService(db: Db) {
     const uncategorized: CategoryTreeDocument[] = [];
 
     for (const d of docRows) {
-      const doc: CategoryTreeDocument = { id: d.id, title: d.title, updatedAt: d.updatedAt };
+      const doc: CategoryTreeDocument = { id: d.id, title: d.title, slug: d.slug, updatedAt: d.updatedAt };
       if (d.categoryId) {
         const node = nodeMap.get(d.categoryId);
         if (node) { node.documents.push(doc); continue; }
