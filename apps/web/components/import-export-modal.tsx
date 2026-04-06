@@ -160,10 +160,7 @@ export function ImportExportModal({
   if (!open) return null;
 
   const selectStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px', fontSize: '14px',
-    border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-    background: 'var(--surface)', color: 'var(--text)', outline: 'none',
-    fontFamily: 'inherit', cursor: 'pointer',
+    width: '100%', padding: '10px 30px 10px 12px', fontSize: '14px',
   };
 
   return (

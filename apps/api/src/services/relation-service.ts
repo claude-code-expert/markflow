@@ -182,31 +182,13 @@ export function createRelationService(db: Db) {
       throw badRequest('TOO_MANY_RELATED_DOCS', 'Maximum 20 related documents allowed');
     }
 
-    // Cycle detection for prev/next
-    if (data.prev) {
-      // We want to set docId.prev = data.prev, which means data.prev -> docId
-      // Check: does following docId's next chain reach data.prev?
-      const hasCycle = await detectCycle(docId, data.prev, 'prev');
-      if (hasCycle) {
-        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
-      }
-    }
-
-    if (data.next) {
-      // We want to set docId.next = data.next, which means docId -> data.next
-      // Check: does following data.next's next chain reach docId?
-      const hasCycle = await detectCycle(docId, data.next, 'next');
-      if (hasCycle) {
-        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
-      }
-    }
-
     // prev and next cannot point to the same document
     if (data.prev && data.next && data.prev === data.next) {
       throw badRequest('INVALID_RELATION', 'prev and next cannot point to the same document');
     }
 
-    // Clear existing relations for this document (both as source and bidirectional next/prev)
+    // Clear existing relations BEFORE cycle detection
+    // (otherwise bidirectional pairs from previous setRelations cause false positives)
     // 1. Delete all relations where this doc is source
     await db
       .delete(documentRelations)
@@ -224,6 +206,21 @@ export function createRelationService(db: Db) {
           ),
         ),
       );
+
+    // Cycle detection for prev/next (after clearing existing relations)
+    if (data.prev) {
+      const hasCycle = await detectCycle(docId, data.prev, 'prev');
+      if (hasCycle) {
+        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
+      }
+    }
+
+    if (data.next) {
+      const hasCycle = await detectCycle(docId, data.next, 'next');
+      if (hasCycle) {
+        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
+      }
+    }
 
     // Insert new relations
     const toInsert: Array<{

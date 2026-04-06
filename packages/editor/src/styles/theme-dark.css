@@ -39,6 +39,10 @@
   --mf-color-table-border: #374151;
   --mf-color-table-hover: #1f2937;
 
+  /* ── 마크/하이라이트 ─── */
+  --mf-color-mark-bg: #854d0e;
+  --mf-color-mark-text: #fef9c3;
+
   /* ── 기타 ─── */
   --mf-warning-text: #facc15;
 }

@@ -53,15 +53,15 @@ export function MarkFlowLogo({ height = 28, showTagline = false, dark = false }:
           }}
         >
           <svg
-            width={`${10 * scale}px`}
-            height={`${10 * scale}px`}
+            width={`${14 * scale}px`}
+            height={`${14 * scale}px`}
             viewBox="0 0 14 14"
             fill="none"
           >
-            <rect x="3" y="5" width="8" height="1.5" rx="0.75" fill="white" opacity="0.95" />
-            <rect x="3" y="8" width="8" height="1.5" rx="0.75" fill="white" opacity="0.95" />
-            <rect x="5" y="2.5" width="1.5" height="9" rx="0.75" fill="white" opacity="0.95" />
-            <rect x="8" y="2.5" width="1.5" height="9" rx="0.75" fill="white" opacity="0.95" />
+            <rect x="1.5" y="4.5" width="11" height="1.8" rx="0.9" fill="white" opacity="0.95" />
+            <rect x="1.5" y="7.7" width="11" height="1.8" rx="0.9" fill="white" opacity="0.95" />
+            <rect x="4.2" y="1.5" width="1.8" height="11" rx="0.9" fill="white" opacity="0.95" />
+            <rect x="8" y="1.5" width="1.8" height="11" rx="0.9" fill="white" opacity="0.95" />
           </svg>
         </span>
         <span

@@ -142,7 +142,7 @@ export default function EmbedSettingsPage() {
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text-2)', marginBottom: '6px' }}>권한 범위</label>
               <select value={scope} onChange={(e) => setScope(e.target.value)}
-                style={{ width: '100%', padding: '10px 13px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border)', fontSize: '14px', fontFamily: 'inherit' }}>
+                style={{ width: '100%', padding: '10px 30px 10px 13px', fontSize: '14px' }}>
                 <option value="read">읽기 전용 (read)</option>
                 <option value="read_write">읽기 + 쓰기 (read-write)</option>
               </select>

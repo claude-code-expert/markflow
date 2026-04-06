@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { useToastStore } from '../stores/toast-store';
@@ -25,13 +25,100 @@ interface DocumentLinksModalProps {
   onSaved?: () => void;
 }
 
+/* ─── Searchable dropdown with keyboard nav ─── */
+
+interface SearchDropdownProps {
+  placeholder: string;
+  items: Document[];
+  onSelect: (doc: Document) => void;
+  excludeIds?: number[];
+}
+
+function SearchDropdown({ placeholder, items, onSelect, excludeIds = [] }: SearchDropdownProps) {
+  const [query, setQuery] = useState('');
+  const [highlightIdx, setHighlightIdx] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const filtered = query.trim()
+    ? items
+        .filter((d) => !excludeIds.includes(d.id))
+        .filter((d) => d.title.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 8)
+    : [];
+
+  // Reset highlight when results change
+  useEffect(() => {
+    setHighlightIdx(0);
+  }, [query]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (!listRef.current) return;
+    const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [highlightIdx]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (filtered.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightIdx((i) => (i + 1) % filtered.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightIdx((i) => (i - 1 + filtered.length) % filtered.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const doc = filtered[highlightIdx];
+      if (doc) {
+        onSelect(doc);
+        setQuery('');
+      }
+    } else if (e.key === 'Escape') {
+      setQuery('');
+    }
+  }, [filtered, highlightIdx, onSelect]);
+
+  return (
+    <div className="relative">
+      <input
+        className="w-full px-3 py-2.5 border-[1.5px] border-[#E2E0D8] rounded-md text-sm outline-none focus:border-[#1A56DB]"
+        placeholder={placeholder}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
+      />
+      {filtered.length > 0 && (
+        <div ref={listRef} className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
+          {filtered.map((d, i) => (
+            <div
+              key={d.id}
+              className={`px-3 py-2 cursor-pointer text-sm flex items-center gap-1.5 ${
+                i === highlightIdx ? 'bg-[#EEF3FF] text-[#1A56DB]' : 'hover:bg-[#F1F0EC]'
+              }`}
+              onClick={() => { onSelect(d); setQuery(''); }}
+              onMouseEnter={() => setHighlightIdx(i)}
+            >
+              <FileText size={14} className="shrink-0" /> {d.title}
+            </div>
+          ))}
+        </div>
+      )}
+      {query.trim() && filtered.length === 0 && (
+        <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 px-3 py-2 text-sm text-[#9A9890]">
+          검색 결과가 없습니다
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Modal ─── */
+
 export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onSaved }: DocumentLinksModalProps) {
   const addToast = useToastStore((s) => s.addToast);
   const [relations, setRelations] = useState<Relations>({ prev: null, next: null, related: [] });
   const [docs, setDocs] = useState<Document[]>([]);
-  const [prevSearch, setPrevSearch] = useState('');
-  const [nextSearch, setNextSearch] = useState('');
-  const [relatedSearch, setRelatedSearch] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -58,9 +145,9 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
       await apiFetch(`/workspaces/${workspaceId}/documents/${documentId}/relations`, {
         method: 'PUT',
         body: {
-          prev: relations.prev?.id,
-          next: relations.next?.id,
-          related: relations.related.map((r) => r.id),
+          prev: relations.prev ? String(relations.prev.id) : undefined,
+          next: relations.next ? String(relations.next.id) : undefined,
+          related: relations.related.map((r) => String(r.id)),
         },
       });
       addToast({ message: '문서 링크가 저장되었습니다', type: 'success' });
@@ -73,40 +160,34 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
     }
   };
 
-  const selectPrev = (doc: Document) => {
+  const selectPrev = useCallback((doc: Document) => {
     if (doc.id === relations.next?.id) {
       addToast({ message: '이전 문서와 다음 문서는 같을 수 없습니다', type: 'error' });
       return;
     }
     setRelations((r) => ({ ...r, prev: { id: doc.id, title: doc.title } }));
-    setPrevSearch('');
-  };
+  }, [relations.next?.id, addToast]);
 
-  const selectNext = (doc: Document) => {
+  const selectNext = useCallback((doc: Document) => {
     if (doc.id === relations.prev?.id) {
       addToast({ message: '이전 문서와 다음 문서는 같을 수 없습니다', type: 'error' });
       return;
     }
     setRelations((r) => ({ ...r, next: { id: doc.id, title: doc.title } }));
-    setNextSearch('');
-  };
+  }, [relations.prev?.id, addToast]);
 
-  const addRelated = (doc: Document) => {
+  const addRelated = useCallback((doc: Document) => {
     if (relations.related.length >= 20) {
       addToast({ message: '연관 문서는 최대 20개까지 추가할 수 있습니다', type: 'error' });
       return;
     }
     if (relations.related.some((r) => r.id === doc.id)) return;
     setRelations((r) => ({ ...r, related: [...r.related, { id: doc.id, title: doc.title }] }));
-    setRelatedSearch('');
-  };
+  }, [relations.related, addToast]);
 
   const removeRelated = (id: number) => {
     setRelations((r) => ({ ...r, related: r.related.filter((d) => d.id !== id) }));
   };
-
-  const filterDocs = (q: string) =>
-    q.trim() ? docs.filter((d) => d.title.toLowerCase().includes(q.toLowerCase())).slice(0, 5) : [];
 
   if (!open) return null;
 
@@ -129,23 +210,11 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                 <button onClick={() => setRelations((r) => ({ ...r, prev: null }))} className="text-[#DC2626] text-xs">✕</button>
               </div>
             ) : (
-              <div className="relative">
-                <input
-                  className="w-full px-3 py-2.5 border-[1.5px] border-[#E2E0D8] rounded-md text-sm outline-none focus:border-[#1A56DB]"
-                  placeholder="문서 검색..."
-                  value={prevSearch}
-                  onChange={(e) => setPrevSearch(e.target.value)}
-                />
-                {prevSearch && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
-                    {filterDocs(prevSearch).map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => selectPrev(d)}>
-                        <FileText size={14} className="shrink-0" /> {d.title}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <SearchDropdown
+                placeholder="문서 검색..."
+                items={docs}
+                onSelect={selectPrev}
+              />
             )}
             <span className="text-[11px] text-[#9A9890] mt-1 block">순환 참조 자동 감지 (DFS)</span>
           </div>
@@ -160,23 +229,11 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                 <button onClick={() => setRelations((r) => ({ ...r, next: null }))} className="text-[#DC2626] text-xs">✕</button>
               </div>
             ) : (
-              <div className="relative">
-                <input
-                  className="w-full px-3 py-2.5 border-[1.5px] border-[#E2E0D8] rounded-md text-sm outline-none focus:border-[#1A56DB]"
-                  placeholder="문서 검색..."
-                  value={nextSearch}
-                  onChange={(e) => setNextSearch(e.target.value)}
-                />
-                {nextSearch && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
-                    {filterDocs(nextSearch).map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => selectNext(d)}>
-                        <FileText size={14} className="shrink-0" /> {d.title}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <SearchDropdown
+                placeholder="문서 검색..."
+                items={docs}
+                onSelect={selectNext}
+              />
             )}
           </div>
 
@@ -196,25 +253,12 @@ export function DocumentLinksModal({ open, onClose, workspaceId, documentId, onS
                 ))}
               </div>
             )}
-            <div className="relative">
-              <input
-                className="w-full px-3 py-2.5 border-[1.5px] border-[#E2E0D8] rounded-md text-sm outline-none focus:border-[#1A56DB]"
-                placeholder="연관 문서 검색..."
-                value={relatedSearch}
-                onChange={(e) => setRelatedSearch(e.target.value)}
-              />
-              {relatedSearch && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-[#E2E0D8] rounded-md mt-1 shadow-lg z-10 max-h-40 overflow-y-auto">
-                  {filterDocs(relatedSearch)
-                    .filter((d) => !relations.related.some((r) => r.id === d.id))
-                    .map((d) => (
-                      <div key={d.id} className="px-3 py-2 hover:bg-[#F1F0EC] cursor-pointer text-sm flex items-center gap-1.5" onClick={() => addRelated(d)}>
-                        <FileText size={14} className="shrink-0" /> {d.title}
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
+            <SearchDropdown
+              placeholder="연관 문서 검색..."
+              items={docs}
+              onSelect={addRelated}
+              excludeIds={relations.related.map((r) => r.id)}
+            />
           </div>
         </div>
 

@@ -86,14 +86,7 @@ const s = {
   } satisfies CSSProperties,
 
   select: {
-    border: '1.5px solid var(--border)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '8px 10px',
-    fontSize: 13,
-    color: 'var(--text)',
-    background: 'var(--surface)',
-    outline: 'none',
-    cursor: 'pointer',
+    width: 'auto',
   } satisfies CSSProperties,
 
   primaryBtn: {

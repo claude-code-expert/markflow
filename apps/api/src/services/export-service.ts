@@ -1,8 +1,8 @@
 import archiver from 'archiver';
+import { PassThrough } from 'node:stream';
 import {
   documents,
   categories,
-  categoryClosure,
   eq,
   and,
   sql,
@@ -76,21 +76,40 @@ export function createExportService(db: Db) {
       throw notFound('Category not found');
     }
 
-    // Get all descendant category IDs via closure table
-    const descendants = await db
+    // Get all categories in this workspace to traverse hierarchy
+    const allCats = await db
       .select({
         id: categories.id,
         name: categories.name,
         parentId: categories.parentId,
       })
-      .from(categoryClosure)
-      .innerJoin(categories, eq(categories.id, categoryClosure.descendantId))
-      .where(eq(categoryClosure.ancestorId, numCategoryId));
+      .from(categories)
+      .where(eq(categories.workspaceId, numWorkspaceId));
 
-    // Build a map of category ID -> full path
+    // Collect the target category + all descendants via parentId traversal
     const categoryMap = new Map<number, { name: string; parentId: number | null }>();
-    for (const desc of descendants) {
-      categoryMap.set(desc.id, { name: desc.name, parentId: desc.parentId });
+    for (const cat of allCats) {
+      categoryMap.set(cat.id, { name: cat.name, parentId: cat.parentId });
+    }
+
+    // Pre-build children lookup for O(N) traversal
+    const childrenMap = new Map<number, number[]>();
+    for (const cat of allCats) {
+      if (cat.parentId != null) {
+        const arr = childrenMap.get(cat.parentId) ?? [];
+        arr.push(cat.id);
+        childrenMap.set(cat.parentId, arr);
+      }
+    }
+
+    const categoryIds: number[] = [];
+    const queue = [numCategoryId];
+    while (queue.length > 0) {
+      const id = queue.pop()!;
+      categoryIds.push(id);
+      for (const childId of childrenMap.get(id) ?? []) {
+        queue.push(childId);
+      }
     }
 
     function buildPath(catId: number): string {
@@ -101,7 +120,6 @@ export function createExportService(db: Db) {
         const cat = categoryMap.get(currentId);
         if (!cat) break;
         parts.unshift(cat.name);
-        // Stop traversal at the root category being exported
         if (currentId === numCategoryId) break;
         currentId = cat.parentId;
       }
@@ -110,8 +128,6 @@ export function createExportService(db: Db) {
     }
 
     // Get all documents in these categories
-    const categoryIds = descendants.map((d) => d.id);
-
     const docs = categoryIds.length > 0
       ? await db
           .select({
@@ -128,22 +144,25 @@ export function createExportService(db: Db) {
           ))
       : [];
 
-    // Build ZIP
+    // Build ZIP — pipe through PassThrough to avoid backpressure issues
     const buffer = await new Promise<Buffer>((resolve, reject) => {
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = archiver('zip', { zlib: { level: 6 } });
+      const passthrough = new PassThrough();
       const chunks: Buffer[] = [];
 
-      archive.on('data', (chunk: Buffer) => {
+      passthrough.on('data', (chunk: Buffer) => {
         chunks.push(chunk);
       });
 
-      archive.on('end', () => {
+      passthrough.on('end', () => {
         resolve(Buffer.concat(chunks));
       });
 
       archive.on('error', (err: Error) => {
         reject(err);
       });
+
+      archive.pipe(passthrough);
 
       // Add documents to archive
       for (const doc of docs) {

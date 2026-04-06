@@ -465,22 +465,6 @@ export default function DocsPage() {
                 setSortField(field);
                 setSortOrder(order);
               }}
-              style={{
-                padding: '8px 28px 8px 12px',
-                border: '1.5px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--surface)',
-                fontSize: '13px',
-                color: 'var(--text-2)',
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-                outline: 'none',
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 8px center',
-              }}
             >
               <option value="updatedAt:desc">수정일 (최신)</option>
               <option value="updatedAt:asc">수정일 (오래된)</option>
@@ -495,22 +479,6 @@ export default function DocsPage() {
               <select
                 value={selectedTag}
                 onChange={(e) => setSelectedTag(e.target.value)}
-                style={{
-                  padding: '8px 28px 8px 12px',
-                  border: '1.5px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--surface)',
-                  fontSize: '13px',
-                  color: 'var(--text-2)',
-                  fontFamily: 'inherit',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 8px center',
-                }}
               >
                 <option value="">전체 태그</option>
                 {workspaceTags.map((tag) => (
@@ -624,15 +592,7 @@ export default function DocsPage() {
             <select
               value={pageSize}
               onChange={(e) => setPageSize(Number(e.target.value))}
-              style={{
-                padding: '5px 24px 5px 8px', fontSize: '12px', color: 'var(--text-2)',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)', cursor: 'pointer', outline: 'none',
-                fontFamily: 'inherit',
-                appearance: 'none', WebkitAppearance: 'none' as never,
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2357564F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center',
-              }}
+              style={{ padding: '5px 24px 5px 8px', fontSize: '12px' }}
             >
               <option value={10}>10개</option>
               <option value={20}>20개</option>

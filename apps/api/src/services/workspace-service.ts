@@ -1,11 +1,14 @@
 import {
   workspaces,
   workspaceMembers,
+  documents,
+  categories,
   joinRequests,
   eq,
   and,
   count,
   ilike,
+  inArray,
   notInArray,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
@@ -80,6 +83,25 @@ export function createWorkspaceService(db: Db) {
       .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
       .where(eq(workspaceMembers.userId, Number(userId)));
 
+    // Batch-fetch document & category counts (parallel, filtered to user's workspaces)
+    const wsIds = rows.map((r) => r.id);
+
+    const [docCounts, catCounts] = wsIds.length > 0
+      ? await Promise.all([
+          db.select({ workspaceId: documents.workspaceId, value: count() })
+            .from(documents)
+            .where(and(eq(documents.isDeleted, false), inArray(documents.workspaceId, wsIds)))
+            .groupBy(documents.workspaceId),
+          db.select({ workspaceId: categories.workspaceId, value: count() })
+            .from(categories)
+            .where(inArray(categories.workspaceId, wsIds))
+            .groupBy(categories.workspaceId),
+        ])
+      : [[], []];
+
+    const docCountMap = new Map(docCounts.map((r) => [r.workspaceId, Number(r.value)]));
+    const catCountMap = new Map(catCounts.map((r) => [r.workspaceId, Number(r.value)]));
+
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -92,6 +114,8 @@ export function createWorkspaceService(db: Db) {
       updatedAt: row.updatedAt,
       role: row.role,
       lastActivityAt: row.updatedAt,
+      documentCount: docCountMap.get(row.id) ?? 0,
+      categoryCount: catCountMap.get(row.id) ?? 0,
     }));
   }
 

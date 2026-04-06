@@ -12,6 +12,9 @@ node_modules
 
 # testing
 /coverage
+
+# backups
+*.bak
 .env.local
 .env.example.local
 .env.development.local

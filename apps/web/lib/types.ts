@@ -27,6 +27,8 @@ export interface Workspace {
   updatedAt: string;
   role: WorkspaceRole;
   lastActivityAt?: string;
+  documentCount?: number;
+  categoryCount?: number;
 }
 
 export interface Document {

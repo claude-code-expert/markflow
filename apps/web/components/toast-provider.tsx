@@ -3,18 +3,17 @@
 import { useToastStore } from '../stores/toast-store';
 import type { Toast, ToastType } from '../stores/toast-store';
 
-const typeStyles: Record<ToastType, string> = {
-  success: 'bg-green-600 text-white',
-  error: 'bg-red-600 text-white',
-  info: 'bg-gray-900 text-white',
+const typeColors: Record<ToastType, { bg: string; text: string }> = {
+  success: { bg: '#373737', text: '#ffffff' },
+  error: { bg: '#dc2626', text: '#ffffff' },
+  info: { bg: '#373737', text: '#ffffff' },
 };
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   return (
     <div
-      className={`flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
-        animate-in slide-in-from-bottom-2 fade-in duration-200
-        ${typeStyles[toast.type]}`}
+      className="flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-bottom-2 fade-in duration-200"
+      style={{ backgroundColor: typeColors[toast.type].bg, color: typeColors[toast.type].text }}
       role="alert"
     >
       <span className="flex-1">{toast.message}</span>

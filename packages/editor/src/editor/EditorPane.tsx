@@ -1,7 +1,7 @@
 // ─── EditorPane — CodeMirror 6 source editor ─────────────────────────────────
 
 import React, { useEffect, useRef, useCallback } from 'react'
-import { EditorView, keymap, placeholder as placeholderExt, scrollPastEnd } from '@codemirror/view'
+import { EditorView, keymap, placeholder as placeholderExt } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { autocompletion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete'
@@ -165,7 +165,6 @@ export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
             history(),
             keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
             EditorView.lineWrapping,
-            scrollPastEnd(),
             themeCompartment.of(theme === 'dark' ? oneDark : lightTheme),
             readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
             placeholderCompartment.of(

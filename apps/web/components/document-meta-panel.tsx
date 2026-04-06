@@ -48,7 +48,7 @@ interface DocumentInfo {
   id: number;
   title: string;
   categoryId: number | null;
-  categoryPath: number | null;
+  categoryPath: string | null;
   createdAt: string;
   updatedAt: string;
   author: { id: number; name: string };
@@ -240,7 +240,7 @@ export function DocumentMetaPanel({
             fontFamily: 'inherit', outline: 'none',
           }}
         >
-          <option value="">/ (루트)</option>
+          <option value="">/ (Root)</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
@@ -307,7 +307,7 @@ export function DocumentMetaPanel({
         {relations && (
           <MiniDagDiagram
             currentTitle={doc.title}
-            categoryName={doc.categoryPath != null ? String(doc.categoryPath) : null}
+            categoryName={doc.categoryPath}
             prev={relations.prev}
             next={relations.next}
             related={relations.related}
@@ -340,7 +340,7 @@ export function DocumentMetaPanel({
           edges={graphQuery.data.edges}
           currentDocId={doc.id}
           currentTitle={doc.title}
-          categoryName={doc.categoryPath != null ? String(doc.categoryPath) : null}
+          categoryName={doc.categoryPath}
           workspaceSlug={workspaceSlug}
           onEditLinks={() => { setShowDagModal(false); setShowLinksModal(true); }}
         />

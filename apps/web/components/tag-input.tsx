@@ -19,7 +19,7 @@ interface TagInputProps {
   disabled?: boolean;
 }
 
-const MAX_TAGS = 30;
+const MAX_TAGS = 5;
 
 export function TagInput({
   workspaceSlug,

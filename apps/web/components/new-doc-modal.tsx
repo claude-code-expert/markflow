@@ -233,28 +233,7 @@ export function NewDocModal({
               id="new-doc-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 14,
-                color: 'var(--text)',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-                boxSizing: 'border-box',
-                cursor: 'pointer',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--accent)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-2)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              style={{ display: 'block', width: '100%', padding: '10px 30px 10px 12px', fontSize: 14 }}
             >
               <option value="">카테고리 없음</option>
               {categories?.map((cat) => (

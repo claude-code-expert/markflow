@@ -145,3 +145,81 @@
 
 .mf-preview img { max-width: 100%; border-radius: 6px; margin: 0.5em 0; }
 .mf-preview del { opacity: 0.5; }
+
+/* ─── GitHub-style HTML elements ──────────────────────────────────────────── */
+
+.mf-preview details {
+  border: 1px solid var(--mf-color-table-border, #d0d7de);
+  border-radius: 6px;
+  padding: 0.5em 0.75em;
+  margin: 0.75em 0;
+}
+
+.mf-preview details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25em 0;
+}
+
+.mf-preview details[open] > summary {
+  margin-bottom: 0.5em;
+}
+
+.mf-preview kbd {
+  display: inline-block;
+  padding: 0.15em 0.4em;
+  font-family: var(--mf-font-mono);
+  font-size: 0.85em;
+  line-height: 1;
+  color: var(--mf-color-text);
+  background: var(--mf-color-code-bg, #f6f8fa);
+  border: 1px solid var(--mf-color-table-border, #d0d7de);
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 var(--mf-color-table-border, #d0d7de);
+  vertical-align: baseline;
+}
+
+.mf-preview mark {
+  background: var(--mf-color-mark-bg, #fff3bf);
+  color: var(--mf-color-mark-text, inherit);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.mf-preview sup { vertical-align: super; font-size: 0.8em; }
+.mf-preview sub { vertical-align: sub; font-size: 0.8em; }
+
+.mf-preview abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.mf-preview ins {
+  text-decoration: underline;
+  text-decoration-color: #22c55e;
+}
+
+.mf-preview figure {
+  margin: 1em 0;
+  text-align: center;
+}
+
+.mf-preview figcaption {
+  font-size: 0.875em;
+  color: var(--mf-text-muted, #6b7280);
+  margin-top: 0.5em;
+}
+
+.mf-preview dl { margin: 0.75em 0; }
+.mf-preview dt { font-weight: 700; margin-top: 0.5em; }
+.mf-preview dd { margin-left: 1.5em; margin-bottom: 0.25em; }
+
+.mf-preview samp {
+  font-family: var(--mf-font-mono);
+  font-size: 0.875em;
+}
+
+.mf-preview var {
+  font-style: italic;
+  font-weight: 500;
+}

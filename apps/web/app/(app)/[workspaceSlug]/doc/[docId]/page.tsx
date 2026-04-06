@@ -6,13 +6,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MarkdownEditor, type WikiLinkItem } from '@markflow/editor';
 import '@markflow/editor/styles';
 import { apiFetch, ApiError } from '../../../../../lib/api';
-import { uploadImage, getWorkerUrl } from '../../../../../lib/image-upload';
+import { uploadImage, getWorkerUrl, isImageUploadEnabled } from '../../../../../lib/image-upload';
 import { useEditorStore } from '../../../../../stores/editor-store';
 import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
 import type { DocumentResponse, Category } from '../../../../../lib/types';
 import Link from 'next/link';
-import { History, PanelRight, Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, Presentation, MessageSquare, HardDrive } from 'lucide-react';
+import { History, PanelRight, Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, Presentation, MessageSquare, HardDrive, X } from 'lucide-react';
 import { DocumentMetaPanel } from '../../../../../components/document-meta-panel';
 import { VersionHistoryPanel } from '../../../../../components/version-history-panel';
 import { VersionHistoryModal } from '../../../../../components/version-history-modal';
@@ -46,6 +46,12 @@ export default function DocEditorPage() {
   const [activePanel, setActivePanel] = useState<'meta' | 'version' | 'comment' | null>('meta');
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [showStorageGuide, setShowStorageGuide] = useState(false);
+  const [storageBannerDismissed, setStorageBannerDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const dismissedAt = localStorage.getItem('mf-storage-banner-dismissed-at');
+    if (!dismissedAt) return false;
+    return Date.now() - Number(dismissedAt) < 24 * 60 * 60 * 1000;
+  });
 
   const togglePanel = (panel: 'meta' | 'version' | 'comment') => {
     setActivePanel((prev) => (prev === panel ? null : panel));
@@ -101,15 +107,17 @@ export default function DocEditorPage() {
     enabled: !!wsId,
   });
 
-  // Image upload callback — Worker URL 설정 시에만 활성화
-  // 미설정 시 onImageUpload를 전달하지 않아 에디터 내장 가이드 모달이 표시됨
+  // Image upload callback — 업로드 활성화 + Worker URL 설정 시에만 활성화
+  // 비활성화 또는 미설정 시 onImageUpload를 전달하지 않아 에디터 내장 가이드 모달이 표시됨
+  const imageUploadEnabled = useMemo(() => isImageUploadEnabled(), []);
   const handleImageUpload = useMemo(() => {
+    if (!imageUploadEnabled) return undefined;
     const url = getWorkerUrl();
     if (!url) return undefined;
     return async (file: File): Promise<string> => {
       return uploadImage(file);
     };
-  }, []);
+  }, [imageUploadEnabled]);
 
   // Wiki link search callback
   const handleWikiLinkSearch = useCallback(async (query: string): Promise<WikiLinkItem[]> => {
@@ -282,7 +290,7 @@ export default function DocEditorPage() {
                 fontFamily: 'inherit', maxWidth: '160px',
               }}
             >
-              <option value="">루트</option>
+              <option value="">Root</option>
               {categoryList.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -427,24 +435,51 @@ export default function DocEditorPage() {
       </div>
 
       {/* Storage not configured banner */}
-      {!getWorkerUrl() && !showStorageGuide && (
-        <button
-          type="button"
-          onClick={() => { setShowStorageGuide(true); setActivePanel(null); }}
+      {imageUploadEnabled && !getWorkerUrl() && !showStorageGuide && !storageBannerDismissed && (
+        <div
           style={{
             display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-            padding: '8px 16px', fontSize: '12.5px', textAlign: 'left' as const,
+            padding: '8px 16px', fontSize: '12.5px',
             background: 'var(--amber-lt, #fef3c7)', color: 'var(--amber, #92400e)',
-            borderBottom: '1px solid var(--border)', border: 'none',
-            cursor: 'pointer', fontFamily: 'inherit',
+            borderBottom: '1px solid var(--border)',
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span>이미지 업로드를 사용하려면 저장소 설정이 필요합니다.</span>
-          <span style={{ fontWeight: 600, marginLeft: '4px' }}>설정하기 →</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => { setShowStorageGuide(true); setActivePanel(null); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px', flex: 1,
+              background: 'none', border: 'none', color: 'inherit',
+              cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit',
+              textAlign: 'left' as const, padding: 0,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>이미지 업로드를 사용하려면 저장소 설정이 필요합니다.</span>
+            <span style={{ fontWeight: 600, marginLeft: '4px' }}>설정하기 →</span>
+          </button>
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={(e) => {
+              e.stopPropagation();
+              localStorage.setItem('mf-storage-banner-dismissed-at', String(Date.now()));
+              setStorageBannerDismissed(true);
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '20px', height: '20px', flexShrink: 0,
+              background: 'none', border: 'none', color: 'inherit',
+              cursor: 'pointer', borderRadius: '4px', opacity: 0.6,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; }}
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
 
       {/* Editor + Meta Panel */}
@@ -460,7 +495,13 @@ export default function DocEditorPage() {
             readOnly={isReadOnly}
             onWikiLinkSearch={handleWikiLinkSearch}
             onImageUpload={handleImageUpload}
-            onImageUploadGuide={() => { setShowStorageGuide(true); setActivePanel(null); }}
+            onImageUploadGuide={() => {
+              if (!imageUploadEnabled) {
+                router.push(`/${workspaceSlug}/settings/storage`);
+              } else {
+                setShowStorageGuide(true); setActivePanel(null);
+              }
+            }}
             themeVars={themeVars}
           />
           {wsId && (
@@ -478,7 +519,9 @@ export default function DocEditorPage() {
               id: doc.id,
               title: doc.title,
               categoryId: doc.categoryId ?? null,
-              categoryPath: doc.categoryId ?? null,
+              categoryPath: doc.categoryId != null
+                ? (categoryList.find((c) => c.id === doc.categoryId)?.name ?? null)
+                : null,
               createdAt: doc.createdAt,
               updatedAt: doc.updatedAt,
               author: { id: doc.authorId, name: String(doc.authorId) },

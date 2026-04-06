@@ -7,8 +7,9 @@ import {
   ArrowDownAZ, ArrowDownWideNarrow, Briefcase, FileText, Search, FolderOpen, Command, ChevronDown, Plus, Check, LayoutGrid,
 } from 'lucide-react';
 import { useWorkspaceStore } from '../stores/workspace-store';
-import { CategoryTree, type Category as TreeCategory, type TreeDocument } from './category-tree';
+import { CategoryTree, DOC_SPACER_PX, type Category as TreeCategory, type TreeDocument } from './category-tree';
 import { apiFetch } from '../lib/api';
+import { useToastStore } from '../stores/toast-store';
 import { FolderContextMenu } from './folder-context-menu';
 import { DocContextMenu } from './doc-context-menu';
 import { Tooltip } from './tooltip';
@@ -217,8 +218,8 @@ function SearchBar({ onClick }: { onClick?: () => void }) {
 
 type FolderSort = 'name' | 'date';
 
-const INDENT_PX = 16;
-const BASE_PL = 10;
+const INDENT_PX = 12;
+const BASE_PL = 4;
 
 interface CategoryTreeResponse {
   categories: TreeCategory[];
@@ -293,6 +294,7 @@ function sortCategories(cats: TreeCategory[], sort: FolderSort): TreeCategory[] 
 }
 
 function FolderTreeSection({ slug }: { slug: string }) {
+  const addToast = useToastStore((s) => s.addToast);
   const [categories, setCategories] = useState<TreeCategory[]>([]);
   const [uncategorized, setUncategorized] = useState<TreeDocument[]>([]);
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -352,6 +354,21 @@ function FolderTreeSection({ slug }: { slug: string }) {
       // silently fail
     }
   };
+
+  const handleMoveDoc = useCallback(async (docId: number, targetCategoryId: number | null) => {
+    if (!wsId) return;
+    try {
+      await apiFetch(`/workspaces/${wsId}/documents/${docId}`, {
+        method: 'PATCH',
+        body: { categoryId: targetCategoryId },
+      });
+      loadData();
+    } catch {
+      addToast({ message: '문서 이동에 실패했습니다.', type: 'error' });
+    }
+  }, [wsId, loadData, addToast]);
+
+  const [unclassifiedDragOver, setUnclassifiedDragOver] = useState(false);
 
   const docsHref = `/${slug}/doc`;
   const isDocsActive = pathname !== null && (pathname === docsHref || pathname.startsWith(docsHref + '/'));
@@ -414,7 +431,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
         />
       )}
 
-      {/* 전체 문서 링크 — depth 0 */}
+      {/* 전체 문서 링크 — depth 0, drop zone for uncategorizing docs */}
       <Link
         href={docsHref}
         style={{
@@ -424,14 +441,31 @@ function FolderTreeSection({ slug }: { slug: string }) {
           textDecoration: 'none', fontSize: '13.5px',
           color: isDocsActive ? 'var(--accent)' : 'var(--text-2)',
           fontWeight: isDocsActive ? 500 : 400,
-          background: isDocsActive ? 'var(--accent-2)' : 'transparent',
+          background: unclassifiedDragOver ? 'var(--accent-2)' : isDocsActive ? 'var(--accent-2)' : 'transparent',
+          outline: unclassifiedDragOver ? '2px solid var(--accent)' : 'none',
+        }}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes('application/x-doc-id')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            setUnclassifiedDragOver(true);
+          }
+        }}
+        onDragLeave={() => setUnclassifiedDragOver(false)}
+        onDrop={(e) => {
+          const docIdStr = e.dataTransfer.getData('application/x-doc-id');
+          if (docIdStr) {
+            e.preventDefault();
+            void handleMoveDoc(Number(docIdStr), null);
+          }
+          setUnclassifiedDragOver(false);
         }}
       >
         <FolderOpen size={16} style={{ opacity: isDocsActive ? 1 : 0.65, flexShrink: 0 }} />
         전체 문서
       </Link>
 
-      {/* 미분류 문서 — depth 1 */}
+      {/* 미분류 문서 — depth 1 (aligned with folder documents) */}
       {uncategorized.length > 0 && (
         <div>
           {uncategorized.map((doc) => {
@@ -441,22 +475,28 @@ function FolderTreeSection({ slug }: { slug: string }) {
               <Link
                 key={doc.id}
                 href={docHref}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/x-doc-id', String(doc.id));
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
+                  display: 'flex', alignItems: 'center', gap: '4px',
                   padding: '5px 10px',
-                  paddingLeft: `${BASE_PL + INDENT_PX}px`,
+                  paddingLeft: `${BASE_PL + DOC_SPACER_PX}px`,
                   borderRadius: 'var(--radius-sm)',
                   textDecoration: 'none', fontSize: '13px',
                   fontWeight: isDocActive ? 500 : 400,
                   color: isDocActive ? 'var(--accent)' : 'var(--text-2)',
                   background: isDocActive ? 'var(--accent-2)' : 'transparent',
                   transition: 'background 0.15s',
+                  cursor: 'grab',
                 }}
                 onMouseEnter={(e) => { if (!isDocActive) e.currentTarget.style.background = 'var(--surface-2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = isDocActive ? 'var(--accent-2)' : 'transparent'; }}
                 onContextMenu={(e) => handleDocContextMenu(e, doc)}
               >
-                <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <FileText size={16} style={{ opacity: 0.5, flexShrink: 0 }} />
                 <span style={{
                   flex: 1, minWidth: 0,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -484,6 +524,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
               body: { orderedIds },
             }).then(() => loadData());
           }}
+          onMoveDoc={handleMoveDoc}
           basePl={BASE_PL}
           indentPx={INDENT_PX}
         />

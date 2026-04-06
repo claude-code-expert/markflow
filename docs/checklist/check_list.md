@@ -147,26 +147,31 @@
 
 #### 2.1.2 이미지 업로드 통합 (Avatar + Editor R2)
 
-> **현재 진행 중** — `image-upload.ts`, `storage-guide-panel.tsx`, `/settings/storage` 페이지 생성됨
+> **진행 중** — 설정 페이지 + 에디터 연동 완료, Avatar 연동 남음 (2026-04-06 업데이트)
 
-- [ ] 통합 업로드 모듈 (`image-upload.ts`) 완성
-  - [ ] Avatar 검증: JPG/PNG/WebP, 5MB
-  - [ ] Editor 검증: PNG/JPEG/GIF/WebP/SVG, 10MB
-  - [ ] Worker URL 해석: env var (`NEXT_PUBLIC_R2_WORKER_URL`) > localStorage (`mf-cf-worker-url`)
+- [x] 통합 업로드 모듈 (`image-upload.ts`) 완성
+  - [x] Avatar 검증: JPG/PNG/WebP, 5MB
+  - [x] Editor 검증: PNG/JPEG/GIF/WebP/SVG, 10MB
+  - [x] Worker URL 해석: env var (`NEXT_PUBLIC_R2_WORKER_URL`) > localStorage (`mf-cf-worker-url`)
+  - [x] 이미지 업로드 토글: `isImageUploadEnabled()` / `setImageUploadEnabled()` (localStorage `mf-image-upload-enabled`)
 - [ ] Avatar 업로드 흐름 변경: R2 Worker → URL 획득 → PATCH /users/me
   - [ ] 프로필 편집 모달 (profile-edit-modal.tsx) 카메라 버튼 연동
   - [ ] Worker 미설정 시 StorageGuidePanel 표시
-- [ ] 이미지 저장소 설정 페이지 (`/settings/storage`)
-  - [ ] 연결 상태 표시
-  - [ ] Worker URL 입력 (env var 설정 시 비활성화)
-  - [ ] 연결 테스트 (테스트 이미지 업로드 + URL 반환 검증)
-  - [ ] 설정 가이드 (Cloudflare 계정 → wrangler → 버킷 → Worker 배포)
-- [ ] 에디터 이미지 업로드 연동
-  - [ ] 드래그앤드롭, 붙여넣기, 파일 선택 3가지 입력 경로
-  - [ ] Worker 미설정 시 에디터 내장 ImageUploadGuide 모달
-  - [ ] 플레이스홀더 → 완료 URL 교체 패턴
-- [ ] 에러 처리: NO_WORKER_URL, VALIDATION_FAILED, UPLOAD_FAILED
-- [ ] R2 Worker CORS 설정 (ALLOWED_ORIGINS)
+- [x] 이미지 저장소 설정 페이지 (`/settings/storage`)
+  - [x] 이미지 업로드 사용/미사용 토글 (ON/OFF)
+  - [x] 이미지 업로드 사용법 도움말 패널 (3단계)
+  - [x] 연결 상태 표시 (연동 완료/미설정)
+  - [x] Worker URL 입력 (env var 설정 시 비활성화)
+  - [x] 연결 테스트 (테스트 이미지 업로드 + URL 반환 검증)
+  - [x] 설정 가이드 → StorageGuidePanel 우측 패널로 열기 (에디터와 동일 UX)
+  - [x] 미설정 시 CTA 버튼으로 가이드 패널 열기 유도
+- [x] 에디터 이미지 업로드 연동
+  - [x] 드래그앤드롭, 붙여넣기, 파일 선택 3가지 입력 경로
+  - [x] Worker 미설정 시 에디터 내장 ImageUploadGuide 모달 / StorageGuidePanel
+  - [x] 업로드 토글 OFF 시 업로드 비활성화, 버튼 클릭 시 설정 페이지로 이동
+  - [x] 플레이스홀더 → 완료 URL 교체 패턴
+- [x] 에러 처리: NO_WORKER_URL, VALIDATION_FAILED, UPLOAD_FAILED
+- [x] R2 Worker CORS 설정 (ALLOWED_ORIGINS)
 - [ ] 테스트: 업로드 성공/실패, 네트워크 단절, 미설정 상태
 
 #### 2.1.3 댓글 수정/해결 API
@@ -372,11 +377,11 @@
 
 | 파일 | 변경 내용 | 상태 |
 |------|----------|------|
-| `apps/web/lib/image-upload.ts` | 통합 이미지 업로드 모듈 (신규) | 🔄 진행 중 |
-| `apps/web/components/storage-guide-panel.tsx` | R2 설정 가이드 패널 (신규) | 🔄 진행 중 |
-| `apps/web/app/.../settings/storage/page.tsx` | 이미지 저장소 설정 페이지 (신규) | 🔄 진행 중 |
+| `apps/web/lib/image-upload.ts` | 통합 이미지 업로드 모듈 + 토글 유틸 | ✅ 완료 |
+| `apps/web/components/storage-guide-panel.tsx` | R2 설정 가이드 패널 (에디터+설정 공유) | ✅ 완료 |
+| `apps/web/app/.../settings/storage/page.tsx` | 이미지 저장소 설정 페이지 (토글+가이드 패널) | ✅ 완료 |
+| `apps/web/app/.../doc/[docId]/page.tsx` | 에디터 이미지 업로드 토글 연동 | ✅ 완료 |
 | `apps/web/components/profile-edit-modal.tsx` | Avatar R2 업로드 연동 (수정) | 🔄 진행 중 |
-| `apps/web/app/.../doc/[docId]/page.tsx` | 에디터 이미지 업로드 연동 (수정) | 🔄 진행 중 |
 | `apps/web/components/app-header.tsx` | 헤더 수정 | 🔄 진행 중 |
 
 ---

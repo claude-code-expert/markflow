@@ -5,6 +5,7 @@
 import { createCloudflareUploader, validateImageFile } from '@markflow/editor';
 
 const STORAGE_KEY = 'mf-cf-worker-url';
+const UPLOAD_ENABLED_KEY = 'mf-image-upload-enabled';
 
 const AVATAR_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -58,6 +59,23 @@ export function saveWorkerUrl(url: string): void {
 
 export function clearWorkerUrl(): void {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+// ─── Image Upload Toggle ─────────────────────────────────────────────────────
+
+/** 이미지 업로드 사용 여부 조회 (기본값: false) */
+export function isImageUploadEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(UPLOAD_ENABLED_KEY) === 'true';
+}
+
+/** 이미지 업로드 사용 여부 저장 */
+export function setImageUploadEnabled(enabled: boolean): void {
+  if (enabled) {
+    localStorage.setItem(UPLOAD_ENABLED_KEY, 'true');
+  } else {
+    localStorage.removeItem(UPLOAD_ENABLED_KEY);
+  }
 }
 
 // ─── Upload ───────────────────────────────────────────────────────────────────

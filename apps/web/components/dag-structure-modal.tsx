@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronDown, FolderOpen } from 'lucide-react';
 
 interface GraphNode {
   id: number;
@@ -35,12 +36,77 @@ const LEGEND = [
   { label: 'Root / 일반', color: '#F1F0EC', border: '#CBD5E1' },
 ];
 
+/* ── Related docs dropdown ── */
+
+function RelatedDropdown({ docs, onNavigate }: { docs: GraphNode[]; onNavigate: (id: number) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative h-full">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-md hover:bg-white transition-colors h-full"
+      >
+        <div className="text-center">
+          <div className="text-[10px] font-semibold text-[#9A9890] uppercase tracking-wider">연관 문서</div>
+          <div className="text-[13px] font-medium text-[#7C3AED] flex items-center justify-center gap-1">
+            {docs.length}개
+            <ChevronDown size={12} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+          </div>
+        </div>
+      </button>
+      {open && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-56 bg-white border border-[#E2E0D8] rounded-lg shadow-lg z-20 py-1 max-h-48 overflow-y-auto">
+          {docs.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => onNavigate(d.id)}
+              className="w-full text-left px-3 py-2 text-[13px] text-[#6D28D9] hover:bg-[#F5F3FF] flex items-center gap-2 transition-colors"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C4B5FD] shrink-0" />
+              <span className="truncate">{d.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DagStructureModal({
   open, onClose, nodes, edges, currentDocId, currentTitle,
   categoryName, workspaceSlug, onEditLinks,
 }: DagStructureModalProps) {
   const router = useRouter();
   const [scale, setScale] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+
+  // Drag-to-pan via viewBox offset
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, panX: 0, panY: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const onPanStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('g[class*="cursor-pointer"]')) return;
+    dragState.current = { dragging: true, startX: e.clientX, startY: e.clientY, panX, panY };
+    e.currentTarget.style.cursor = 'grabbing';
+  }, [panX, panY]);
+
+  const onPanMove = useCallback((e: React.MouseEvent) => {
+    const ds = dragState.current;
+    if (!ds.dragging || !svgRef.current) return;
+    // Convert pixel movement to SVG units using the rendered size
+    const rect = svgRef.current.getBoundingClientRect();
+    const svgW = svgRef.current.viewBox.baseVal.width;
+    const ratio = svgW / rect.width;
+    setPanX(ds.panX - (e.clientX - ds.startX) * ratio);
+    setPanY(ds.panY - (e.clientY - ds.startY) * ratio);
+  }, []);
+
+  const onPanEnd = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    dragState.current.dragging = false;
+    e.currentTarget.style.cursor = 'grab';
+  }, []);
 
   const currentEdges = useMemo(() => edges.filter(
     (e) => e.source === currentDocId || e.target === currentDocId
@@ -72,27 +138,61 @@ export function DagStructureModal({
   };
 
   const zoom = (factor: number) => {
-    if (factor === 1) setScale(1);
+    if (factor === 1) { setScale(1); setPanX(0); setPanY(0); }
     else setScale((s) => Math.max(0.5, Math.min(2, s * factor)));
   };
 
   if (!open) return null;
 
-  // Layout: simple horizontal flow
-  const SVG_W = 820;
-  const SVG_H = 400;
-  const N = { w: 130, h: 50, rx: 8 };
+  // Layout — collect all right-side nodes, distribute vertically
+  const N = { w: 120, h: 44, rx: 8 };
+  const GAP = 12;
+  const PAD = 24;
+
+  const rightNodes: { doc: GraphNode; label: string; type: 'prev' | 'next' | 'related' }[] = [];
+  if (prevDoc) rightNodes.push({ doc: prevDoc, label: '← prev', type: 'prev' });
+  if (nextDoc) rightNodes.push({ doc: nextDoc, label: 'next →', type: 'next' });
+  for (const rd of relatedDocs) {
+    rightNodes.push({ doc: rd, label: 'related', type: 'related' });
+  }
+
+  const rightTotalH = rightNodes.length * N.h + Math.max(0, rightNodes.length - 1) * GAP;
+  const leftMinH = categoryName ? N.h + 70 + 40 : 70 + 40; // root + category + current
+  const contentH = Math.max(rightTotalH, leftMinH, 150);
+  const SVG_H = contentH + PAD * 2;
+  const SVG_W = 760;
+  const cy = SVG_H / 2;
+
+  // Right column: vertically centered
+  const rightStartY = cy - rightTotalH / 2;
+
+  // Left column positions
+  const rootX = PAD;
+  const rootCy = cy;
+  const curX = 340;
+  const curH = 60;
+  const curY = cy - curH / 2;
+  const rightX = 580;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5" onClick={onClose}>
       <div className="bg-white rounded-[18px] shadow-2xl w-full max-w-[1000px] max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+        {/* Header — category badge + title */}
         <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="font-[var(--font-sora)] text-[17px] font-semibold">문서 연결 구조 다이어그램</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#9A9890]">{currentTitle}</span>
-            <button onClick={onClose} className="text-[#9A9890] hover:text-[#1A1916]">✕</button>
+          <div className="flex items-center gap-2.5">
+            {categoryName && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[#1343B0] bg-[#EEF3FF] border border-[#93C5FD] rounded-md">
+                <FolderOpen size={11} /> {categoryName}
+              </span>
+            )}
+            {!categoryName && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-[#9A9890] bg-[#F1F0EC] border border-[#E2E0D8] rounded-md">
+                <FolderOpen size={11} /> Root
+              </span>
+            )}
+            <h2 className="font-[var(--font-sora)] text-[17px] font-semibold">문서 연결 구조</h2>
           </div>
+          <button onClick={onClose} className="text-[#9A9890] hover:text-[#1A1916]">✕</button>
         </div>
 
         <div className="px-6 py-4">
@@ -111,81 +211,126 @@ export function DagStructureModal({
             </div>
           </div>
 
-          {/* Diagram */}
-          <div className="bg-[#F8F7F4] border border-[#E2E0D8] rounded-xl overflow-auto p-6">
-            <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} style={{ width: '100%', minWidth: '700px', transform: `scale(${scale})`, transformOrigin: 'center' }}>
+          {/* Diagram — drag to pan */}
+          <div
+            className="bg-[#F8F7F4] border border-[#E2E0D8] rounded-xl overflow-hidden p-4"
+            style={{ cursor: 'grab' }}
+            onMouseDown={onPanStart}
+            onMouseMove={onPanMove}
+            onMouseUp={onPanEnd}
+            onMouseLeave={onPanEnd}
+          >
+            <svg ref={svgRef} viewBox={`${panX} ${panY} ${SVG_W / scale} ${SVG_H / scale}`} style={{ width: '100%', height: `${Math.max(280, SVG_H * scale * 0.6)}px` }}>
               {/* Root */}
-              <g className="cursor-pointer" onClick={() => {}}>
-                <rect x={20} y={175} width={90} height={N.h} rx={N.rx} fill="#F1F0EC" stroke="#CBD5E1" strokeWidth="2" />
-                <text x={65} y={196} textAnchor="middle" fontSize="11" fontWeight="700" fill="#57564F">root</text>
-                <text x={65} y={213} textAnchor="middle" fontSize="9" fill="#9A9890">{workspaceSlug}</text>
+              <g>
+                <rect x={rootX} y={rootCy - N.h / 2} width={80} height={N.h} rx={N.rx} fill="#F1F0EC" stroke="#CBD5E1" strokeWidth="2" />
+                <text x={rootX + 40} y={rootCy - 2} textAnchor="middle" fontSize="11" fontWeight="700" fill="#57564F">root</text>
+                <text x={rootX + 40} y={rootCy + 12} textAnchor="middle" fontSize="8" fill="#9A9890">{decodeURIComponent(workspaceSlug).slice(0, 12)}</text>
               </g>
+
               {/* Lines root → category/current */}
-              <line x1={110} y1={200} x2={218} y2={categoryName ? 120 : 200} stroke="#CBD5E1" strokeWidth="2" />
-              {/* Category */}
-              {categoryName && (
-                <g>
-                  <rect x={218} y={95} width={N.w} height={N.h} rx={N.rx} fill="#EEF3FF" stroke="#93C5FD" strokeWidth="2" />
-                  <text x={283} y={116} textAnchor="middle" fontSize="10" fontWeight="700" fill="#1343B0">{categoryName}</text>
-                  <line x1={348} y1={120} x2={404} y2={200} stroke="#93C5FD" strokeWidth="2" />
-                </g>
+              {categoryName ? (
+                <>
+                  <line x1={rootX + 80} y1={rootCy} x2={190} y2={cy - 50} stroke="#CBD5E1" strokeWidth="2" />
+                  <g>
+                    <rect x={190} y={cy - 50 - N.h / 2} width={N.w} height={N.h} rx={N.rx} fill="#EEF3FF" stroke="#93C5FD" strokeWidth="2" />
+                    <text x={190 + N.w / 2} y={cy - 50 + 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="#1343B0">{categoryName.slice(0, 14)}</text>
+                  </g>
+                  <line x1={190 + N.w} y1={cy - 50} x2={curX} y2={cy} stroke="#93C5FD" strokeWidth="2" />
+                </>
+              ) : (
+                <line x1={rootX + 80} y1={rootCy} x2={curX} y2={cy} stroke="#CBD5E1" strokeWidth="2" />
               )}
+
               {/* Current doc */}
               <g>
-                <rect x={404} y={165} width={N.w} height={70} rx={10} fill="#1A56DB" stroke="#1343B0" strokeWidth="2.5" />
-                <rect x={400} y={161} width={N.w + 8} height={78} rx={13} fill="none" stroke="#93C5FD" strokeWidth="1.5" opacity="0.5">
+                <rect x={curX} y={curY} width={N.w} height={curH} rx={10} fill="#1A56DB" stroke="#1343B0" strokeWidth="2.5" />
+                <rect x={curX - 3} y={curY - 3} width={N.w + 6} height={curH + 6} rx={13} fill="none" stroke="#93C5FD" strokeWidth="1.5" opacity="0.5">
                   <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite" />
                 </rect>
-                <text x={469} y={195} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff">현재 문서</text>
-                <text x={469} y={212} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,.85)">{currentTitle.slice(0, 18)}</text>
+                <text x={curX + N.w / 2} y={cy - 4} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff">현재 문서</text>
+                <text x={curX + N.w / 2} y={cy + 12} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,.85)">{currentTitle.slice(0, 16)}</text>
               </g>
-              {/* Prev */}
-              {prevDoc && (
-                <g className="cursor-pointer" onClick={() => navigateToDoc(prevDoc.id)}>
-                  <line x1={534} y1={200} x2={600} y2={120} stroke="#86EFAC" strokeWidth="2" />
-                  <rect x={600} y={95} width={N.w} height={N.h} rx={N.rx} fill="#F0FDF4" stroke="#86EFAC" strokeWidth="2" />
-                  <text x={665} y={114} textAnchor="middle" fontSize="9" fontWeight="600" fill="#16A34A">← prev</text>
-                  <text x={665} y={130} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#15803D">{prevDoc.title.slice(0, 16)}</text>
-                </g>
-              )}
-              {/* Next */}
-              {nextDoc && (
-                <g className="cursor-pointer" onClick={() => navigateToDoc(nextDoc.id)}>
-                  <line x1={534} y1={200} x2={600} y2={200} stroke="#86EFAC" strokeWidth="2" />
-                  <rect x={600} y={175} width={N.w} height={N.h} rx={N.rx} fill="#F0FDF4" stroke="#86EFAC" strokeWidth="2" />
-                  <text x={665} y={194} textAnchor="middle" fontSize="9" fontWeight="600" fill="#16A34A">next →</text>
-                  <text x={665} y={210} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#15803D">{nextDoc.title.slice(0, 16)}</text>
-                </g>
-              )}
-              {/* Related */}
-              {relatedDocs.map((doc, i) => (
-                <g key={doc.id} className="cursor-pointer" onClick={() => navigateToDoc(doc.id)}>
-                  <line x1={534} y1={200} x2={600} y2={280 + i * 60} stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="5 3" />
-                  <rect x={600} y={255 + i * 60} width={N.w} height={N.h - 2} rx={N.rx} fill="#F5F3FF" stroke="#C4B5FD" strokeWidth="1.5" />
-                  <text x={665} y={274 + i * 60} textAnchor="middle" fontSize="9" fill="#7C3AED">related</text>
-                  <text x={665} y={290 + i * 60} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#6D28D9">{doc.title.slice(0, 16)}</text>
-                </g>
-              ))}
+
+              {/* Right-side nodes: prev, next, related — dynamically positioned */}
+              {rightNodes.map((node, i) => {
+                const ny = rightStartY + i * (N.h + GAP) + N.h / 2;
+                const isPrevNext = node.type === 'prev' || node.type === 'next';
+                const fill = isPrevNext ? '#F0FDF4' : '#F5F3FF';
+                const stroke = isPrevNext ? '#86EFAC' : '#C4B5FD';
+                const textColor = isPrevNext ? '#16A34A' : '#7C3AED';
+                const titleColor = isPrevNext ? '#15803D' : '#6D28D9';
+                const dash = node.type === 'related' ? '5 3' : '0';
+
+                return (
+                  <g key={node.doc.id} className="cursor-pointer" onClick={() => navigateToDoc(node.doc.id)}>
+                    <line x1={curX + N.w} y1={cy} x2={rightX} y2={ny} stroke={stroke} strokeWidth={isPrevNext ? 2 : 1.5} strokeDasharray={dash} />
+                    <rect x={rightX} y={ny - N.h / 2} width={N.w} height={N.h} rx={N.rx} fill={fill} stroke={stroke} strokeWidth={isPrevNext ? 2 : 1.5} />
+                    <text x={rightX + N.w / 2} y={ny - 4} textAnchor="middle" fontSize="9" fontWeight="600" fill={textColor}>{node.label}</text>
+                    <text x={rightX + N.w / 2} y={ny + 10} textAnchor="middle" fontSize="9" fontWeight="600" fill={titleColor}>{node.doc.title.slice(0, 14)}</text>
+                  </g>
+                );
+              })}
             </svg>
           </div>
 
-          {/* Summary cards */}
-          <div className="flex gap-3 mt-3.5 flex-wrap">
-            <div className="flex-1 min-w-[160px] bg-[#F1F0EC] rounded-lg p-3 border border-[#E2E0D8]">
-              <div className="text-[11px] font-semibold text-[#9A9890] uppercase tracking-wider mb-1">상위 카테고리</div>
-              <div className="text-[13px] font-medium">{categoryName ?? '(루트)'}</div>
+          {/* Navigation bar: ← prev | related (center) | next → */}
+          <div className="flex items-stretch gap-2 mt-3.5 bg-[#F1F0EC] rounded-lg border border-[#E2E0D8] p-1.5">
+            {/* Left: prev */}
+            <div className="flex-1 min-w-0">
+              {prevDoc ? (
+                <button
+                  onClick={() => navigateToDoc(prevDoc.id)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left hover:bg-white transition-colors"
+                >
+                  <span className="text-[#16A34A] text-sm font-bold shrink-0">←</span>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-[#9A9890] uppercase tracking-wider">이전 문서</div>
+                    <div className="text-[13px] font-medium text-[#15803D] truncate">{prevDoc.title}</div>
+                  </div>
+                </button>
+              ) : (
+                <div className="flex items-center justify-center h-full px-3 py-2.5">
+                  <span className="text-[12px] text-[#CBC9C0]">이전 문서 없음</span>
+                </div>
+              )}
             </div>
-            <div className="flex-1 min-w-[160px] bg-[#F1F0EC] rounded-lg p-3 border border-[#E2E0D8]">
-              <div className="text-[11px] font-semibold text-[#9A9890] uppercase tracking-wider mb-1">이전 / 다음 문서</div>
-              <div className="text-[13px]">{prevDoc ? `← ${prevDoc.title}` : '없음'}</div>
-              <div className="text-[13px] mt-0.5">{nextDoc ? `→ ${nextDoc.title}` : '없음'}</div>
+
+            {/* Center divider */}
+            <div className="w-px bg-[#E2E0D8] self-stretch my-1" />
+
+            {/* Center: related docs */}
+            <div className="flex-1 min-w-0">
+              {relatedDocs.length > 0 ? (
+                <RelatedDropdown docs={relatedDocs} onNavigate={navigateToDoc} />
+              ) : (
+                <div className="flex items-center justify-center h-full px-3 py-2.5">
+                  <span className="text-[12px] text-[#CBC9C0]">연관 문서 없음</span>
+                </div>
+              )}
             </div>
-            <div className="flex-1 min-w-[160px] bg-[#F1F0EC] rounded-lg p-3 border border-[#E2E0D8]">
-              <div className="text-[11px] font-semibold text-[#9A9890] uppercase tracking-wider mb-1">연관 문서 ({relatedDocs.length}개)</div>
-              {relatedDocs.slice(0, 2).map((d) => (
-                <div key={d.id} className="text-[13px]">{d.title}</div>
-              ))}
-              {relatedDocs.length === 0 && <div className="text-[13px] text-[#9A9890]">없음</div>}
+
+            {/* Right divider */}
+            <div className="w-px bg-[#E2E0D8] self-stretch my-1" />
+
+            {/* Right: next */}
+            <div className="flex-1 min-w-0">
+              {nextDoc ? (
+                <button
+                  onClick={() => navigateToDoc(nextDoc.id)}
+                  className="w-full flex items-center justify-end gap-2 px-3 py-2.5 rounded-md text-right hover:bg-white transition-colors"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-semibold text-[#9A9890] uppercase tracking-wider text-right">다음 문서</div>
+                    <div className="text-[13px] font-medium text-[#15803D] truncate">{nextDoc.title}</div>
+                  </div>
+                  <span className="text-[#16A34A] text-sm font-bold shrink-0">→</span>
+                </button>
+              ) : (
+                <div className="flex items-center justify-center h-full px-3 py-2.5">
+                  <span className="text-[12px] text-[#CBC9C0]">다음 문서 없음</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

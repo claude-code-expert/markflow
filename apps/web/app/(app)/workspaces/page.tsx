@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Settings } from 'lucide-react';
+import { Settings, FolderOpen, FileText } from 'lucide-react';
 import { useWorkspaceStore } from '../../../stores/workspace-store';
 import type { Workspace } from '../../../lib/types';
 import { CreateWorkspaceModal } from '../../../components/create-workspace-modal';
@@ -96,9 +96,19 @@ function WorkspaceRow({ workspace }: { workspace: Workspace }) {
             </span>
           )}
         </div>
-        <p style={{ marginTop: '2px', fontSize: '12px', color: 'var(--text-3)' }}>
-          {formatRelativeTime(workspace.lastActivityAt)}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-3)' }}>
+            <FolderOpen size={13} />
+            {workspace.categoryCount ?? 0}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-3)' }}>
+            <FileText size={13} />
+            {workspace.documentCount ?? 0}
+          </span>
+          <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+            {formatRelativeTime(workspace.lastActivityAt)}
+          </span>
+        </div>
       </div>
 
       {/* Action buttons */}

@@ -2,14 +2,14 @@
 
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Folder, FolderOpen, FileText, GripVertical } from 'lucide-react';
+import { ChevronRight, Folder, FolderOpen, FileText } from 'lucide-react';
 import { useSidebarStore } from '../stores/sidebar-store';
 
 export interface TreeDocument {
   id: number;
   title: string;
-  slug: string;
   updatedAt: string;
+  categoryId?: number | null;
 }
 
 export interface Category {
@@ -28,6 +28,7 @@ interface CategoryTreeProps {
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
   onDocContextMenu?: (e: React.MouseEvent, doc: TreeDocument) => void;
   onReorder?: (orderedIds: number[]) => void;
+  onMoveDoc?: (docId: number, targetCategoryId: number | null) => void;
   basePl?: number;
   indentPx?: number;
 }
@@ -40,9 +41,13 @@ interface CategoryNodeProps {
   depth: number;
   onContextMenu?: (e: React.MouseEvent, category: Category) => void;
   onDocContextMenu?: (e: React.MouseEvent, doc: TreeDocument) => void;
+  onMoveDoc?: (docId: number, targetCategoryId: number | null) => void;
   basePl: number;
   indentPx: number;
 }
+
+/* chevron(16) + gap(4) = 20px spacer for doc alignment */
+export const DOC_SPACER_PX = 20;
 
 function CategoryNode({
   category,
@@ -52,6 +57,7 @@ function CategoryNode({
   depth,
   onContextMenu,
   onDocContextMenu,
+  onMoveDoc,
   basePl,
   indentPx,
 }: CategoryNodeProps) {
@@ -61,6 +67,7 @@ function CategoryNode({
   const hasChildren = category.children.length > 0;
   const hasDocs = category.documents.length > 0;
   const hasContent = hasChildren || hasDocs;
+  const [docDragOver, setDocDragOver] = useState(false);
 
   const handleToggle = useCallback(
     (e: React.MouseEvent) => {
@@ -102,32 +109,47 @@ function CategoryNode({
           fontSize: '13.5px',
           fontWeight: isActive ? 500 : 400,
           color: isActive ? 'var(--accent)' : 'var(--text-2)',
-          background: isActive ? 'var(--accent-2)' : 'transparent',
+          background: docDragOver ? 'var(--accent-2)' : isActive ? 'var(--accent-2)' : 'transparent',
           borderRadius: 'var(--radius-sm)',
           textDecoration: 'none',
           transition: 'background 0.15s ease, color 0.15s ease',
           cursor: 'pointer',
           userSelect: 'none',
+          outline: docDragOver ? '2px solid var(--accent)' : 'none',
         }}
         onMouseEnter={(e) => {
-          if (!isActive) {
+          if (!isActive && !docDragOver) {
             e.currentTarget.style.background = 'var(--surface-2)';
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = isActive
-            ? 'var(--accent-2)'
-            : 'transparent';
+          if (!docDragOver) {
+            e.currentTarget.style.background = isActive
+              ? 'var(--accent-2)'
+              : 'transparent';
+          }
         }}
         onContextMenu={handleContextMenu}
+        onDragOver={(e) => {
+          const type = e.dataTransfer.types.includes('application/x-doc-id') ? 'doc' : null;
+          if (type === 'doc') {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'move';
+            setDocDragOver(true);
+          }
+        }}
+        onDragLeave={() => setDocDragOver(false)}
+        onDrop={(e) => {
+          const docIdStr = e.dataTransfer.getData('application/x-doc-id');
+          if (docIdStr && onMoveDoc) {
+            e.preventDefault();
+            e.stopPropagation();
+            onMoveDoc(Number(docIdStr), category.id);
+          }
+          setDocDragOver(false);
+        }}
       >
-        {/* Drag handle */}
-        <GripVertical
-          size={12}
-          style={{ opacity: 0.3, flexShrink: 0, cursor: 'grab' }}
-          onMouseDown={(e) => e.stopPropagation()}
-        />
-
         {/* Expand/Collapse chevron */}
         <button
           type="button"
@@ -211,6 +233,7 @@ function CategoryNode({
               depth={depth + 1}
               onContextMenu={onContextMenu}
               onDocContextMenu={onDocContextMenu}
+              onMoveDoc={onMoveDoc}
               basePl={basePl}
               indentPx={indentPx}
             />
@@ -219,15 +242,21 @@ function CategoryNode({
           {category.documents.map((doc) => {
             const docHref = `/${workspaceSlug}/doc/${doc.id}`;
             const isDocActive = currentDocId === doc.id;
-            const docPl = basePl + (depth + 1) * indentPx;
+            const docPl = basePl + (depth + 1) * indentPx + DOC_SPACER_PX;
             return (
               <Link
                 key={doc.id}
                 href={docHref}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/x-doc-id', String(doc.id));
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.stopPropagation();
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '4px',
                   padding: '5px 10px',
                   paddingLeft: `${docPl}px`,
                   fontSize: '13px',
@@ -237,6 +266,7 @@ function CategoryNode({
                   borderRadius: 'var(--radius-sm)',
                   textDecoration: 'none',
                   transition: 'background 0.15s ease',
+                  cursor: 'grab',
                 }}
                 onMouseEnter={(e) => {
                   if (!isDocActive) e.currentTarget.style.background = 'var(--surface-2)';
@@ -251,7 +281,7 @@ function CategoryNode({
                   }
                 }}
               >
-                <FileText size={14} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <FileText size={16} style={{ opacity: 0.5, flexShrink: 0 }} />
                 <span style={{
                   flex: 1, minWidth: 0,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -275,6 +305,7 @@ export function CategoryTree({
   onContextMenu,
   onDocContextMenu,
   onReorder,
+  onMoveDoc,
   basePl = 10,
   indentPx = 16,
 }: CategoryTreeProps) {
@@ -285,12 +316,16 @@ export function CategoryTree({
   }
 
   function handleDragOver(e: React.DragEvent, categoryId: number) {
+    // Only handle folder reorder drag (text/plain), not doc drags
+    if (e.dataTransfer.types.includes('application/x-doc-id')) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverId(categoryId);
   }
 
   function handleDrop(e: React.DragEvent, targetId: number) {
+    // Skip if this is a doc drop (handled by CategoryNode)
+    if (e.dataTransfer.types.includes('application/x-doc-id')) return;
     e.preventDefault();
     setDragOverId(null);
     const draggedId = Number(e.dataTransfer.getData('text/plain'));
@@ -326,6 +361,7 @@ export function CategoryTree({
             depth={0}
             onContextMenu={onContextMenu}
             onDocContextMenu={onDocContextMenu}
+            onMoveDoc={onMoveDoc}
             basePl={basePl}
             indentPx={indentPx}
           />

@@ -7,6 +7,7 @@ import remarkMath from 'remark-math'
 import remarkRehype from 'remark-rehype'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
 import { deepmerge } from 'deepmerge-ts'
@@ -18,13 +19,24 @@ const sanitizeSchema = deepmerge(defaultSchema, {
     code: ['className'],
     span: ['className', 'style', 'aria-hidden'],
     div: ['className', 'style'],
-    '*': ['className'],
+    img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
+    td: ['align', 'valign'],
+    th: ['align', 'valign'],
+    details: ['className', 'open'],
+    summary: ['className'],
+    '*': ['className', 'id'],
   },
   tagNames: [
+    // KaTeX MathML
     'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'mfrac',
     'msqrt', 'mroot', 'msup', 'msub', 'msubsup', 'annotation',
     'annotation-xml', 'menclose', 'mtext', 'mspace', 'mtable',
     'mtr', 'mtd',
+    // GitHub-style HTML elements
+    'details', 'summary', 'kbd', 'samp', 'var', 'mark',
+    'sup', 'sub', 'abbr', 'ins', 'del',
+    'figure', 'figcaption', 'dl', 'dt', 'dd',
+    'ruby', 'rt', 'rp',
   ],
 } as typeof defaultSchema)
 
@@ -33,9 +45,10 @@ const processor = unified()
   .use(remarkParse)                    // CommonMark parsing
   .use(remarkGfm)                      // GitHub Flavored Markdown (tables, task lists, strikethrough)
   .use(remarkMath)                     // $...$ and $$...$$ math blocks
-  .use(remarkRehype, { allowDangerousHtml: false })
+  .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeHighlight, { detect: true, ignoreMissing: true })  // code syntax highlighting
   .use(rehypeKatex)                    // render math with KaTeX
+  .use(rehypeRaw)                      // raw HTML → proper HAST nodes
   .use(rehypeSanitize, sanitizeSchema) // XSS protection
   .use(rehypeStringify)
 

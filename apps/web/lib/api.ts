@@ -1,3 +1,5 @@
+import { useToastStore } from '../stores/toast-store';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 interface FetchOptions extends Omit<RequestInit, 'body'> {
@@ -79,8 +81,13 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
       }
     }
     clearAccessToken();
-    window.location.href = '/login';
-    throw new ApiError('UNAUTHORIZED', 'Session expired', 401);
+    useToastStore.getState().addToast({
+      message: '로그인 정보가 만료되었습니다. 다시 로그인해주세요.',
+      type: 'error',
+      duration: 4000,
+    });
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
+    throw new ApiError('UNAUTHORIZED', '로그인 정보가 만료되었습니다.', 401);
   }
 
   if (!response.ok) {

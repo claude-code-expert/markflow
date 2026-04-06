@@ -1,12 +1,17 @@
 # 이미지 업로드 설정 가이드
 
+> **버전:** 1.4.0
+> **최종 수정:** 2026-04-06
 > Cloudflare R2 Worker를 통한 이미지 업로드 설정 절차 및 화면 구성
+> **변경 이력:**
+> - v1.4.0 — 이미지 업로드 사용/미사용 토글 추가, 설정 페이지 UX 개선 (인라인 가이드 → 우측 패널), 에디터 연동 토글 제어
+> - v1.3.0 — 초판 작성
 
 ---
 
 ## 개요
 
-MarkFlow 에디터와 프로필 아바타에서 이미지를 업로드하려면 Cloudflare R2 저장소를 연결해야 합니다.
+MarkFlow 에디터와 프로필 아바타에서 이미지를 업로드하려면 **이미지 업로드 기능을 활성화**하고 Cloudflare R2 저장소를 연결해야 합니다.
 업로드 흐름은 **클라이언트 → R2 Worker → R2 버킷** 구조이며, Worker URL을 앱에 등록하면 즉시 사용할 수 있습니다.
 
 ### 아키텍처
@@ -112,25 +117,87 @@ NEXT_PUBLIC_R2_WORKER_URL=https://markflow-r2-uploader.account-id.workers.dev
 
 ---
 
+## 이미지 업로드 토글
+
+이미지 업로드 기능은 설정 페이지에서 사용/미사용을 토글할 수 있습니다.
+
+```
+파일: apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx
+상태 저장: localStorage `mf-image-upload-enabled`
+유틸 함수: apps/web/lib/image-upload.ts → isImageUploadEnabled(), setImageUploadEnabled()
+```
+
+### 토글 동작
+
+| 상태 | 설정 페이지 | 에디터 |
+|------|-----------|--------|
+| OFF (기본값) | 토글 카드만 표시, R2 설정 UI 숨김 | 이미지 업로드 비활성화 (드래그/붙여넣기/툴바), 업로드 버튼 클릭 시 설정 페이지(`/settings/storage`)로 이동 |
+| ON + Worker 미설정 | 사용법 도움말 + 연결 상태(미설정) + CTA → 우측 가이드 패널 | 업로드 시도 시 StorageGuidePanel 열기 |
+| ON + Worker 설정됨 | 사용법 도움말 + 연결 상태(연동 완료) + URL 관리 | 정상 업로드 동작 |
+
+> **참고:** 토글을 OFF로 전환해도 기존 Worker URL 설정은 삭제되지 않습니다.
+> 이미지 URL 직접 삽입(`![](url)`)은 토글 상태와 무관하게 항상 사용 가능합니다.
+
+---
+
 ## 화면 구성
+
+### 이미지 저장소 설정 페이지 (`/settings/storage`)
+
+워크스페이스 설정 하위의 이미지 저장소 관리 페이지입니다.
+
+```
+파일: apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx
+```
+
+#### 페이지 구성
+
+```
+┌─────────────────────────────────────────────┐ ┌──────────────────────────┐
+│  이미지 저장소                               │ │ StorageGuidePanel (420px) │
+│  ─────────────────────────────────────────── │ │ (CTA 클릭 시 우측에 열림) │
+│  ┌─────────────────────────────────────────┐ │ │                          │
+│  │ 🖼 이미지 업로드  [토글 ON/OFF]          │ │ │ ① Cloudflare 가입        │
+│  └─────────────────────────────────────────┘ │ │ ② Wrangler 로그인        │
+│                                              │ │ ③ R2 버킷 생성           │
+│  ┌─────────────────────────────────────────┐ │ │ ④ 퍼블릭 액세스          │
+│  │ ☁ 이미지 업로드 사용법 (3단계 도움말)     │ │ │ ⑤ Worker 배포            │
+│  └─────────────────────────────────────────┘ │ │ ⑥ Worker URL 입력        │
+│                                              │ │   [연결 테스트] [저장]    │
+│  ┌─────────────────────────────────────────┐ │ └──────────────────────────┘
+│  │ 연결 상태: ⚠ 미설정                      │ │
+│  │ [📖 Cloudflare R2 설정 가이드 →]         │ │  ← CTA 클릭 → 우측 패널
+│  └─────────────────────────────────────────┘ │
+│                                              │
+│  ┌─────────────────────────────────────────┐ │
+│  │ 업로드 서버 URL                          │ │
+│  │ [_________________________] [테스트][저장]│ │
+│  └─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
 
 ### 이미지 저장소 설정 패널 (StorageGuidePanel)
 
-문서 에디터 우측에 독립 오버레이로 열리는 420px 폭의 사이드 패널입니다.
+문서 에디터 및 설정 페이지 우측에 독립 오버레이로 열리는 420px 폭의 사이드 패널입니다.
+**에디터와 설정 페이지에서 동일한 컴포넌트를 사용**하여 UX 일관성을 유지합니다.
 
 ```
 파일: apps/web/components/storage-guide-panel.tsx
-위치: 문서 에디터 페이지 (apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx)
+사용 위치:
+  - 문서 에디터 페이지 (apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx)
+  - 이미지 저장소 설정 페이지 (apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx)
 ```
 
 #### 진입 경로
 
-| 경로 | 동작 |
-|------|------|
-| 에디터 상단 툴바 HardDrive 아이콘 | 패널 토글 (열기/닫기) |
-| 에디터 툴바 "Upload image" 버튼 (Worker 미설정 시) | 패널 열기 |
-| 에디터에서 이미지 드래그/붙여넣기 (Worker 미설정 시) | 패널 열기 |
-| "이미지 업로드를 사용하려면 저장소 설정이 필요합니다" 배너 | 패널 열기 |
+| 경로 | 위치 | 동작 |
+|------|------|------|
+| 에디터 상단 툴바 HardDrive 아이콘 | 에디터 | 패널 토글 (열기/닫기) |
+| 에디터 툴바 "Upload image" 버튼 (Worker 미설정 시) | 에디터 | 패널 열기 |
+| 에디터에서 이미지 드래그/붙여넣기 (Worker 미설정 시) | 에디터 | 패널 열기 |
+| "이미지 업로드를 사용하려면 저장소 설정이 필요합니다" 배너 | 에디터 | 패널 열기 |
+| "Cloudflare R2 설정 가이드" CTA 버튼 (연결 상태 미설정 시) | 설정 페이지 | 패널 열기 |
+| "설정 가이드 다시 보기" 링크 (연결 완료 후) | 설정 페이지 | 패널 열기 |
 
 #### 패널 구성
 
@@ -207,6 +274,12 @@ NEXT_PUBLIC_R2_WORKER_URL=https://markflow-r2-uploader.account-id.workers.dev
 2. localStorage `mf-cf-worker-url`
 3. 미설정 (빈 문자열)
 
+### 이미지 업로드 토글 상태
+
+- 키: localStorage `mf-image-upload-enabled` (`'true'` | 미설정)
+- 유틸: `isImageUploadEnabled()`, `setImageUploadEnabled(boolean)`
+- 기본값: `false` (비활성화)
+
 ### 에러 코드
 
 | 코드 | 의미 | 발생 시점 |
@@ -218,9 +291,10 @@ NEXT_PUBLIC_R2_WORKER_URL=https://markflow-r2-uploader.account-id.workers.dev
 ### 에디터 연동
 
 ```
-onImageUpload prop 있음 → 외부 업로더 사용
-onImageUpload prop 없음 + Worker URL 있음 → 내장 R2 업로더
-onImageUpload prop 없음 + Worker URL 없음 → onImageUploadGuide 콜백 → StorageGuidePanel 열기
+이미지 업로드 토글 OFF → onImageUpload 미전달, 업로드 버튼 클릭 시 /settings/storage로 이동
+이미지 업로드 토글 ON + onImageUpload prop 있음 → 외부 업로더 사용
+이미지 업로드 토글 ON + onImageUpload prop 없음 + Worker URL 있음 → 내장 R2 업로더
+이미지 업로드 토글 ON + onImageUpload prop 없음 + Worker URL 없음 → onImageUploadGuide 콜백 → StorageGuidePanel 열기
 ```
 
 ---

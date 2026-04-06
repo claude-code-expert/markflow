@@ -162,9 +162,9 @@ export function NewFolderModal({
               id="folderParent"
               value={parentId ?? ''}
               onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ display: 'block', width: '100%', padding: '10px 30px 10px 12px', fontSize: 14 }}
             >
-              <option value="">최상위 (루트)</option>
+              <option value="">최상위 (Root)</option>
               {flatCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.path}
