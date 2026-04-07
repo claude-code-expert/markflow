@@ -6,8 +6,8 @@
 > **상태:** 📋 계획됨 (KMS SaaS 구축 시 적용)
 > **변경 이력:**
 > - v1.4.0 — USERS 테이블: password_reset_token/password_reset_expires_at 추가, email_verify_token/email_verify_expires_at/locked_until/login_fail_count 반영. WORKSPACES: UNIQUE(name) → UNIQUE(owner_id, name) 복합 유니크로 변경, description 제거. DOCUMENTS: slug 컬럼 제거(마이그레이션 0001). CATEGORIES: slug 제거. 마이그레이션 0002 추가
-> - v1.3.0 — 실제 구현 기준 스키마 동기화: ID 타입 uuid→bigserial 전체 교체, OAUTH_ACCOUNTS Phase 3 이연, documents.start_mode 미구현 상태 명시, workspaces 테이블 slug 제거 및 theme_preset/theme_css 추가, categories.order_index 추가, document_versions.author_id 추가, comments/embed_tokens 테이블 상세화, 인덱스 전략 반영
-> - v1.2.0 — `CATEGORY_CLOSURE` 테이블 신규 추가 (무제한 중첩 계층 조회 최적화), `DOCUMENTS`에 `start_mode` 컬럼 추가, `DOCUMENT_RELATIONS`에 DAG 관련 무결성 규칙 보강, 마이그레이션 파일 `0012` 추가
+> - v1.3.0 — 실제 구현 기준 스키마 동기화: ID 타입 uuid→bigserial 전체 교체, OAUTH_ACCOUNTS Phase 3 이연, workspaces 테이블 slug 제거 및 theme_preset/theme_css 추가, categories.order_index 추가, document_versions.author_id 추가, comments/embed_tokens 테이블 상세화, 인덱스 전략 반영
+> - v1.2.0 — `CATEGORY_CLOSURE` 테이블 신규 추가 (무제한 중첩 계층 조회 최적화), `DOCUMENT_RELATIONS`에 DAG 관련 무결성 규칙 보강, 마이그레이션 파일 `0012` 추가
 > - v1.1.0 — `WORKSPACE_JOIN_REQUESTS` 테이블 신규 추가, ERD 관계 업데이트
 
 ---
@@ -415,7 +415,6 @@ CREATE TABLE categories (
     workspace_id  BIGINT           NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
     parent_id     BIGINT           REFERENCES categories(id) ON DELETE SET NULL,
     name          TEXT             NOT NULL CHECK (char_length(name) BETWEEN 1 AND 100),
-    slug          TEXT             NOT NULL,
     order_index   DOUBLE PRECISION NOT NULL DEFAULT 0,  -- Fractional Indexing
     created_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
@@ -476,16 +475,12 @@ CREATE TABLE documents (
     category_id      BIGINT      REFERENCES categories(id) ON DELETE SET NULL,
     author_id        BIGINT      NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     title            TEXT        NOT NULL DEFAULT 'Untitled',
-    slug             TEXT        NOT NULL,
     content          TEXT        NOT NULL DEFAULT '',
     current_version  INTEGER     NOT NULL DEFAULT 1,
     is_deleted       BOOLEAN     NOT NULL DEFAULT FALSE,
     deleted_at       TIMESTAMPTZ,
-    -- v1.2.0 기획됨, 현재 미구현. Phase 2에서 템플릿 기능과 함께 구현 예정.
-    -- start_mode    TEXT        NOT NULL DEFAULT 'blank' CHECK (start_mode IN ('blank','template')),
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (workspace_id, slug)
 );
 
 -- Full-Text Search Index (simple: 한국어·영어 공용)
@@ -506,11 +501,9 @@ CREATE INDEX idx_documents_active ON documents(workspace_id, category_id, update
 CREATE INDEX idx_documents_deleted ON documents(workspace_id, deleted_at)
     WHERE is_deleted;
 
--- 워크스페이스 내 slug 유일성
-CREATE UNIQUE INDEX uq_document_workspace_slug ON documents(workspace_id, slug);
 ```
 
-> **v1.3.0 변경:** `start_mode` 컬럼은 v1.2.0에서 기획되었으나 현재 미구현 상태이다. DDL에서 주석 처리하여 스키마에 포함되지 않음을 명시한다. 인덱스 이름을 실제 구현에 맞게 `idx_documents_active`, `idx_documents_deleted`로 변경하고 조건식을 `WHERE NOT is_deleted` / `WHERE is_deleted`로 통일했다.
+> **v1.4.0 변경:** `start_mode` 컬럼은 v1.2.0에서 기획되었으나 프론트엔드에서 레이아웃 상태로 처리하기로 결정하여 스펙에서 완전 제거한다. `slug` 컬럼은 마이그레이션 0001에서 DROP 완료. 인덱스 이름을 실제 구현에 맞게 `idx_documents_active`, `idx_documents_deleted`로 변경하고 조건식을 `WHERE NOT is_deleted` / `WHERE is_deleted`로 통일했다.
 
 ### 2.10 document_versions
 
@@ -675,26 +668,25 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 
 ## 3. 인덱스 전략
 
-> **총 인덱스 수:** 16개 (FTS/Trigram 제외, B-tree/partial index 기준)
+> **총 인덱스 수:** 15개 (FTS/Trigram 제외, B-tree/partial index 기준)
 
 | # | 인덱스 이름 | 테이블 | 컬럼 / 조건 | 용도 |
 |---|------------|--------|-------------|------|
 | 1 | `idx_documents_active` | documents | `(workspace_id, category_id, updated_at)` WHERE NOT is_deleted | 활성 문서 목록 조회 |
 | 2 | `idx_documents_deleted` | documents | `(workspace_id, deleted_at)` WHERE is_deleted | 휴지통 문서 조회 |
-| 3 | `uq_document_workspace_slug` | documents | `(workspace_id, slug)` UNIQUE | 워크스페이스 내 slug 유일성 |
-| 4 | `uq_document_version` | document_versions | `(document_id, version)` UNIQUE | 문서별 버전 유일성 |
-| 5 | `idx_closure_ancestor` | category_closure | `(ancestor_id)` | 하위 계층 조회 |
-| 6 | `idx_closure_descendant` | category_closure | `(descendant_id)` | 상위 경로(breadcrumb) 조회 |
-| 7 | `idx_comments_document` | comments | `(document_id)` | 문서별 댓글 조회 |
-| 8 | `idx_embed_tokens_workspace` | embed_tokens | `(workspace_id)` | 워크스페이스별 토큰 조회 |
-| 9 | `idx_refresh_user` | refresh_tokens | `(user_id)` | 사용자별 토큰 조회 |
-| 10 | `idx_refresh_expires` | refresh_tokens | `(expires_at)` | 만료 토큰 정리 |
-| 11 | `idx_document_tags_document` | document_tags | `(doc_id)` | 문서별 태그 조회 |
-| 12 | `idx_document_tags_tag` | document_tags | `(tag)` | 태그별 문서 검색 |
-| 13 | `idx_document_relations_source` | document_relations | `(doc_id)` | 소스 문서 기준 관계 조회 |
-| 14 | `idx_document_relations_target` | document_relations | `(related_doc_id)` | 타겟 문서 기준 관계 조회 |
-| 15 | `idx_join_requests_unique_pending` | workspace_join_requests | `(workspace_id, requester_id)` WHERE status = 'pending' | pending 중복 방지 (partial unique) |
-| 16 | 기타 (`idx_users_email`, `idx_workspaces_*`, `idx_wm_*`, `idx_inv_*`, 등) | 각 테이블 | — | 기본 조회 최적화 |
+| 3 | `uq_document_version` | document_versions | `(document_id, version)` UNIQUE | 문서별 버전 유일성 |
+| 4 | `idx_closure_ancestor` | category_closure | `(ancestor_id)` | 하위 계층 조회 |
+| 5 | `idx_closure_descendant` | category_closure | `(descendant_id)` | 상위 경로(breadcrumb) 조회 |
+| 6 | `idx_comments_document` | comments | `(document_id)` | 문서별 댓글 조회 |
+| 7 | `idx_embed_tokens_workspace` | embed_tokens | `(workspace_id)` | 워크스페이스별 토큰 조회 |
+| 8 | `idx_refresh_user` | refresh_tokens | `(user_id)` | 사용자별 토큰 조회 |
+| 9 | `idx_refresh_expires` | refresh_tokens | `(expires_at)` | 만료 토큰 정리 |
+| 10 | `idx_document_tags_document` | document_tags | `(doc_id)` | 문서별 태그 조회 |
+| 11 | `idx_document_tags_tag` | document_tags | `(tag)` | 태그별 문서 검색 |
+| 12 | `idx_document_relations_source` | document_relations | `(doc_id)` | 소스 문서 기준 관계 조회 |
+| 13 | `idx_document_relations_target` | document_relations | `(related_doc_id)` | 타겟 문서 기준 관계 조회 |
+| 14 | `idx_join_requests_unique_pending` | workspace_join_requests | `(workspace_id, requester_id)` WHERE status = 'pending' | pending 중복 방지 (partial unique) |
+| 15 | 기타 (`idx_users_email`, `idx_workspaces_*`, `idx_wm_*`, `idx_inv_*`, 등) | 각 테이블 | — | 기본 조회 최적화 |
 
 ---
 
@@ -709,7 +701,7 @@ CREATE INDEX idx_notif_user ON notifications(user_id, is_read, created_at DESC);
 | 카테고리 이동 순환 방지 | 자기 자신의 자손으로 이동 시 400 + CIRCULAR_CATEGORY — 앱 레이어 |
 | Closure Table 정합성 | 카테고리 생성·이동·삭제 시 트랜잭션으로 closure 행 동기화 |
 | 버전 최대 보관 (Phase별) | Phase 1: 20개 / Phase 2+: 100개 — 앱 레이어 또는 트리거 정리 |
-| Soft Delete 후 문서 slug 재사용 | 삭제 시 slug에 timestamp 접미사 추가 |
+| Soft Delete 후 문서 복원 | `is_deleted = FALSE`, `deleted_at = NULL`로 복원 |
 | Root 워크스페이스 삭제 방지 | `is_root = TRUE` 워크스페이스 DELETE API 403 반환 |
 | 연관 문서 최대 20개 | 애플리케이션 레이어 검증, `rel_type='related'` COUNT > 20 → 400 반환 |
 | 가입 신청 중복 방지 | `UNIQUE (workspace_id, requester_id)` 제약 → 409 반환 |

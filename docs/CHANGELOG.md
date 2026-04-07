@@ -1,5 +1,29 @@
 # Docs Changelog
 
+## v1.7.0 — 2026-04-08
+
+> 코드베이스 감사 기반 문서 정합성 업데이트, start_mode 스펙 제거 확정
+
+### Spec 정리
+
+| 변경 | 설명 |
+|------|------|
+| **`documents.start_mode` 스펙 제거** | v1.2.0에서 기획되었으나 프론트엔드 레이아웃 상태로 처리 확정. DDL 주석·변경이력·Ghost Fields에서 완전 삭제 |
+| **documents.slug DDL 잔존 정리** | 마이그레이션 0001에서 DROP 완료되었으나 004_data-model DDL에 남아있던 `slug` 컬럼·UNIQUE 제약·인덱스 제거 |
+| **categories.slug DDL 잔존 정리** | 실제 스키마에 없는 `slug` 컬럼 DDL에서 제거 |
+| **인덱스 목록 재정렬** | `uq_document_workspace_slug` 제거로 16→15개, 번호 재정렬 |
+
+### 체크리스트 재분류
+
+| 변경 | 설명 |
+|------|------|
+| **Phase 1 완성도 상향** | 95% → 98%. Spec 동기화(9건), ERD 업데이트(7건), D&D 폴더이동이 이미 완료 상태였음을 코드베이스 분석으로 확인 |
+| **Phase 2 완성도 상향** | 15% → 25%. 버전 Diff UI, DAG 컴포넌트, 임베드 가이드 탭 등 프론트엔드 부분 구현 반영 |
+| **이메일 재발송 API** | Phase 1 잔여 → Phase 2 P1 마지막 순위로 이동 |
+| **`documents.start_mode`** | Phase 1 잔여 → 스펙 제거 확정 (완료) |
+
+---
+
 ## v1.6.0 — 2026-04-07
 
 > 비밀번호 재설정, 문서 생성 흐름 변경, 권한 분리, 테스트 DB 분리, 보안 강화
@@ -219,7 +243,7 @@ docs/007_architecture.md          ← 버전 접미사 없던 구버전
 
 | 필드 | 위치 | 상태 |
 |------|------|------|
-| `documents.start_mode` | 004/005 Spec | DB/API 미구현 — 구현 여부 결정 필요 |
+| ~~`documents.start_mode`~~ | 004 Spec | **v1.7.0에서 스펙 제거 확정** — 프론트엔드 레이아웃 상태로 처리 |
 | `OAUTH_ACCOUNTS` 테이블 | 004 Spec | Phase 3 이연 |
 
 
@@ -228,7 +252,7 @@ docs/007_architecture.md          ← 버전 접미사 없던 구버전
 ## v1.2.0 — 2026-03-26
 
 - CATEGORY_CLOSURE 테이블 신규 (무제한 중첩 계층)
-- DOCUMENTS에 start_mode 컬럼 추가 (기획)
+- DOCUMENTS에 start_mode 컬럼 추가 (기획, v1.7.0에서 스펙 제거)
 - DOCUMENT_RELATIONS DAG 무결성 규칙 보강
 - Categories API 상세화 (이동·Closure Table 동기화·에러 코드)
 - 그래프 뷰 API 섹션 추가

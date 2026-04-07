@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
 import { useAuthStore } from '../stores/auth-store';
-import { MessageSquare, Send, Trash2, Reply, X } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Reply, X, Pencil, Check, CheckCircle } from 'lucide-react';
 
 interface Comment {
   id: number;
@@ -13,6 +13,8 @@ interface Comment {
   authorName: string;
   content: string;
   parentId: number | null;
+  resolved: boolean;
+  resolvedBy: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +54,8 @@ function CommentItem({
   currentUserId,
   onDelete,
   onReply,
+  onEdit,
+  onToggleResolved,
   replies,
   depth,
 }: {
@@ -59,9 +63,32 @@ function CommentItem({
   currentUserId: number | null;
   onDelete: (id: number) => void;
   onReply: (id: number) => void;
+  onEdit: (id: number, content: string) => void;
+  onToggleResolved: (id: number) => void;
   replies: Comment[];
   depth: number;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+
+  function handleEditSubmit() {
+    if (!editContent.trim()) return;
+    onEdit(comment.id, editContent.trim());
+    setIsEditing(false);
+  }
+
+  const actionBtnStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '11px',
+    padding: '2px 6px',
+    borderRadius: 'var(--radius-sm)',
+  };
+
   return (
     <div style={{ marginLeft: depth > 0 ? 20 : 0 }}>
       <div
@@ -69,6 +96,7 @@ function CommentItem({
           padding: '10px 12px',
           borderBottom: '1px solid var(--border)',
           background: depth > 0 ? 'var(--surface-2)' : 'transparent',
+          opacity: comment.resolved ? 0.6 : 1,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -77,7 +105,7 @@ function CommentItem({
               width: '24px',
               height: '24px',
               borderRadius: '50%',
-              background: 'var(--accent)',
+              background: comment.resolved ? 'var(--text-3)' : 'var(--accent)',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
@@ -87,62 +115,115 @@ function CommentItem({
               flexShrink: 0,
             }}
           >
-            {comment.authorName.charAt(0).toUpperCase()}
+            {comment.resolved ? <Check size={12} /> : comment.authorName.charAt(0).toUpperCase()}
           </div>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', textDecoration: comment.resolved ? 'line-through' : 'none' }}>
             {comment.authorName}
           </span>
+          {comment.resolved && (
+            <span style={{ fontSize: '10px', color: 'var(--green, #38a169)', fontWeight: 500 }}>
+              해결됨
+            </span>
+          )}
           <span style={{ fontSize: '11px', color: 'var(--text-3)', marginLeft: 'auto' }}>
             {relativeTime(comment.createdAt)}
           </span>
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, paddingLeft: '32px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {comment.content}
-        </div>
-        <div style={{ display: 'flex', gap: '4px', paddingLeft: '32px', marginTop: '6px' }}>
-          {depth === 0 && (
-            <button
-              type="button"
-              onClick={() => onReply(comment.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '11px',
-                color: 'var(--text-3)',
-                padding: '2px 6px',
-                borderRadius: 'var(--radius-sm)',
+
+        {isEditing ? (
+          <div style={{ paddingLeft: '32px' }}>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleEditSubmit();
+                }
+                if (e.key === 'Escape') setIsEditing(false);
               }}
-            >
-              <Reply size={12} />
-              답글
-            </button>
-          )}
-          {currentUserId === comment.authorId && (
-            <button
-              type="button"
-              onClick={() => onDelete(comment.id)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '11px',
-                color: 'var(--red, #e53e3e)',
-                padding: '2px 6px',
+                width: '100%',
+                padding: '6px 8px',
+                border: '1px solid var(--accent)',
                 borderRadius: 'var(--radius-sm)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                fontSize: '13px',
+                resize: 'none',
+                minHeight: '50px',
+                fontFamily: 'inherit',
+                outline: 'none',
               }}
-            >
-              <Trash2 size={12} />
-              삭제
-            </button>
-          )}
-        </div>
+            />
+            <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={handleEditSubmit}
+                style={{ ...actionBtnStyle, color: 'var(--accent)' }}
+              >
+                <Check size={12} />
+                저장
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(false); setEditContent(comment.content); }}
+                style={{ ...actionBtnStyle, color: 'var(--text-3)' }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: '13px', color: 'var(--text)', lineHeight: 1.5, paddingLeft: '32px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {comment.content}
+          </div>
+        )}
+
+        {!isEditing && (
+          <div style={{ display: 'flex', gap: '4px', paddingLeft: '32px', marginTop: '6px' }}>
+            {depth === 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onReply(comment.id)}
+                  style={{ ...actionBtnStyle, color: 'var(--text-3)' }}
+                >
+                  <Reply size={12} />
+                  답글
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onToggleResolved(comment.id)}
+                  style={{ ...actionBtnStyle, color: comment.resolved ? 'var(--accent)' : 'var(--green, #38a169)' }}
+                >
+                  <CheckCircle size={12} />
+                  {comment.resolved ? '해제' : '해결'}
+                </button>
+              </>
+            )}
+            {currentUserId === comment.authorId && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setIsEditing(true); setEditContent(comment.content); }}
+                  style={{ ...actionBtnStyle, color: 'var(--text-3)' }}
+                >
+                  <Pencil size={12} />
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(comment.id)}
+                  style={{ ...actionBtnStyle, color: 'var(--red, #e53e3e)' }}
+                >
+                  <Trash2 size={12} />
+                  삭제
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
       {replies.map((reply) => (
         <CommentItem
@@ -151,6 +232,8 @@ function CommentItem({
           currentUserId={currentUserId}
           onDelete={onDelete}
           onReply={onReply}
+          onEdit={onEdit}
+          onToggleResolved={onToggleResolved}
           replies={[]}
           depth={depth + 1}
         />
@@ -186,6 +269,28 @@ export function CommentPanel({ workspaceId, documentId, onClose }: CommentPanelP
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) =>
+      apiFetch<CommentResponse>(
+        `/workspaces/${workspaceId}/documents/${documentId}/comments/${commentId}`,
+        { method: 'PATCH', body: { content } },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['comments', workspaceId, documentId] });
+    },
+  });
+
+  const resolveMutation = useMutation({
+    mutationFn: (commentId: number) =>
+      apiFetch<CommentResponse>(
+        `/workspaces/${workspaceId}/documents/${documentId}/comments/${commentId}`,
+        { method: 'PATCH', body: { resolved: true } },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['comments', workspaceId, documentId] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (commentId: number) =>
       apiFetch(
@@ -205,6 +310,14 @@ export function CommentPanel({ workspaceId, documentId, onClose }: CommentPanelP
     }
     createMutation.mutate(body);
   }, [newContent, replyTo, createMutation]);
+
+  const handleEdit = useCallback((commentId: number, content: string) => {
+    editMutation.mutate({ commentId, content });
+  }, [editMutation]);
+
+  const handleToggleResolved = useCallback((commentId: number) => {
+    resolveMutation.mutate(commentId);
+  }, [resolveMutation]);
 
   const handleDelete = useCallback((commentId: number) => {
     deleteMutation.mutate(commentId);
@@ -301,6 +414,8 @@ export function CommentPanel({ workspaceId, documentId, onClose }: CommentPanelP
             currentUserId={currentUser?.id ?? null}
             onDelete={handleDelete}
             onReply={handleReply}
+            onEdit={handleEdit}
+            onToggleResolved={handleToggleResolved}
             replies={repliesMap.get(comment.id) ?? []}
             depth={0}
           />

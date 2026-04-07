@@ -1,6 +1,6 @@
 # MarkFlow KMS -- 전체 Phase 체크리스트
 
-> **최종 수정:** 2026-04-07
+> **최종 수정:** 2026-04-08
 > **기준:** develop 브랜치
 > **범위:** Phase 0 ~ Phase 3 전체
 
@@ -11,8 +11,8 @@
 | Phase | 상태 | 완성도 | 주요 지표 |
 |-------|------|--------|----------|
 | Phase 0 (Editor) | ✅ 완료 | 100% | npm 배포 가능, 24개 의존성, ESM+CJS |
-| Phase 1 (Prototype) | ✅ 완료 (잔여 작업 있음) | ~95% | API 44/56, 프론트 15/15 페이지, DB 15/15 |
-| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~15% | 비밀번호 재설정 완료, 이미지 업로드 진행 중 |
+| Phase 1 (Prototype) | ✅ 완료 (잔여 1건) | ~98% | API 44/56, 프론트 15/15 페이지, DB 15/15 |
+| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~30% | 비밀번호 재설정 완료, 이미지 업로드 완료, 댓글 수정/해결 완료, D&D 완료 |
 | Phase 3 (Launch) | 📋 계획 | 0% | 미착수 |
 
 ---
@@ -31,8 +31,9 @@
 - [x] Next.js App Router 호환 (`use client`)
 - [x] `.mf-` CSS 클래스 / `--mf-` CSS 변수 네임스페이스
 - [x] peerDependencies: React ^18 || ^19 만 요구
-- [x] 마크다운 복사 버튼 (에디터 pane header) ← **2026-04-07 추가**
-- [x] 외부 링크 새 탭 열기 (`target="_blank"`, `rel="noopener noreferrer"`) ← **2026-04-07 추가**
+- [x] 마크다운 복사 버튼 (에디터 pane header)
+- [x] 외부 링크 새 탭 열기 (`target="_blank"`, `rel="noopener noreferrer"`)
+- [x] HTML 패스스루 (`rehype-raw` — `<details>`, `<kbd>`, `<mark>` 등 GitHub 스타일 HTML)
 
 ### Phase 0 잔여
 
@@ -40,7 +41,7 @@
 
 ---
 
-## Phase 1 -- Prototype ✅ (잔여 작업 있음)
+## Phase 1 -- Prototype ✅ (잔여 1건)
 
 > **기간:** 2026-04-01 ~ 2026-04-07 | **목표:** 내부 팀 사용 가능 수준
 
@@ -53,8 +54,8 @@
 | 토큰 갱신 | POST /auth/refresh | — | ✅ |
 | 로그아웃 | POST /auth/logout | — | ✅ |
 | 이메일 인증 | GET /auth/verify-email | /verify-email | ✅ |
-| 비밀번호 찾기 | POST /auth/forgot-password | /forgot-password | ✅ **← 2026-04-07 완료** |
-| 비밀번호 재설정 | POST /auth/reset-password | /reset-password | ✅ **← 2026-04-07 완료** |
+| 비밀번호 찾기 | POST /auth/forgot-password | /forgot-password | ✅ |
+| 비밀번호 재설정 | POST /auth/reset-password | /reset-password | ✅ |
 | 계정 잠금 | 5회 실패 → 15분 락 | — | ✅ |
 | 속도 제한 | 10 req/15min (register, login), 5/15min (forgot-password) | — | ✅ |
 
@@ -64,7 +65,7 @@
 |------|-----|------|
 | 내 정보 조회 | GET /users/me | ✅ |
 | 프로필 수정 | PATCH /users/me | ✅ |
-| 아바타 업로드 | PUT /users/me/avatar | ⏳ 파일 검증만 (R2 미연동) |
+| 아바타 업로드 | PATCH /users/me { avatarUrl } + R2 Worker | ✅ (프론트→R2 직접 업로드, PUT 엔드포인트 제거) |
 
 ### 1.3 워크스페이스 (Workspaces)
 
@@ -76,9 +77,9 @@
 | 멤버 관리 | GET/PATCH/DELETE /members | /settings/members | ✅ |
 | 초대 | POST /invitations, GET/POST /invitations/:token | /invite/[token] | ✅ |
 | 가입 요청 | POST/GET/PATCH /join-requests (+ batch) | JoinRequestPanel | ✅ |
-| 가입 요청 관리 UI | — | /settings/members 내 가입 신청 섹션 | ✅ **← 2026-04-07 완료** |
-| 가입 요청 수 표시 | GET /workspaces (pendingJoinCount) | /workspaces 목록 뱃지 | ✅ **← 2026-04-07 완료** |
-| 워크스페이스 행 클릭 이동 | — | /workspaces 행 클릭 → /doc | ✅ **← 2026-04-07 완료** |
+| 가입 요청 관리 UI | — | /settings/members 내 가입 신청 섹션 | ✅ |
+| 가입 요청 수 표시 | GET /workspaces (pendingJoinCount) | /workspaces 목록 뱃지 | ✅ |
+| 워크스페이스 행 클릭 이동 | — | /workspaces 행 클릭 → /doc | ✅ |
 
 ### 1.4 카테고리 (Categories)
 
@@ -93,7 +94,7 @@
 | 항목 | API | Frontend | 상태 |
 |------|-----|----------|------|
 | CRUD | POST/GET/PATCH/DELETE | /[ws]/doc/[id] | ✅ |
-| 새 문서 (DB 저장 없이 에디터 진입) | — | /[ws]/doc/new | ✅ **← 2026-04-07 변경** |
+| 새 문서 (DB 저장 없이 에디터 진입) | — | /[ws]/doc/new | ✅ |
 | 수동 저장 | PATCH (Cmd+S / 버튼) | 에디터 | ✅ |
 | 소프트 삭제 | DELETE (soft) | — | ✅ |
 | 버전 목록 | GET /versions | VersionHistoryPanel | ✅ |
@@ -103,8 +104,8 @@
 | 댓글 | GET/POST/DELETE /comments | CommentPanel | ✅ |
 | 휴지통 | GET/POST/DELETE /trash | /[ws]/trash | ✅ |
 | Import/Export | POST /import, GET /export | ImportExportModal | ✅ |
-| 문서 작성자/어드민 권한 분리 | PATCH 서버측 authorId 검증 | 읽기전용 + 편집 전환 모달 | ✅ **← 2026-04-07 완료** |
-| 제목 빈 문서 저장 방지 | — | 토스트 경고 | ✅ **← 2026-04-07 완료** |
+| 문서 작성자/어드민 권한 분리 | PATCH 서버측 authorId 검증 | 읽기전용 + 편집 전환 모달 | ✅ |
+| 제목 빈 문서 저장 방지 | — | 토스트 경고 | ✅ |
 
 ### 1.6 추가 기능
 
@@ -112,12 +113,13 @@
 |------|------|
 | 테마 커스텀 (프리셋 5종 + CSS 변수) | ✅ |
 | 임베드 토큰 CRUD | ✅ |
-| 프레젠테이션 모드 (TOC 네비게이션) | ✅ |
+| 프레젠테이션 모드 (TOC 네비게이션 + 펜 드로잉) | ✅ |
 | 검색 모달 (Cmd+/) | ✅ |
-| 그래프 뷰 (DAG 시각화) | ✅ |
+| 그래프 뷰 (마인드맵 Canvas — 다크/라이트 테마, 파티클, 보간) | ✅ |
 | 랜딩 페이지 (Hero + Features + Pricing + Footer) | ✅ |
 | 토스트 알림 시스템 | ✅ |
-| 사이드바 실시간 갱신 (refreshKey) | ✅ **← 2026-04-07 완료** |
+| 사이드바 실시간 갱신 (refreshKey) | ✅ |
+| 문서 드래그앤드롭 (문서→폴더 이동) | ✅ |
 
 ### 1.7 인프라 & 미들웨어
 
@@ -127,18 +129,20 @@
 - [x] 워크스페이스 스코프 미들웨어
 - [x] CORS 설정
 - [x] 휴지통 정리 잡 (30일 자동 삭제)
-- [x] Rate Limiting (@fastify/rate-limit) ← **2026-04-07 추가**
-- [x] 테스트 DB 분리 (markdown_web_test, 개발 DB 보호) ← **2026-04-07 완료**
-- [x] DB 마이그레이션 정합성 복구 (workspaces unique constraint 수정) ← **2026-04-07 완료**
+- [x] Rate Limiting (@fastify/rate-limit)
+- [x] 테스트 DB 분리 (markdown_web_test, 개발 DB 보호)
+- [x] DB 마이그레이션 정합성 복구 (workspaces unique constraint 수정)
+- [x] Spec 문서 v1_3 동기화 (9건 완료 — CHANGELOG v1.3.0)
+- [x] ERD 업데이트 (v1.3.0 + v1.6.0에서 모든 불일치 해소)
 
 ### 1.8 Phase 1 잔여 작업
 
 > Phase 1에서 구현되지 않은 항목. Phase 2 시작 전 또는 병행 처리 필요.
 
-- [ ] **`documents.start_mode`** — 스키마/API 모두 미구현. Spec에서 제거할지 구현할지 결정 필요
-- [ ] **Spec 문서 v1_3 동기화** — 9개 문서 불일치 (아래 §문서 섹션 참조)
-- [ ] **ERD 업데이트** — 7건 불일치 (ID 타입, theme/embed 테이블 누락 등)
-- [ ] **이메일 재발송** — POST /auth/resend-verification (프론트에서 호출 중이나 API 미구현)
+- [x] ~~**`documents.start_mode`**~~ → **v1.7.0에서 스펙 제거 확정** (프론트엔드 레이아웃 상태로 처리)
+- [x] ~~**Spec 문서 v1_3 동기화**~~ → CHANGELOG v1.3.0에서 9개 문서 전체 교체 완료
+- [x] ~~**ERD 업데이트**~~ → v1.3.0 + v1.6.0에서 모든 불일치 해소 (ID 타입, theme, embed, comments 등)
+- [ ] **이메일 재발송** — POST /auth/resend-verification (프론트에서 호출 중이나 API 미구현) → **Phase 2 P1 마지막 순서로 이동**
 - [x] ~~회원가입 시 자동 워크스페이스 생성~~ → **제거됨** (2026-04-07). 로그인 후 /workspaces에서 수동 생성
 
 ---
@@ -152,55 +156,74 @@
 
 #### 2.1.1 비밀번호 재설정 플로우
 
-- [x] POST /auth/forgot-password — 비밀번호 리셋 이메일 발송 ← **2026-04-07 완료**
-- [x] POST /auth/reset-password — 토큰 기반 비밀번호 재설정 ← **2026-04-07 완료**
+- [x] POST /auth/forgot-password — 비밀번호 리셋 이메일 발송 ✅
+- [x] POST /auth/reset-password — 토큰 기반 비밀번호 재설정 ✅
 - [ ] PATCH /users/me/password — 비밀번호 변경 (로그인 상태)
-- [x] 비밀번호 리셋 요청 페이지 UI ← **2026-04-07 완료**
-- [x] 비밀번호 재설정 페이지 UI ← **2026-04-07 완료**
+- [x] 비밀번호 리셋 요청 페이지 UI ✅
+- [x] 비밀번호 재설정 페이지 UI ✅
 - [ ] 이메일 서비스 연동 (Resend, console.log 대체)
-- [x] 테스트: 유효/만료 토큰, 비밀번호 강도 검증 ← **2026-04-07 완료**
+- [x] 테스트: 유효/만료 토큰, 비밀번호 강도 검증 ✅
 
-#### 2.1.2 이미지 업로드 통합 (Avatar + Editor R2)
+#### 2.1.2 이미지 업로드 통합 (Avatar + Editor R2) ✅
 
-> **진행 중** — 설정 페이지 + 에디터 연동 완료, Avatar 연동 남음 (2026-04-06 업데이트)
+> **완료** — 프론트엔드에서 R2 Worker로 직접 업로드 후 PATCH /users/me로 URL 저장. PUT /me/avatar 레거시 엔드포인트 제거 (v1.7.0)
 
 - [x] 통합 업로드 모듈 (`image-upload.ts`) 완성
-- [ ] Avatar 업로드 흐름 변경: R2 Worker → URL 획득 → PATCH /users/me
+- [x] Avatar 업로드: R2 Worker → URL 획득 → PATCH /users/me (`profile-edit-modal.tsx`)
 - [x] 이미지 저장소 설정 페이지 (`/settings/storage`)
 - [x] 에디터 이미지 업로드 연동
 - [x] 에러 처리: NO_WORKER_URL, VALIDATION_FAILED, UPLOAD_FAILED
 - [x] R2 Worker CORS 설정 (ALLOWED_ORIGINS)
+- [x] PUT /users/me/avatar 레거시 엔드포인트 제거
 - [ ] 테스트: 업로드 성공/실패, 네트워크 단절, 미설정 상태
 
-#### 2.1.3 댓글 수정/해결 API
+#### 2.1.3 댓글 수정/해결 API ✅
 
-- [ ] PATCH /comments/:commentId — 댓글 내용 수정
-- [ ] PATCH /comments/:commentId — 해결 상태 토글 (resolved)
-- [ ] CommentPanel UI 업데이트 (수정/해결 버튼)
+> **완료** — PATCH /comments/:commentId (content 수정 + resolved 토글), CommentPanel UI 수정/해결 버튼, DB resolved/resolvedBy 컬럼 추가 (migration 0003)
+
+- [x] PATCH /comments/:commentId — 댓글 내용 수정 ✅
+- [x] PATCH /comments/:commentId — 해결 상태 토글 (resolved) ✅
+- [x] CommentPanel UI 업데이트 (수정/해결 버튼) ✅
 - [ ] 테스트: 권한 체크, 수정 이력
+
+#### 2.1.4 이메일 재발송 API (Phase 1 → 이동)
+
+> ⚠️ **프론트-백 불일치**: 프론트엔드(`verify-email/page.tsx:232`)에서 `POST /auth/resend-verification` 이미 호출 중이나 백엔드 API 미구현 → **사용자에게 404 에러 발생**
+
+- [ ] POST /auth/resend-verification — 인증 이메일 재발송 API 구현
+- [x] 프론트엔드 호출 연동 (/verify-email 페이지) — ⚠️ API 없이 호출 중
+- [ ] 테스트: 재발송 성공, 이미 인증된 계정, rate limit
 
 ### 2.2 P2 우선순위 -- 기능 확장
 
 #### 2.2.1 워크스페이스 전체 검색
 
-- [ ] GET /workspaces/:id/search — 풀텍스트 검색 API
-- [ ] 검색 모달 고도화 (현재 title LIKE만 지원)
+> **부분 구현** — `GET /documents` API에 `q` 쿼리 파라미터로 기본 title LIKE 검색 존재
+
+- [ ] GET /workspaces/:id/search — 풀텍스트 검색 API (pg_trgm 인덱스 활용)
+- [ ] 검색 모달 고도화 (현재 title LIKE만 지원 → 본문 검색 추가)
 - [ ] 테스트: 한글 검색, 필터 조합, 0건 결과
 
 #### 2.2.2 버전 Diff
 
+> **부분 구현** — `version-history-panel.tsx`에 diff UI 존재 (added/removed line count), 전용 API 없음
+
 - [ ] GET .../versions/:versionNum — 특정 버전 내용 조회
 - [ ] GET .../versions/diff — Myers 알고리즘 기반 diff API
-- [ ] VersionHistoryModal 2-패널 UI
+- [ ] VersionHistoryModal 2-패널 UI 고도화 (현재 기본 diff 표시 존재)
 - [ ] 테스트: 긴 문서 diff 성능, 복원 후 상태
 
 #### 2.2.3 OG Link Preview 프록시
+
+> **부분 구현** — `link-preview.tsx` 컴포넌트 존재, 백엔드 API 없음
 
 - [ ] POST /link-preview — OG 메타데이터 프록시 API
 - [ ] 에디터 프리뷰에서 링크 카드 렌더링
 - [ ] 테스트: 유효/무효 URL, 타임아웃, CORS
 
 #### 2.2.4 퍼블릭 임베드 페이지
+
+> **부분 구현** — embed-tokens CRUD 완료, 설정 페이지에 npm/iframe/api 가이드 3탭 존재
 
 - [ ] GET /embed/doc/:documentId — 임베드용 HTML 렌더링
 - [ ] 임베드 프리뷰 페이지 UI
@@ -214,8 +237,10 @@
 
 #### 2.2.6 단일 문서 DAG 컨텍스트
 
+> **부분 구현** — `mini-dag-diagram.tsx` + `dag-structure-modal.tsx` 컴포넌트 존재, 전용 API 없음
+
 - [ ] GET /documents/:id/dag-context — 단일 문서 중심 그래프
-- [ ] MiniDagDiagram, DagStructureModal
+- [ ] MiniDagDiagram, DagStructureModal API 연동
 - [ ] 테스트: 고립 문서, 순환 참조
 
 #### 2.2.7 실시간 협업
@@ -224,23 +249,26 @@
 - [ ] CodeMirror y-codemirror.next 확장 연동
 - [ ] 테스트: 2+ 동시 편집, 네트워크 단절 복구
 
-#### 2.2.8 드래그앤드롭 폴더 이동
+#### ~~2.2.8 드래그앤드롭 폴더 이동~~ ✅ 완료
 
-- [ ] 사이드바 카테고리 트리 D&D 구현
-- [ ] 테스트: 중첩 이동, 자기 자신으로 이동 방지
+> **v1.4.0에서 구현 완료** — `category-tree.tsx`에 HTML5 dataTransfer API 기반 D&D 구현
+> 문서→폴더 이동, "전체 문서"에 드롭 시 미분류 이동 지원
+
+- [x] 사이드바 카테고리 트리 D&D 구현
+- [x] 문서→폴더 드래그 시 categoryId 변경
+- [x] "전체 문서"에 드롭 시 미분류 이동
 
 ### 2.3 프론트엔드 미완성 기능
 
 | 페이지 | 미완료 항목 | 우선순위 |
 |--------|-----------|---------|
-| 랜딩 `/` | 소셜 로그인 버튼 (OAuth 연동 전 비활성) | P3 (Phase 3) |
-| 로그인/가입 | Google/GitHub OAuth | P3 (Phase 3) |
-| 문서 목록 `/[ws]/doc` | 드래그앤드롭 폴더 이동 | P2 |
+| 랜딩 `/` | 소셜 로그인 버튼 (OAuth 연동 전 비활성 — UI만 존재) | P3 (Phase 3) |
+| 로그인/가입 | Google/GitHub OAuth (UI 버튼 존재, 백엔드 미구현) | P3 (Phase 3) |
 | 문서 에디터 | 실시간 협업, 고급 검색 필터 | P2 |
-| 그래프 뷰 | 필터링/검색 | P2 |
+| 그래프 뷰 | 텍스트 검색 (카테고리 필터는 존재) | P2 |
 | 프레젠테이션 | Export/Share 기능 | P3 |
 | 설정 - 테마 | 커스텀 테마 Import | P3 |
-| 설정 - 임베드 | 임베드 가이드 문서, 프리뷰 | P2 |
+| 설정 - 임베드 | 실제 임베드 프리뷰 페이지 (가이드 탭은 존재) | P2 |
 
 ### 2.4 Phase 2 QA & 출시 기준
 
@@ -309,41 +337,32 @@
 
 ---
 
-## 문서 & 인프라 잔여 작업
+## 보안 잔여 작업
 
-### Spec 문서 v1_3 동기화 (9건)
-
-| # | 문서 | 주요 변경 필요 내용 |
-|---|------|-------------------|
-| 1 | 001_requirement | Phase 1 "완료" 반영, 댓글/임베드/테마/프레젠테이션 추가 |
-| 2 | 002_component | 38개 컴포넌트 목록 반영, Zustand 5개 스토어 |
-| 3 | 003_user-flow | 프레젠테이션/초대/가입요청/임베드 플로우 추가 |
-| 4 | 004_data-model | ID bigserial, slug 제거, theme/embed 테이블, comments 상세, password_reset 필드 추가 |
-| 5 | 005_api-spec | /relations 경로, forgot-password/reset-password 추가, 상태 업데이트 |
-| 6 | 006_test-spec | 30개 테스트 파일 현황, 팩토리 함수 문서화, 테스트 DB 분리 |
-| 7 | 007_architecture | Fastify/Next.js 16/Zustand 5, Rate Limiting 추가 |
-| 8 | 008_roadmap | Phase 1 ✅ 완료 반영 |
-| 9 | 009_media-embed | POST /link-preview 미구현 명시 |
-
-### ERD 불일치 수정 (7건)
-
-- [ ] 전체 ID 타입: uuid → bigserial
-- [ ] workspaces.slug 제거
-- [ ] workspaces.theme_preset, theme_css 추가
-- [ ] categories.order_index 추가
-- [ ] document_versions.author_id 추가
-- [ ] comments 테이블 추가
-- [ ] embed_tokens 테이블 추가
-- [ ] users.password_reset_token, password_reset_expires_at 추가 ← **2026-04-07 추가**
-
-### 보안 잔여
-
-- [x] 문서 PATCH 서버측 작성자/어드민 권한 검증 ← **2026-04-07 완료**
-- [x] 워크스페이스 unique constraint 수정 (name → owner_id+name 복합) ← **2026-04-07 완료**
-- [x] 순환 참조 방지 로직 수정 (관계 삭제 전 cycle detection) ← **2026-04-07 완료**
+- [x] 문서 PATCH 서버측 작성자/어드민 권한 검증
+- [x] 워크스페이스 unique constraint 수정 (name → owner_id+name 복합)
+- [x] 순환 참조 방지 로직 수정 (관계 삭제 전 cycle detection)
 - [ ] R2 Worker CORS 정책 문서화 (SECURITY.md)
 - [ ] R2 Worker public POST 보안 검토 (인증 없는 업로드)
 - [ ] SVG 업로드 보안 (에디터 허용, Avatar 거부 — 근거 문서화)
+
+---
+
+## 2026-04-08 세션 변경 내역
+
+| 항목 | 설명 |
+|------|------|
+| 코드베이스 전수 점검 | API 73개 엔드포인트, 프론트 20개 페이지, DB 15개 테이블 대조 감사 완료 |
+| 댓글 수정/해결 체크리스트 갱신 | 2.1.3 항목 3/4 완료 표시 (API + Service + UI 구현 확인, 테스트 잔여) |
+| 이메일 재발송 프론트-백 불일치 발견 | `POST /auth/resend-verification` 프론트 호출 중이나 API 미구현 → 404 에러. 체크리스트에 경고 추가 |
+| Phase 2 완성도 조정 | ~25% → ~30%. 댓글 수정/해결 + 이미지 업로드 완료 반영 |
+| 우선순위 요약 갱신 | 이미지 업로드/댓글 수정 완료 표시, 잔여 항목 정리 |
+| documents.start_mode 스펙 제거 | 004_data-model DDL에서 완전 삭제 — 프론트엔드 레이아웃 상태로 처리 확정 |
+| documents.slug DDL 정리 | 마이그레이션 0001에서 DROP 완료된 slug 컬럼/UNIQUE/인덱스를 004_data-model DDL에서 제거 |
+| categories.slug DDL 정리 | 실제 스키마에 없는 slug 컬럼을 DDL에서 제거 |
+| 체크리스트 재분류 | Phase 1 95%→98%, Phase 2 15%→25%. D&D/Spec동기화/ERD 완료 반영, 이메일 재발송 Phase 2 이동 |
+| 인덱스 목록 재정렬 | slug 인덱스 제거로 16→15개, 번호 재정렬 |
+| CHANGELOG v1.7.0 | 코드베이스 감사 기반 문서 정합성 업데이트 기록 |
 
 ---
 
@@ -376,36 +395,33 @@
 
 ## 우선순위 요약 (실행 순서)
 
-### 즉시 (Phase 1 잔여 + Phase 2 P1)
+### 즉시 (Phase 2 P1)
 
-1. ~~**비밀번호 재설정 플로우**~~ ✅ 완료
-2. **이미지 업로드 통합** — Avatar R2 연동 남음
-3. **이메일 서비스 연동** — Resend (console.log 대체)
-4. **댓글 수정/해결** — PATCH /comments/:id
-5. **비밀번호 변경 (로그인 상태)** — PATCH /users/me/password
-6. **Spec 문서 v1_3 동기화** — 9건 불일치 해소
+1. ~~**이미지 업로드 통합**~~ — ✅ 완료
+2. **이메일 서비스 연동** — Resend (console.log 대체)
+3. ~~**댓글 수정/해결**~~ — ✅ 완료 (테스트 잔여)
+4. **비밀번호 변경 (로그인 상태)** — PATCH /users/me/password
+5. **이메일 재발송 API** — POST /auth/resend-verification
 
 ### 단기 (Phase 2 P2, 4~6주)
 
-7. **워크스페이스 전체 검색** — PostgreSQL 풀텍스트 + 필터 UI
-8. **버전 Diff** — Myers 알고리즘 + 2-패널 UI
-9. **카테고리 Graph API** — ancestors/descendants
-10. **단일 문서 DAG 컨텍스트** — 메타 패널 인라인
-11. **퍼블릭 임베드 페이지** — Guest Token + iframe
-12. **OG Link Preview** — 프록시 API + 에디터 카드
-13. **D&D 폴더 이동** — 사이드바 카테고리 트리
+6. **워크스페이스 전체 검색** — PostgreSQL 풀텍스트 + 필터 UI
+7. **버전 Diff** — Myers 알고리즘 + 2-패널 UI (프론트 부분 구현 존재)
+8. **카테고리 Graph API** — ancestors/descendants
+9. **단일 문서 DAG 컨텍스트** — 메타 패널 인라인 (프론트 컴포넌트 존재)
+10. **퍼블릭 임베드 페이지** — Guest Token + iframe (설정 가이드 존재)
+11. **OG Link Preview** — 프록시 API + 에디터 카드 (프론트 컴포넌트 존재)
 
 ### 중기 (Phase 2 마무리, 2~4주)
 
-14. **실시간 협업** — y-websocket CRDT
-15. **ERD & 문서 최종 동기화**
-16. **베타 온보딩 & QA**
+12. **실시간 협업** — y-websocket CRDT
+13. **베타 온보딩 & QA**
 
 ### 장기 (Phase 3)
 
-17. **OAuth 2.0** — Google + GitHub
-18. **Activity Feed & 알림**
-19. **Public Pages** — 커스텀 도메인
-20. **AI Writing Assistant** — Claude API
-21. **성능 최적화 & 부하 테스트**
-22. **수익화** — Stripe 결제
+14. **OAuth 2.0** — Google + GitHub
+15. **Activity Feed & 알림**
+16. **Public Pages** — 커스텀 도메인
+17. **AI Writing Assistant** — Claude API
+18. **성능 최적화 & 부하 테스트**
+19. **수익화** — Stripe 결제

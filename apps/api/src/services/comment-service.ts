@@ -37,6 +37,8 @@ export function createCommentService(db: Db) {
         authorName: users.name,
         content: comments.content,
         parentId: comments.parentId,
+        resolved: comments.resolved,
+        resolvedBy: comments.resolvedBy,
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
       })
@@ -111,6 +113,8 @@ export function createCommentService(db: Db) {
         authorName: users.name,
         content: comments.content,
         parentId: comments.parentId,
+        resolved: comments.resolved,
+        resolvedBy: comments.resolvedBy,
         createdAt: comments.createdAt,
         updatedAt: comments.updatedAt,
       })
@@ -120,6 +124,146 @@ export function createCommentService(db: Db) {
       .limit(1);
 
     logger.info('Comment created', { commentId: comment.id, documentId });
+
+    return result;
+  }
+
+  async function update(
+    commentId: string,
+    workspaceId: string,
+    userId: string,
+    content: string,
+  ) {
+    const numCommentId = Number(commentId);
+
+    const [comment] = await db
+      .select({
+        id: comments.id,
+        authorId: comments.authorId,
+        documentId: comments.documentId,
+      })
+      .from(comments)
+      .where(eq(comments.id, numCommentId))
+      .limit(1);
+
+    if (!comment) {
+      throw notFound('Comment not found');
+    }
+
+    // Verify document belongs to workspace
+    const [doc] = await db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(and(
+        eq(documents.id, comment.documentId),
+        eq(documents.workspaceId, Number(workspaceId)),
+      ))
+      .limit(1);
+
+    if (!doc) {
+      throw notFound('Comment not found');
+    }
+
+    // Only author can edit
+    if (comment.authorId !== Number(userId)) {
+      throw forbidden('You can only edit your own comments');
+    }
+
+    await db
+      .update(comments)
+      .set({ content, updatedAt: new Date() })
+      .where(eq(comments.id, numCommentId));
+
+    // Fetch updated with author name
+    const [result] = await db
+      .select({
+        id: comments.id,
+        documentId: comments.documentId,
+        authorId: comments.authorId,
+        authorName: users.name,
+        content: comments.content,
+        parentId: comments.parentId,
+        resolved: comments.resolved,
+        resolvedBy: comments.resolvedBy,
+        createdAt: comments.createdAt,
+        updatedAt: comments.updatedAt,
+      })
+      .from(comments)
+      .innerJoin(users, eq(comments.authorId, users.id))
+      .where(eq(comments.id, numCommentId))
+      .limit(1);
+
+    logger.info('Comment updated', { commentId, userId });
+
+    return result;
+  }
+
+  async function toggleResolved(
+    commentId: string,
+    workspaceId: string,
+    userId: string,
+  ) {
+    const numCommentId = Number(commentId);
+
+    const [comment] = await db
+      .select({
+        id: comments.id,
+        documentId: comments.documentId,
+        resolved: comments.resolved,
+      })
+      .from(comments)
+      .where(eq(comments.id, numCommentId))
+      .limit(1);
+
+    if (!comment) {
+      throw notFound('Comment not found');
+    }
+
+    // Verify document belongs to workspace
+    const [doc] = await db
+      .select({ id: documents.id })
+      .from(documents)
+      .where(and(
+        eq(documents.id, comment.documentId),
+        eq(documents.workspaceId, Number(workspaceId)),
+      ))
+      .limit(1);
+
+    if (!doc) {
+      throw notFound('Comment not found');
+    }
+
+    const newResolved = !comment.resolved;
+
+    await db
+      .update(comments)
+      .set({
+        resolved: newResolved,
+        resolvedBy: newResolved ? Number(userId) : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(comments.id, numCommentId));
+
+    // Fetch updated with author name
+    const [result] = await db
+      .select({
+        id: comments.id,
+        documentId: comments.documentId,
+        authorId: comments.authorId,
+        authorName: users.name,
+        content: comments.content,
+        parentId: comments.parentId,
+        resolved: comments.resolved,
+        resolvedBy: comments.resolvedBy,
+        createdAt: comments.createdAt,
+        updatedAt: comments.updatedAt,
+      })
+      .from(comments)
+      .innerJoin(users, eq(comments.authorId, users.id))
+      .where(eq(comments.id, numCommentId))
+      .limit(1);
+
+    logger.info('Comment resolved toggled', { commentId, resolved: newResolved, userId });
 
     return result;
   }
@@ -168,5 +312,5 @@ export function createCommentService(db: Db) {
     logger.info('Comment deleted', { commentId, userId });
   }
 
-  return { list, create, remove };
+  return { list, create, update, toggleResolved, remove };
 }

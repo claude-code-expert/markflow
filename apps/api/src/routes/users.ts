@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import '@fastify/multipart';
 import { users, eq } from '@markflow/db';
 import type { Db } from '@markflow/db';
 import { authMiddleware } from '../middleware/auth.js';
@@ -8,9 +7,6 @@ import { badRequest, unauthorized } from '../utils/errors.js';
 interface UsersRoutesOptions {
   db: Db;
 }
-
-const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png']);
-const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2MB
 
 export async function usersRoutes(app: FastifyInstance, opts: UsersRoutesOptions) {
   const { db } = opts;
@@ -103,55 +99,7 @@ export async function usersRoutes(app: FastifyInstance, opts: UsersRoutesOptions
     return reply.status(200).send({ user });
   });
 
-  // PUT /api/v1/users/me/avatar
-  app.put('/me/avatar', async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    if (!request.currentUser) {
-      throw unauthorized('Not authenticated');
-    }
-
-    const file = await request.file();
-
-    if (!file) {
-      throw badRequest('MISSING_FILE', 'An image file is required');
-    }
-
-    if (!ALLOWED_AVATAR_TYPES.has(file.mimetype)) {
-      throw badRequest('INVALID_FILE_TYPE', 'Only JPG and PNG images are allowed');
-    }
-
-    // Consume file buffer to check size
-    const chunks: Buffer[] = [];
-    for await (const chunk of file.file) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-
-    if (buffer.length > MAX_AVATAR_SIZE) {
-      throw badRequest('FILE_TOO_LARGE', 'Avatar image must be under 2MB');
-    }
-
-    // Phase 1: generate a placeholder URL — actual upload to R2 comes later
-    const avatarUrl = `/avatars/${request.currentUser.userId}/${file.filename}`;
-
-    const updated = await db
-      .update(users)
-      .set({
-        avatarUrl,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, Number(request.currentUser.userId)))
-      .returning({
-        avatarUrl: users.avatarUrl,
-      });
-
-    const row = updated[0];
-    if (!row) {
-      throw unauthorized('User not found');
-    }
-
-    return reply.status(200).send({ avatarUrl: row.avatarUrl });
-  });
+  // Avatar 업로드는 프론트엔드에서 R2 Worker로 직접 업로드 후
+  // PATCH /users/me { avatarUrl } 로 URL을 저장한다.
+  // PUT /me/avatar 엔드포인트는 v1.7.0에서 제거됨.
 }
