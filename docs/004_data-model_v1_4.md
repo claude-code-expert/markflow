@@ -1,10 +1,11 @@
 # 004 — 데이터 모델 (Data Model & ERD)
 
-> **버전:** 1.3.0
-> **최종 수정:** 2026-04-04
+> **버전:** 1.4.0
+> **최종 수정:** 2026-04-07
 > **DB:** PostgreSQL 16 · **ORM:** Drizzle ORM
 > **상태:** 📋 계획됨 (KMS SaaS 구축 시 적용)
 > **변경 이력:**
+> - v1.4.0 — USERS 테이블: password_reset_token/password_reset_expires_at 추가, email_verify_token/email_verify_expires_at/locked_until/login_fail_count 반영. WORKSPACES: UNIQUE(name) → UNIQUE(owner_id, name) 복합 유니크로 변경, description 제거. DOCUMENTS: slug 컬럼 제거(마이그레이션 0001). CATEGORIES: slug 제거. 마이그레이션 0002 추가
 > - v1.3.0 — 실제 구현 기준 스키마 동기화: ID 타입 uuid→bigserial 전체 교체, OAUTH_ACCOUNTS Phase 3 이연, documents.start_mode 미구현 상태 명시, workspaces 테이블 slug 제거 및 theme_preset/theme_css 추가, categories.order_index 추가, document_versions.author_id 추가, comments/embed_tokens 테이블 상세화, 인덱스 전략 반영
 > - v1.2.0 — `CATEGORY_CLOSURE` 테이블 신규 추가 (무제한 중첩 계층 조회 최적화), `DOCUMENTS`에 `start_mode` 컬럼 추가, `DOCUMENT_RELATIONS`에 DAG 관련 무결성 규칙 보강, 마이그레이션 파일 `0012` 추가
 > - v1.1.0 — `WORKSPACE_JOIN_REQUESTS` 테이블 신규 추가, ERD 관계 업데이트
@@ -20,12 +21,17 @@
 erDiagram
     USERS {
         bigserial id PK
-        text email UK
-        text name
-        text password_hash
-        text avatar_url
-        text bio
+        varchar email UK
+        varchar name
+        varchar password_hash
+        varchar avatar_url
         boolean email_verified
+        varchar email_verify_token
+        timestamp email_verify_expires_at
+        varchar password_reset_token
+        timestamp password_reset_expires_at
+        timestamp locked_until
+        integer login_fail_count
         timestamp created_at
         timestamp updated_at
     }
@@ -49,8 +55,7 @@ erDiagram
 
     WORKSPACES {
         bigserial id PK
-        text name UK
-        text description
+        varchar name
         bigint owner_id FK
         varchar theme_preset
         text theme_css
@@ -96,8 +101,7 @@ erDiagram
         bigserial id PK
         bigint workspace_id FK
         bigint parent_id FK
-        text name
-        text slug
+        varchar name
         double_precision order_index
         timestamp created_at
         timestamp updated_at
@@ -115,7 +119,6 @@ erDiagram
         bigint category_id FK
         bigint author_id FK
         text title
-        text slug
         text content
         integer current_version
         boolean is_deleted
@@ -232,15 +235,20 @@ erDiagram
 
 ```sql
 CREATE TABLE users (
-    id              BIGSERIAL   PRIMARY KEY,
-    email           TEXT        NOT NULL UNIQUE,
-    name            TEXT        NOT NULL,
-    password_hash   TEXT,                           -- NULL if OAuth-only
-    avatar_url      TEXT,
-    bio             TEXT,
-    email_verified  BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                        BIGSERIAL    PRIMARY KEY,
+    email                     VARCHAR(255) NOT NULL UNIQUE,
+    name                      VARCHAR(100) NOT NULL,
+    password_hash             VARCHAR(255) NOT NULL,
+    avatar_url                VARCHAR(500),
+    email_verified            BOOLEAN      NOT NULL DEFAULT FALSE,
+    email_verify_token        VARCHAR(255),
+    email_verify_expires_at   TIMESTAMPTZ,
+    password_reset_token      VARCHAR(255),
+    password_reset_expires_at TIMESTAMPTZ,
+    locked_until              TIMESTAMPTZ,
+    login_fail_count          INTEGER      NOT NULL DEFAULT 0,
+    created_at                TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at                TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_email ON users(email);

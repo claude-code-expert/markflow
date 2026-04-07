@@ -102,6 +102,20 @@ export function createWorkspaceService(db: Db) {
     const docCountMap = new Map(docCounts.map((r) => [r.workspaceId, Number(r.value)]));
     const catCountMap = new Map(catCounts.map((r) => [r.workspaceId, Number(r.value)]));
 
+    // Batch-fetch pending join request counts (admin/owner only)
+    const joinCountMap = new Map<number, number>();
+    const adminWsIds = rows.filter((r) => r.role === 'owner' || r.role === 'admin').map((r) => r.id);
+    if (adminWsIds.length > 0) {
+      const joinCounts = await db
+        .select({ workspaceId: joinRequests.workspaceId, value: count() })
+        .from(joinRequests)
+        .where(and(eq(joinRequests.status, 'pending'), inArray(joinRequests.workspaceId, adminWsIds)))
+        .groupBy(joinRequests.workspaceId);
+      for (const r of joinCounts) {
+        joinCountMap.set(r.workspaceId, Number(r.value));
+      }
+    }
+
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -116,6 +130,7 @@ export function createWorkspaceService(db: Db) {
       lastActivityAt: row.updatedAt,
       documentCount: docCountMap.get(row.id) ?? 0,
       categoryCount: catCountMap.get(row.id) ?? 0,
+      pendingJoinCount: joinCountMap.get(row.id) ?? 0,
     }));
   }
 

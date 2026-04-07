@@ -36,15 +36,18 @@ function loadSidebarOpen(): boolean {
 interface SidebarState {
   expandedCategoryIds: Set<number>;
   isSidebarOpen: boolean;
+  refreshKey: number;
   toggleCategory: (id: number) => void;
   toggleSidebar: () => void;
   expandCategory: (id: number) => void;
   collapseCategory: (id: number) => void;
+  refresh: () => void;
 }
 
 export const useSidebarStore = create<SidebarState>((set) => ({
   expandedCategoryIds: loadExpanded(),
   isSidebarOpen: loadSidebarOpen(),
+  refreshKey: 0,
 
   toggleCategory: (id) =>
     set((state) => {
@@ -86,4 +89,6 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       }
       return { isSidebarOpen: next };
     }),
+
+  refresh: () => set((state) => ({ refreshKey: state.refreshKey + 1 })),
 }));

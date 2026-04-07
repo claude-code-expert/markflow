@@ -7,6 +7,7 @@ import {
   ArrowDownAZ, ArrowDownWideNarrow, Briefcase, FileText, Search, FolderOpen, Command, ChevronDown, Plus, Check, LayoutGrid,
 } from 'lucide-react';
 import { useWorkspaceStore } from '../stores/workspace-store';
+import { useSidebarStore } from '../stores/sidebar-store';
 import { CategoryTree, DOC_SPACER_PX, type Category as TreeCategory, type TreeDocument } from './category-tree';
 import { apiFetch } from '../lib/api';
 import { useToastStore } from '../stores/toast-store';
@@ -302,6 +303,7 @@ function FolderTreeSection({ slug }: { slug: string }) {
   const { workspaces } = useWorkspaceStore();
   const wsId = workspaces.find((ws) => ws.name === decodeURIComponent(slug))?.id;
   const pathname = usePathname();
+  const refreshKey = useSidebarStore((s) => s.refreshKey);
 
   // Context menu state
   const [folderMenu, setFolderMenu] = useState<{ category: TreeCategory; pos: { x: number; y: number } } | null>(null);
@@ -336,10 +338,10 @@ function FolderTreeSection({ slug }: { slug: string }) {
     loadData();
   }, [loadData]);
 
-  // pathname 변경 시 refetch (문서 저장/생성 후 갱신)
+  // pathname 변경 또는 refreshKey 변경 시 refetch
   useEffect(() => {
     loadData();
-  }, [pathname, loadData]);
+  }, [pathname, refreshKey, loadData]);
 
   const handleCreateFolder = async (name: string) => {
     if (!wsId) return;

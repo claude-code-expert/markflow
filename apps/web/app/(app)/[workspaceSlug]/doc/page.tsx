@@ -14,10 +14,8 @@ import { useWorkspaceStore } from '../../../../stores/workspace-store';
 import { usePermissions } from '../../../../hooks/use-permissions';
 import { CategoryTree, type Category } from '../../../../components/category-tree';
 import { FolderContextMenu } from '../../../../components/folder-context-menu';
-import { NewDocModal } from '../../../../components/new-doc-modal';
 import { NewFolderModal } from '../../../../components/new-folder-modal';
 import { ImportExportModal } from '../../../../components/import-export-modal';
-import { flattenCategories } from '../../../../lib/category-utils';
 import { Download, Plus } from 'lucide-react';
 import { Tooltip } from '../../../../components/tooltip';
 
@@ -151,10 +149,13 @@ export default function DocsPage() {
   const [pageSize, setPageSize] = useState(10);
 
   // Modal state
-  const [showNewDocModal, setShowNewDocModal] = useState(false);
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderParentId, setNewFolderParentId] = useState<number | null>(null);
-  const [newDocCategoryId, setNewDocCategoryId] = useState<number | null>(null);
+  /** 새 문서 에디터로 이동 (DB 저장 없이) */
+  const goToNewDoc = useCallback((categoryId?: number | null) => {
+    const params = categoryId ? `?categoryId=${categoryId}` : '';
+    router.push(`/${workspaceSlug}/doc/new${params}`);
+  }, [router, workspaceSlug]);
 
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
@@ -390,10 +391,7 @@ export default function DocsPage() {
               {permissions.canCreateDocument && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setNewDocCategoryId(categoryIdParam ? Number(categoryIdParam) : null);
-                    setShowNewDocModal(true);
-                  }}
+                  onClick={() => goToNewDoc(categoryIdParam ? Number(categoryIdParam) : null)}
                   style={btnPrimary}
                 >
                   <Plus size={14} strokeWidth={2.5} />
@@ -699,10 +697,7 @@ export default function DocsPage() {
                 {!searchQuery && permissions.canCreateDocument && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setNewDocCategoryId(categoryIdParam ? Number(categoryIdParam) : null);
-                      setShowNewDocModal(true);
-                    }}
+                    onClick={() => goToNewDoc(categoryIdParam ? Number(categoryIdParam) : null)}
                     style={btnPrimary}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
@@ -1081,10 +1076,7 @@ export default function DocsPage() {
           workspaceId={wsId ?? 0}
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
-          onNewDoc={() => {
-            setNewDocCategoryId(contextMenu.category.id);
-            setShowNewDocModal(true);
-          }}
+          onNewDoc={() => goToNewDoc(contextMenu.category.id)}
           onRefresh={() => void categoriesQuery.refetch()}
         />
       )}
@@ -1092,13 +1084,6 @@ export default function DocsPage() {
       {/* ================================================================ */}
       {/* Modals                                                            */}
       {/* ================================================================ */}
-      <NewDocModal
-        open={showNewDocModal}
-        onClose={() => setShowNewDocModal(false)}
-        workspaceSlug={workspaceSlug}
-        workspaceId={currentWorkspace?.id ?? 0}
-        categories={flattenCategories(categories).map((c) => ({ id: c.id, name: c.path }))}
-      />
       <NewFolderModal
         open={showNewFolderModal}
         onClose={() => setShowNewFolderModal(false)}

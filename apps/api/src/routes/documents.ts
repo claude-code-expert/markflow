@@ -23,11 +23,11 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
   // POST /api/v1/workspaces/:wsId/documents
   app.post<{
     Params: { wsId: string };
-    Body: { title: string; categoryId?: string };
+    Body: { title: string; content?: string; categoryId?: string };
   }>('/workspaces/:wsId/documents', {
     preHandler: requireRole('editor'),
   }, async (request, reply) => {
-    const { title, categoryId } = request.body;
+    const { title, content, categoryId } = request.body;
 
     if (!title || title.trim().length === 0) {
       throw badRequest('MISSING_FIELDS', 'title is required');
@@ -42,6 +42,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       request.params.wsId,
       userId,
       title.trim(),
+      content ?? '',
       categoryId,
     );
 
@@ -107,11 +108,16 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       throw badRequest('INVALID_FIELDS', 'title must be 300 characters or less');
     }
 
+    const userId = request.currentUser!.userId;
+    const member = (request as typeof request & { workspaceMember: { role: string } }).workspaceMember;
+    const isAdminOrOwner = member.role === 'owner' || member.role === 'admin';
+
     const document = await documentService.update(
       request.params.id,
       request.params.wsId,
       { content, title, categoryId },
-      request.currentUser!.userId,
+      userId,
+      isAdminOrOwner,
     );
 
     return reply.status(200).send({ document });

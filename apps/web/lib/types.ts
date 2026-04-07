@@ -29,6 +29,7 @@ export interface Workspace {
   lastActivityAt?: string;
   documentCount?: number;
   categoryCount?: number;
+  pendingJoinCount?: number;
 }
 
 export interface Document {
@@ -68,6 +69,25 @@ export interface WorkspaceMember {
   userName: string;
   userEmail: string;
   userAvatarUrl: string | null;
+}
+
+export interface JoinRequest {
+  id: number;
+  workspaceId: number;
+  userId: number;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy: number | null;
+  assignedRole: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userName: string;
+  userEmail: string;
+  userAvatarUrl: string | null;
+}
+
+export interface JoinRequestsResponse {
+  joinRequests: JoinRequest[];
 }
 
 export interface Invitation {

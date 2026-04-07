@@ -187,8 +187,25 @@ export function createRelationService(db: Db) {
       throw badRequest('INVALID_RELATION', 'prev and next cannot point to the same document');
     }
 
-    // Clear existing relations BEFORE cycle detection
-    // (otherwise bidirectional pairs from previous setRelations cause false positives)
+    // Cycle detection BEFORE clearing existing relations
+    // (clearing first removes the edges needed for detection)
+    // Temporarily exclude current doc's outgoing relations to avoid false positives
+    // from its own existing prev/next, but keep other docs' relations intact.
+    if (data.prev) {
+      const hasCycle = await detectCycle(docId, data.prev, 'prev');
+      if (hasCycle) {
+        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
+      }
+    }
+
+    if (data.next) {
+      const hasCycle = await detectCycle(docId, data.next, 'next');
+      if (hasCycle) {
+        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
+      }
+    }
+
+    // Clear existing relations
     // 1. Delete all relations where this doc is source
     await db
       .delete(documentRelations)
@@ -206,21 +223,6 @@ export function createRelationService(db: Db) {
           ),
         ),
       );
-
-    // Cycle detection for prev/next (after clearing existing relations)
-    if (data.prev) {
-      const hasCycle = await detectCycle(docId, data.prev, 'prev');
-      if (hasCycle) {
-        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
-      }
-    }
-
-    if (data.next) {
-      const hasCycle = await detectCycle(docId, data.next, 'next');
-      if (hasCycle) {
-        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
-      }
-    }
 
     // Insert new relations
     const toInsert: Array<{

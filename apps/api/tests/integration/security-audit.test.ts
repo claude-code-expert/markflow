@@ -250,9 +250,8 @@ describe('Security Audit: Workspace isolation', () => {
   });
 });
 
-// TODO: Rate limiting middleware is not yet implemented. Enable when @fastify/rate-limit is added.
 describe('Security Audit: Rate limiting on auth endpoints', () => {
-  it.skip('login endpoint should enforce rate limiting after threshold', async () => {
+  it('login endpoint should enforce rate limiting after threshold', async () => {
     const app = getApp();
 
     // Fire 12 login attempts (threshold is 10) from the same IP

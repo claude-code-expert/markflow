@@ -89,6 +89,7 @@ export function TagInput({
         addToast({ message: '태그 저장에 실패했습니다', type: 'error' });
       } finally {
         setSaving(false);
+        requestAnimationFrame(() => inputRef.current?.focus());
       }
     },
     [wsKey, documentId, tags],
@@ -105,7 +106,6 @@ export function TagInput({
     setInputValue('');
     setShowSuggestions(false);
     void saveTags(newTags);
-    requestAnimationFrame(() => inputRef.current?.focus());
   }
 
   function removeTag(name: string) {

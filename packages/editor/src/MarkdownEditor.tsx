@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
-import { PenLine, Eye, Loader2, X, RotateCcw } from 'lucide-react'
+import { PenLine, Eye, Loader2, X, RotateCcw, Copy, Check } from 'lucide-react'
 import { Toolbar } from './toolbar/Toolbar'
 import { EditorPane } from './editor/EditorPane'
 import { PreviewPane } from './preview/PreviewPane'
@@ -108,6 +108,7 @@ export function MarkdownEditor({
   const [guideOpen, setGuideOpen] = useState(false)
   const [workerUrl, setWorkerUrl] = useState<string>('')
   const [isDragOver, setIsDragOver] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [uploadState, setUploadState] = useState<{
     status: 'idle' | 'uploading' | 'error'
     fileName?: string
@@ -144,6 +145,13 @@ export function MarkdownEditor({
     if (workerUrl) return createCloudflareUploader(workerUrl)
     return null
   }, [onImageUploadProp, workerUrl])
+
+  const handleCopyMarkdown = useCallback(() => {
+    void navigator.clipboard.writeText(markdown).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [markdown])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleChange = useCallback(
@@ -403,6 +411,21 @@ export function MarkdownEditor({
                 <PenLine size={10} />
                 Editor
               </span>
+              <button
+                type="button"
+                onClick={handleCopyMarkdown}
+                title="마크다운 복사"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '3px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: copied ? 'var(--mf-green, #16a34a)' : 'var(--mf-text-3, #9A9890)',
+                  fontSize: '11px', fontWeight: 400, padding: '2px 4px',
+                  borderRadius: '4px', transition: 'color 0.15s',
+                }}
+              >
+                {copied ? <Check size={10} /> : <Copy size={10} />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
             </div>
             <div className="mf-pane-content">
               <EditorPane

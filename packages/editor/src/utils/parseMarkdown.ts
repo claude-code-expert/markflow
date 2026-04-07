@@ -11,6 +11,20 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
 import { deepmerge } from 'deepmerge-ts'
+import type { Root, Element } from 'hast'
+import { visit } from 'unist-util-visit'
+
+/** rehype plugin: add target="_blank" and rel="noopener noreferrer" to all <a> links */
+function rehypeExternalLinks() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      if (node.tagName === 'a' && node.properties) {
+        node.properties['target'] = '_blank'
+        node.properties['rel'] = 'noopener noreferrer'
+      }
+    })
+  }
+}
 
 // Extend sanitize schema to allow code class names (for syntax highlighting)
 // and KaTeX-generated classes
@@ -20,6 +34,7 @@ const sanitizeSchema = deepmerge(defaultSchema, {
     span: ['className', 'style', 'aria-hidden'],
     div: ['className', 'style'],
     img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
+    a: ['target', 'rel'],
     td: ['align', 'valign'],
     th: ['align', 'valign'],
     details: ['className', 'open'],
@@ -49,6 +64,7 @@ const processor = unified()
   .use(rehypeHighlight, { detect: true, ignoreMissing: true })  // code syntax highlighting
   .use(rehypeKatex)                    // render math with KaTeX
   .use(rehypeRaw)                      // raw HTML → proper HAST nodes
+  .use(rehypeExternalLinks)            // all links open in new tab
   .use(rehypeSanitize, sanitizeSchema) // XSS protection
   .use(rehypeStringify)
 

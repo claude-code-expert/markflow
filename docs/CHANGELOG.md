@@ -1,5 +1,75 @@
 # Docs Changelog
 
+## v1.6.0 — 2026-04-07
+
+> 비밀번호 재설정, 문서 생성 흐름 변경, 권한 분리, 테스트 DB 분리, 보안 강화
+
+### 인증 (Auth)
+
+| 변경 | 설명 |
+|------|------|
+| **비밀번호 재설정 플로우** | `POST /auth/forgot-password` + `POST /auth/reset-password` API, `/forgot-password` + `/reset-password` UI 페이지 |
+| **Rate Limiting** | `@fastify/rate-limit` 추가 — register/login 10req/15min, forgot-password 5req/15min |
+| **회원가입 변경** | 자동 워크스페이스 생성 제거, 로그인 후 `/workspaces`로 이동 |
+| **로고 교체** | 모든 auth 페이지 `MarkFlowLogo` → `markflow-logo.png` 이미지로 통일 |
+
+### 문서 (Documents)
+
+| 변경 | 설명 |
+|------|------|
+| **새 문서 생성** | 모달 제거 → `/doc/new` 경로에서 저장 전까지 DB 미기록 |
+| **문서 권한 분리** | 작성자만 편집 가능, admin/owner는 확인 모달 후 편집 전환 (서버측 authorId 검증 포함) |
+| **제목 빈 문서 방지** | 저장 시 제목 없으면 토스트 경고, 저장 차단 |
+| **기본 레이아웃** | 기존 문서 열기 시 미리보기 모드 기본값 |
+| **POST content 지원** | 문서 생성 API에 `content` 필드 추가 |
+
+### 에디터 (packages/editor)
+
+| 변경 | 설명 |
+|------|------|
+| **마크다운 복사** | Editor pane header에 Copy/Copied 버튼 추가 |
+| **외부 링크 새 탭** | `rehypeExternalLinks` 플러그인 — 모든 `<a>` 태그에 `target="_blank"` + `rel="noopener noreferrer"` |
+
+### 워크스페이스
+
+| 변경 | 설명 |
+|------|------|
+| **가입 신청 관리 UI** | `/settings/members`에 가입 신청 섹션 (승인/거절 + 역할 지정) |
+| **가입 신청 수 표시** | `/workspaces` 목록에 "가입신청 N명" 뱃지 (admin/owner 전용) |
+| **행 클릭 이동** | 워크스페이스 목록에서 행 클릭 시 문서 메인 이동 |
+| **사이드바 갱신** | `refreshKey` 패턴으로 저장 시 사이드바 즉시 반영 |
+
+### DB 마이그레이션 & 스키마
+
+| 변경 | 설명 |
+|------|------|
+| `0002_lying_crusher_hogan.sql` | `users.password_reset_token`, `users.password_reset_expires_at` 컬럼 추가 |
+| workspace unique constraint | `UNIQUE(name)` → `UNIQUE(owner_id, name)` 복합 유니크로 수정 |
+| 마이그레이션 record 복구 | 0000/0001 해시 불일치 수정 |
+| **004_data-model → v1.4.0** | USERS 필드 6개 추가, WORKSPACES 유니크 변경, DOCUMENTS/CATEGORIES slug 제거 |
+
+### 인프라 & 테스트
+
+| 변경 | 설명 |
+|------|------|
+| **테스트 DB 분리** | `markdown_web_test` DB, `_test` suffix 강제 검증, 개발 DB 보호 |
+| rate limit config 중복 제거 | `authRateLimit()` 헬퍼로 통합 |
+| slug.test.ts 삭제 | slug 기능 제거에 따른 orphan 테스트 삭제 |
+| 순환 참조 방지 수정 | cycle detection을 관계 삭제 전으로 이동 |
+| auth-login 테스트 수정 | rate limit 격리를 위한 고유 remoteAddress 사용 |
+| document 테스트 수정 | slug assertion 제거, content 지원 반영 |
+| .bak 파일 15개 삭제 | 데드코드 정리 |
+
+### 보안
+
+| 변경 | 설명 |
+|------|------|
+| **문서 PATCH 서버측 권한** | `document-service.update()`에 authorId 검증 + isAdminOrOwner 예외 |
+| **JoinRequestSection 버그** | 행별 역할 상태 분리 (공유 상태 버그 수정) |
+| **공개 워크스페이스 API** | `request.userId` → `request.currentUser!.userId` 수정 |
+
+---
+
 ## v1.5.0 — 2026-04-06
 
 > 마인드맵 그래프 전면 재작성, 문서 프리뷰 모달, 문서 삭제 기능

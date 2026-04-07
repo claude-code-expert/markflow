@@ -12,7 +12,7 @@ import {
   sql,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
-import { notFound } from '../utils/errors.js';
+import { notFound, forbidden } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
 const MAX_VERSIONS = 20;
@@ -56,6 +56,7 @@ export function createDocumentService(db: Db) {
     workspaceId: string,
     authorId: string,
     title: string,
+    content: string,
     categoryId?: string | null,
   ) {
     const numWorkspaceId = Number(workspaceId);
@@ -67,7 +68,7 @@ export function createDocumentService(db: Db) {
         authorId: Number(authorId),
         title,
         categoryId: categoryId ? Number(categoryId) : null,
-        content: '',
+        content,
         currentVersion: 1,
       })
       .returning();
@@ -215,7 +216,7 @@ export function createDocumentService(db: Db) {
     };
   }
 
-  async function update(documentId: string, workspaceId: string, data: UpdateData, userId?: string) {
+  async function update(documentId: string, workspaceId: string, data: UpdateData, userId?: string, isAdminOrOwner = false) {
     const numDocumentId = Number(documentId);
     const [existing] = await db
       .select()
@@ -229,6 +230,11 @@ export function createDocumentService(db: Db) {
 
     if (!existing) {
       throw notFound('Document not found');
+    }
+
+    // 작성자 또는 admin/owner만 수정 가능
+    if (userId && !isAdminOrOwner && existing.authorId !== Number(userId)) {
+      throw forbidden('Only the document author or admin can edit this document');
     }
 
     const updates: Record<string, unknown> = {

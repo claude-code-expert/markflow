@@ -10,6 +10,18 @@ interface AuthRoutesOptions {
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
+function authRateLimit(max = 10) {
+  return {
+    config: {
+      rateLimit: {
+        max,
+        timeWindow: '15 minutes',
+        keyGenerator: (request: FastifyRequest) => request.ip,
+      },
+    },
+  };
+}
+
 function getRefreshTokenCookieOptions() {
   return {
     httpOnly: true,
@@ -25,6 +37,7 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
   // POST /api/v1/auth/register
   app.post<{ Body: { email: string; password: string; name: string } }>(
     '/register',
+    authRateLimit(),
     async (request, reply) => {
       const { email, password, name } = request.body;
 
@@ -55,6 +68,7 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
   // POST /api/v1/auth/login
   app.post(
     '/login',
+    authRateLimit(),
     async (request: FastifyRequest, reply: FastifyReply) => {
       const body = request.body as { email: string; password: string; rememberMe?: boolean };
       const { email, password, rememberMe } = body;
@@ -85,6 +99,33 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
       }
 
       const result = await authService.refresh(refreshToken);
+      return reply.status(200).send(result);
+    },
+  );
+
+  // POST /api/v1/auth/forgot-password
+  app.post<{ Body: { email: string } }>(
+    '/forgot-password',
+    authRateLimit(5),
+    async (request, reply) => {
+      const { email } = request.body;
+      if (!email) {
+        throw badRequest('MISSING_FIELDS', 'email is required');
+      }
+      const result = await authService.forgotPassword(email);
+      return reply.status(200).send(result);
+    },
+  );
+
+  // POST /api/v1/auth/reset-password
+  app.post<{ Body: { token: string; password: string } }>(
+    '/reset-password',
+    async (request, reply) => {
+      const { token, password } = request.body;
+      if (!token || !password) {
+        throw badRequest('MISSING_FIELDS', 'token and password are required');
+      }
+      const result = await authService.resetPassword(token, password);
       return reply.status(200).send(result);
     },
   );

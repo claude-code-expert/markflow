@@ -336,7 +336,8 @@ export default function RegisterPage() {
       <div style={styles.card}>
         {/* Logo */}
         <div style={styles.logoWrap}>
-          <MarkFlowLogo height={26} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
         </div>
 
         <div style={styles.successWrap}>
@@ -374,8 +375,8 @@ export default function RegisterPage() {
     <div style={styles.card}>
       {/* Logo */}
       <div style={styles.logoWrap}>
-        <span style={styles.logoBox}>M</span>
-        <span style={styles.logoText}>MarkFlow</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
       </div>
 
       {/* Auth tabs */}

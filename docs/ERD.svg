@@ -49,9 +49,9 @@
   <!-- ==================== -->
   <g transform="translate(660, 70)">
     <rect x="0" y="0" width="230" height="24" rx="4" ry="4" class="table-header"/>
-    <rect x="0" y="20" width="230" height="196" rx="0" class="table-body"/>
-    <rect x="0" y="196" width="230" height="20" rx="0" ry="0" class="table-body" style="stroke-width:0"/>
-    <rect x="0" y="204" width="230" height="12" rx="0" ry="4" class="table-body"/>
+    <rect x="0" y="20" width="230" height="228" rx="0" class="table-body"/>
+    <rect x="0" y="228" width="230" height="20" rx="0" ry="0" class="table-body" style="stroke-width:0"/>
+    <rect x="0" y="236" width="230" height="12" rx="0" ry="4" class="table-body"/>
     <text x="115" y="15" text-anchor="middle" class="table-header-text">users</text>
     <!-- Columns -->
     <text x="6" y="38" class="col-constraint">PK</text><text x="26" y="38" class="col-text">id</text><text x="224" y="38" text-anchor="end" class="col-type">bigserial</text>
@@ -62,10 +62,12 @@
     <text x="26" y="118" class="col-text">email_verified</text><text x="224" y="118" text-anchor="end" class="col-type">boolean NN</text>
     <text x="26" y="134" class="col-text">email_verify_token</text><text x="224" y="134" text-anchor="end" class="col-type">varchar(255)</text>
     <text x="26" y="150" class="col-text">email_verify_expires_at</text><text x="224" y="150" text-anchor="end" class="col-type">timestamptz</text>
-    <text x="26" y="166" class="col-text">locked_until</text><text x="224" y="166" text-anchor="end" class="col-type">timestamptz</text>
-    <text x="26" y="182" class="col-text">login_fail_count</text><text x="224" y="182" text-anchor="end" class="col-type">integer NN</text>
-    <text x="26" y="198" class="col-text">created_at</text><text x="224" y="198" text-anchor="end" class="col-type">timestamptz NN</text>
-    <text x="26" y="214" class="col-text">updated_at</text><text x="224" y="214" text-anchor="end" class="col-type">timestamptz NN</text>
+    <text x="26" y="166" class="col-text">password_reset_token</text><text x="224" y="166" text-anchor="end" class="col-type">varchar(255)</text>
+    <text x="26" y="182" class="col-text">password_reset_expires_at</text><text x="224" y="182" text-anchor="end" class="col-type">timestamptz</text>
+    <text x="26" y="198" class="col-text">locked_until</text><text x="224" y="198" text-anchor="end" class="col-type">timestamptz</text>
+    <text x="26" y="214" class="col-text">login_fail_count</text><text x="224" y="214" text-anchor="end" class="col-type">integer NN</text>
+    <text x="26" y="230" class="col-text">created_at</text><text x="224" y="230" text-anchor="end" class="col-type">timestamptz NN</text>
+    <text x="26" y="246" class="col-text">updated_at</text><text x="224" y="246" text-anchor="end" class="col-type">timestamptz NN</text>
   </g>
 
   <!-- ==================== -->
@@ -77,7 +79,7 @@
     <rect x="0" y="172" width="230" height="12" rx="0" ry="4" class="table-body" style="stroke-width:0"/>
     <text x="115" y="15" text-anchor="middle" class="table-header-text">workspaces</text>
     <text x="6" y="38" class="col-constraint">PK</text><text x="26" y="38" class="col-text">id</text><text x="224" y="38" text-anchor="end" class="col-type">bigserial</text>
-    <text x="6" y="54" class="col-constraint">UQ</text><text x="26" y="54" class="col-text">name</text><text x="224" y="54" text-anchor="end" class="col-type">varchar(100) NN</text>
+    <text x="26" y="54" class="col-text">name</text><text x="224" y="54" text-anchor="end" class="col-type">varchar(100) NN</text>
     <text x="26" y="70" class="col-text">is_root</text><text x="224" y="70" text-anchor="end" class="col-type">boolean NN</text>
     <text x="26" y="86" class="col-text">is_public</text><text x="224" y="86" text-anchor="end" class="col-type">boolean NN</text>
     <text x="6" y="102" class="col-constraint">FK</text><text x="26" y="102" class="col-text">owner_id</text><text x="224" y="102" text-anchor="end" class="col-type">bigint NN</text>
@@ -85,6 +87,7 @@
     <text x="26" y="134" class="col-text">theme_css</text><text x="224" y="134" text-anchor="end" class="col-type">text NN</text>
     <text x="26" y="150" class="col-text">created_at</text><text x="224" y="150" text-anchor="end" class="col-type">timestamptz NN</text>
     <text x="26" y="166" class="col-text">updated_at</text><text x="224" y="166" text-anchor="end" class="col-type">timestamptz NN</text>
+    <text x="6" y="182" class="col-constraint">UQ</text><text x="30" y="182" class="col-type">(owner_id, name)</text>
   </g>
 
   <!-- ==================== -->
@@ -161,22 +164,20 @@
   <!-- ==================== -->
   <g transform="translate(30, 350)">
     <rect x="0" y="0" width="240" height="24" rx="4" ry="4" class="table-header"/>
-    <rect x="0" y="20" width="240" height="212" rx="0" class="table-body"/>
-    <rect x="0" y="220" width="240" height="16" rx="0" ry="4" class="table-body" style="stroke-width:0"/>
+    <rect x="0" y="20" width="240" height="180" rx="0" class="table-body"/>
+    <rect x="0" y="188" width="240" height="16" rx="0" ry="4" class="table-body" style="stroke-width:0"/>
     <text x="120" y="15" text-anchor="middle" class="table-header-text">documents</text>
     <text x="6" y="38" class="col-constraint">PK</text><text x="26" y="38" class="col-text">id</text><text x="234" y="38" text-anchor="end" class="col-type">bigserial</text>
     <text x="6" y="54" class="col-constraint">FK</text><text x="26" y="54" class="col-text">workspace_id</text><text x="234" y="54" text-anchor="end" class="col-type">bigint NN</text>
     <text x="6" y="70" class="col-constraint">FK</text><text x="26" y="70" class="col-text">category_id</text><text x="234" y="70" text-anchor="end" class="col-type">bigint</text>
     <text x="6" y="86" class="col-constraint">FK</text><text x="26" y="86" class="col-text">author_id</text><text x="234" y="86" text-anchor="end" class="col-type">bigint NN</text>
     <text x="26" y="102" class="col-text">title</text><text x="234" y="102" text-anchor="end" class="col-type">varchar(300) NN</text>
-    <text x="26" y="118" class="col-text">slug</text><text x="234" y="118" text-anchor="end" class="col-type">varchar(300) NN</text>
-    <text x="26" y="134" class="col-text">content</text><text x="234" y="134" text-anchor="end" class="col-type">text NN</text>
-    <text x="26" y="150" class="col-text">current_version</text><text x="234" y="150" text-anchor="end" class="col-type">integer NN</text>
-    <text x="26" y="166" class="col-text">is_deleted</text><text x="234" y="166" text-anchor="end" class="col-type">boolean NN</text>
-    <text x="26" y="182" class="col-text">deleted_at</text><text x="234" y="182" text-anchor="end" class="col-type">timestamptz</text>
-    <text x="26" y="198" class="col-text">created_at</text><text x="234" y="198" text-anchor="end" class="col-type">timestamptz NN</text>
-    <text x="26" y="214" class="col-text">updated_at</text><text x="234" y="214" text-anchor="end" class="col-type">timestamptz NN</text>
-    <text x="6" y="234" class="col-constraint">UQ</text><text x="30" y="234" class="col-type">(workspace_id, slug)</text>
+    <text x="26" y="118" class="col-text">content</text><text x="234" y="118" text-anchor="end" class="col-type">text NN</text>
+    <text x="26" y="134" class="col-text">current_version</text><text x="234" y="134" text-anchor="end" class="col-type">integer NN</text>
+    <text x="26" y="150" class="col-text">is_deleted</text><text x="234" y="150" text-anchor="end" class="col-type">boolean NN</text>
+    <text x="26" y="166" class="col-text">deleted_at</text><text x="234" y="166" text-anchor="end" class="col-type">timestamptz</text>
+    <text x="26" y="182" class="col-text">created_at</text><text x="234" y="182" text-anchor="end" class="col-type">timestamptz NN</text>
+    <text x="26" y="198" class="col-text">updated_at</text><text x="234" y="198" text-anchor="end" class="col_type">timestamptz NN</text>
   </g>
 
   <!-- ==================== -->

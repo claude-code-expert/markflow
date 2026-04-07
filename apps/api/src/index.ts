@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
 import { createDb } from '@markflow/db';
 import { logger } from './utils/logger.js';
 import { AppError } from './utils/errors.js';
@@ -43,6 +44,18 @@ export async function buildApp() {
   await app.register(multipart, {
     limits: {
       fileSize: 5 * 1024 * 1024, // 5MB global limit
+    },
+  });
+
+  // --- Rate Limit ---
+  await app.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: (_request, context) => {
+      return new AppError(
+        'RATE_LIMITED',
+        `요청이 너무 많습니다. ${Math.ceil(context.ttl / 1000)}초 후에 다시 시도해주세요.`,
+        context.statusCode,
+      );
     },
   });
 

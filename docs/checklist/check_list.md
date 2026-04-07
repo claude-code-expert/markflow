@@ -1,7 +1,7 @@
 # MarkFlow KMS -- 전체 Phase 체크리스트
 
-> **작성일:** 2026-04-05
-> **기준:** develop 브랜치, checklist-04-04 감사 결과 + 코드베이스 분석
+> **최종 수정:** 2026-04-07
+> **기준:** develop 브랜치
 > **범위:** Phase 0 ~ Phase 3 전체
 
 ---
@@ -11,8 +11,8 @@
 | Phase | 상태 | 완성도 | 주요 지표 |
 |-------|------|--------|----------|
 | Phase 0 (Editor) | ✅ 완료 | 100% | npm 배포 가능, 24개 의존성, ESM+CJS |
-| Phase 1 (Prototype) | ✅ 완료 (잔여 작업 있음) | ~90% | API 40/56, 프론트 14/14 페이지, DB 13/15 |
-| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~5% | 이미지 업로드 모듈 진행 중 |
+| Phase 1 (Prototype) | ✅ 완료 (잔여 작업 있음) | ~95% | API 44/56, 프론트 15/15 페이지, DB 15/15 |
+| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~15% | 비밀번호 재설정 완료, 이미지 업로드 진행 중 |
 | Phase 3 (Launch) | 📋 계획 | 0% | 미착수 |
 
 ---
@@ -31,6 +31,8 @@
 - [x] Next.js App Router 호환 (`use client`)
 - [x] `.mf-` CSS 클래스 / `--mf-` CSS 변수 네임스페이스
 - [x] peerDependencies: React ^18 || ^19 만 요구
+- [x] 마크다운 복사 버튼 (에디터 pane header) ← **2026-04-07 추가**
+- [x] 외부 링크 새 탭 열기 (`target="_blank"`, `rel="noopener noreferrer"`) ← **2026-04-07 추가**
 
 ### Phase 0 잔여
 
@@ -40,7 +42,7 @@
 
 ## Phase 1 -- Prototype ✅ (잔여 작업 있음)
 
-> **기간:** 2026-04-01 ~ 2026-04-04 | **목표:** 내부 팀 사용 가능 수준
+> **기간:** 2026-04-01 ~ 2026-04-07 | **목표:** 내부 팀 사용 가능 수준
 
 ### 1.1 인증 (Auth)
 
@@ -51,8 +53,10 @@
 | 토큰 갱신 | POST /auth/refresh | — | ✅ |
 | 로그아웃 | POST /auth/logout | — | ✅ |
 | 이메일 인증 | GET /auth/verify-email | /verify-email | ✅ |
+| 비밀번호 찾기 | POST /auth/forgot-password | /forgot-password | ✅ **← 2026-04-07 완료** |
+| 비밀번호 재설정 | POST /auth/reset-password | /reset-password | ✅ **← 2026-04-07 완료** |
 | 계정 잠금 | 5회 실패 → 15분 락 | — | ✅ |
-| 속도 제한 | 10 req/15min | — | ✅ |
+| 속도 제한 | 10 req/15min (register, login), 5/15min (forgot-password) | — | ✅ |
 
 ### 1.2 사용자 (Users)
 
@@ -72,6 +76,9 @@
 | 멤버 관리 | GET/PATCH/DELETE /members | /settings/members | ✅ |
 | 초대 | POST /invitations, GET/POST /invitations/:token | /invite/[token] | ✅ |
 | 가입 요청 | POST/GET/PATCH /join-requests (+ batch) | JoinRequestPanel | ✅ |
+| 가입 요청 관리 UI | — | /settings/members 내 가입 신청 섹션 | ✅ **← 2026-04-07 완료** |
+| 가입 요청 수 표시 | GET /workspaces (pendingJoinCount) | /workspaces 목록 뱃지 | ✅ **← 2026-04-07 완료** |
+| 워크스페이스 행 클릭 이동 | — | /workspaces 행 클릭 → /doc | ✅ **← 2026-04-07 완료** |
 
 ### 1.4 카테고리 (Categories)
 
@@ -86,7 +93,8 @@
 | 항목 | API | Frontend | 상태 |
 |------|-----|----------|------|
 | CRUD | POST/GET/PATCH/DELETE | /[ws]/doc/[id] | ✅ |
-| 자동 저장 | PATCH (1s debounce) | 에디터 | ✅ |
+| 새 문서 (DB 저장 없이 에디터 진입) | — | /[ws]/doc/new | ✅ **← 2026-04-07 변경** |
+| 수동 저장 | PATCH (Cmd+S / 버튼) | 에디터 | ✅ |
 | 소프트 삭제 | DELETE (soft) | — | ✅ |
 | 버전 목록 | GET /versions | VersionHistoryPanel | ✅ |
 | 버전 복원 | POST /restore-version | — | ✅ |
@@ -95,6 +103,8 @@
 | 댓글 | GET/POST/DELETE /comments | CommentPanel | ✅ |
 | 휴지통 | GET/POST/DELETE /trash | /[ws]/trash | ✅ |
 | Import/Export | POST /import, GET /export | ImportExportModal | ✅ |
+| 문서 작성자/어드민 권한 분리 | PATCH 서버측 authorId 검증 | 읽기전용 + 편집 전환 모달 | ✅ **← 2026-04-07 완료** |
+| 제목 빈 문서 저장 방지 | — | 토스트 경고 | ✅ **← 2026-04-07 완료** |
 
 ### 1.6 추가 기능
 
@@ -107,6 +117,7 @@
 | 그래프 뷰 (DAG 시각화) | ✅ |
 | 랜딩 페이지 (Hero + Features + Pricing + Footer) | ✅ |
 | 토스트 알림 시스템 | ✅ |
+| 사이드바 실시간 갱신 (refreshKey) | ✅ **← 2026-04-07 완료** |
 
 ### 1.7 인프라 & 미들웨어
 
@@ -116,6 +127,9 @@
 - [x] 워크스페이스 스코프 미들웨어
 - [x] CORS 설정
 - [x] 휴지통 정리 잡 (30일 자동 삭제)
+- [x] Rate Limiting (@fastify/rate-limit) ← **2026-04-07 추가**
+- [x] 테스트 DB 분리 (markdown_web_test, 개발 DB 보호) ← **2026-04-07 완료**
+- [x] DB 마이그레이션 정합성 복구 (workspaces unique constraint 수정) ← **2026-04-07 완료**
 
 ### 1.8 Phase 1 잔여 작업
 
@@ -125,6 +139,7 @@
 - [ ] **Spec 문서 v1_3 동기화** — 9개 문서 불일치 (아래 §문서 섹션 참조)
 - [ ] **ERD 업데이트** — 7건 불일치 (ID 타입, theme/embed 테이블 누락 등)
 - [ ] **이메일 재발송** — POST /auth/resend-verification (프론트에서 호출 중이나 API 미구현)
+- [x] ~~회원가입 시 자동 워크스페이스 생성~~ → **제거됨** (2026-04-07). 로그인 후 /workspaces에서 수동 생성
 
 ---
 
@@ -137,39 +152,22 @@
 
 #### 2.1.1 비밀번호 재설정 플로우
 
-- [ ] POST /auth/forgot-password — 비밀번호 리셋 이메일 발송
-- [ ] POST /auth/reset-password — 토큰 기반 비밀번호 재설정
+- [x] POST /auth/forgot-password — 비밀번호 리셋 이메일 발송 ← **2026-04-07 완료**
+- [x] POST /auth/reset-password — 토큰 기반 비밀번호 재설정 ← **2026-04-07 완료**
 - [ ] PATCH /users/me/password — 비밀번호 변경 (로그인 상태)
-- [ ] 비밀번호 리셋 요청 페이지 UI
-- [ ] 비밀번호 재설정 페이지 UI
+- [x] 비밀번호 리셋 요청 페이지 UI ← **2026-04-07 완료**
+- [x] 비밀번호 재설정 페이지 UI ← **2026-04-07 완료**
 - [ ] 이메일 서비스 연동 (Resend, console.log 대체)
-- [ ] 테스트: 유효/만료 토큰, 비밀번호 강도 검증
+- [x] 테스트: 유효/만료 토큰, 비밀번호 강도 검증 ← **2026-04-07 완료**
 
 #### 2.1.2 이미지 업로드 통합 (Avatar + Editor R2)
 
 > **진행 중** — 설정 페이지 + 에디터 연동 완료, Avatar 연동 남음 (2026-04-06 업데이트)
 
 - [x] 통합 업로드 모듈 (`image-upload.ts`) 완성
-  - [x] Avatar 검증: JPG/PNG/WebP, 5MB
-  - [x] Editor 검증: PNG/JPEG/GIF/WebP/SVG, 10MB
-  - [x] Worker URL 해석: env var (`NEXT_PUBLIC_R2_WORKER_URL`) > localStorage (`mf-cf-worker-url`)
-  - [x] 이미지 업로드 토글: `isImageUploadEnabled()` / `setImageUploadEnabled()` (localStorage `mf-image-upload-enabled`)
 - [ ] Avatar 업로드 흐름 변경: R2 Worker → URL 획득 → PATCH /users/me
-  - [ ] 프로필 편집 모달 (profile-edit-modal.tsx) 카메라 버튼 연동
-  - [ ] Worker 미설정 시 StorageGuidePanel 표시
 - [x] 이미지 저장소 설정 페이지 (`/settings/storage`)
-  - [x] 이미지 업로드 사용/미사용 토글 (ON/OFF)
-  - [x] 이미지 업로드 사용법 도움말 패널 (3단계)
-  - [x] 연결 상태 표시 (연동 완료/미설정)
-  - [x] Worker URL 입력 (env var 설정 시 비활성화)
-  - [x] 연결 테스트 (테스트 이미지 업로드 + URL 반환 검증)
-  - [x] 설정 가이드 → StorageGuidePanel 우측 패널로 열기 (에디터와 동일 UX)
-  - [x] 미설정 시 CTA 버튼으로 가이드 패널 열기 유도
 - [x] 에디터 이미지 업로드 연동
-  - [x] 드래그앤드롭, 붙여넣기, 파일 선택 3가지 입력 경로
-  - [x] Worker 미설정 시 에디터 내장 ImageUploadGuide 모달 / StorageGuidePanel
-  - [x] 업로드 토글 OFF 시 업로드 비활성화, 버튼 클릭 시 설정 페이지로 이동
-  - [x] 플레이스홀더 → 완료 URL 교체 패턴
 - [x] 에러 처리: NO_WORKER_URL, VALIDATION_FAILED, UPLOAD_FAILED
 - [x] R2 Worker CORS 설정 (ALLOWED_ORIGINS)
 - [ ] 테스트: 업로드 성공/실패, 네트워크 단절, 미설정 상태
@@ -186,69 +184,49 @@
 #### 2.2.1 워크스페이스 전체 검색
 
 - [ ] GET /workspaces/:id/search — 풀텍스트 검색 API
-  - [ ] 필터: category, tag, author, date range
-  - [ ] PostgreSQL `ts_vector` / `ts_query` 활용
 - [ ] 검색 모달 고도화 (현재 title LIKE만 지원)
-  - [ ] 필터 UI (카테고리, 태그, 작성자, 날짜)
-  - [ ] 검색 결과 하이라이팅
-  - [ ] 키보드 네비게이션 (↑↓ Enter)
 - [ ] 테스트: 한글 검색, 필터 조합, 0건 결과
 
 #### 2.2.2 버전 Diff
 
 - [ ] GET .../versions/:versionNum — 특정 버전 내용 조회
 - [ ] GET .../versions/diff — Myers 알고리즘 기반 diff API
-- [ ] VersionHistoryModal 2-패널 UI (버전 목록 + diff 프리뷰)
-  - [ ] 추가(녹색) / 삭제(빨간색) 라인 표시
-  - [ ] 버전 복원 (미저장 경고 포함)
-- [ ] 클라이언트 diff: `fast-diff` 라이브러리 활용
+- [ ] VersionHistoryModal 2-패널 UI
 - [ ] 테스트: 긴 문서 diff 성능, 복원 후 상태
 
 #### 2.2.3 OG Link Preview 프록시
 
 - [ ] POST /link-preview — OG 메타데이터 프록시 API
-  - [ ] title, description, image, favicon 추출
-  - [ ] 타임아웃 설정 (3초 제안)
-  - [ ] 캐싱 전략 (1시간 제안)
 - [ ] 에디터 프리뷰에서 링크 카드 렌더링
 - [ ] 테스트: 유효/무효 URL, 타임아웃, CORS
 
 #### 2.2.4 퍼블릭 임베드 페이지
 
 - [ ] GET /embed/doc/:documentId — 임베드용 HTML 렌더링
-  - [ ] Guest Token 인증
-  - [ ] iframe-safe 헤더 (X-Frame-Options, CSP)
 - [ ] 임베드 프리뷰 페이지 UI
-- [ ] 임베드 설정 가이드 문서 (NPM / iframe / REST API)
 - [ ] 테스트: 유효/만료/취소 토큰, XSS 방어
 
 #### 2.2.5 카테고리 Graph API
 
 - [ ] GET /categories/:id/ancestors — Breadcrumb 경로
 - [ ] GET /categories/:id/descendants — 하위 전체 조회
-- [ ] 사이드바 Breadcrumb UI 적용
 - [ ] 테스트: 깊은 트리, 순환 참조 방어
 
 #### 2.2.6 단일 문서 DAG 컨텍스트
 
 - [ ] GET /documents/:id/dag-context — 단일 문서 중심 그래프
-- [ ] MiniDagDiagram (문서 메타 패널 인라인 SVG)
-- [ ] DagStructureModal (전체 인터랙티브 뷰, 줌 컨트롤)
+- [ ] MiniDagDiagram, DagStructureModal
 - [ ] 테스트: 고립 문서, 순환 참조
 
 #### 2.2.7 실시간 협업
 
 - [ ] y-websocket CRDT 서버 설정
 - [ ] CodeMirror y-codemirror.next 확장 연동
-- [ ] 동시 편집자 커서/선택 표시
-- [ ] 충돌 해결 전략 정의
 - [ ] 테스트: 2+ 동시 편집, 네트워크 단절 복구
 
 #### 2.2.8 드래그앤드롭 폴더 이동
 
 - [ ] 사이드바 카테고리 트리 D&D 구현
-- [ ] 이동 API (PATCH /categories/:id with parentId)
-- [ ] 드롭 대상 하이라이트 + 유효성 검증
 - [ ] 테스트: 중첩 이동, 자기 자신으로 이동 방지
 
 ### 2.3 프론트엔드 미완성 기능
@@ -261,7 +239,6 @@
 | 문서 에디터 | 실시간 협업, 고급 검색 필터 | P2 |
 | 그래프 뷰 | 필터링/검색 | P2 |
 | 프레젠테이션 | Export/Share 기능 | P3 |
-| 설정 - 멤버 | 일괄 작업 (batch) | P3 |
 | 설정 - 테마 | 커스텀 테마 Import | P3 |
 | 설정 - 임베드 | 임베드 가이드 문서, 프리뷰 | P2 |
 
@@ -283,16 +260,14 @@
 ### 3.1 OAuth 2.0 소셜 로그인
 
 - [ ] `oauth_accounts` 테이블 생성 (마이그레이션)
-- [ ] Google OAuth 2.0 연동 (Client ID/Secret, callback)
+- [ ] Google OAuth 2.0 연동
 - [ ] GitHub OAuth 2.0 연동
 - [ ] 기존 이메일 계정과 소셜 계정 연결 (linking)
-- [ ] 랜딩/로그인/가입 페이지 소셜 버튼 활성화
 - [ ] 테스트: 신규 가입, 기존 계정 연결, 토큰 갱신
 
 ### 3.2 Activity Feed & 알림
 
 - [ ] `activity_logs` 테이블 설계 및 생성
-- [ ] 활동 이벤트 수집 (문서 생성/수정, 멤버 변경, 댓글 등)
 - [ ] 활동 피드 API (GET /workspaces/:id/activity)
 - [ ] 알림 UI (벨 아이콘, 드롭다운)
 - [ ] 이메일 알림 (멘션, 초대 등)
@@ -303,24 +278,20 @@
 - [ ] 문서 공개 발행 기능 (publish toggle)
 - [ ] 공개 문서 전용 렌더링 페이지
 - [ ] 커스텀 도메인 연결 지원
-- [ ] SEO 메타 태그 (OG, Twitter Card)
 - [ ] 테스트: 공개/비공개 전환, 도메인 매핑
 
 ### 3.4 AI Writing Assistant
 
 - [ ] Claude API 연동 (Anthropic SDK)
 - [ ] 에디터 내 AI 패널 / 인라인 제안
-- [ ] 기능: 문서 요약, 번역, 문법 교정, 자동 완성
-- [ ] 사용량 제한 정책 (플랜별 토큰 한도)
 - [ ] 테스트: API 호출, 응답 스트리밍, 에러 처리
 
 ### 3.5 성능 최적화 & 부하 테스트
 
 - [ ] API p95 응답 시간 < 200ms 달성
 - [ ] 데이터베이스 쿼리 최적화 (N+1 제거, 인덱스 점검)
-- [ ] CDN 캐싱 전략 (정적 자산, 이미지)
 - [ ] 부하 테스트 (k6 또는 Artillery)
-- [ ] 모니터링: Sentry 에러 트래킹, 성능 대시보드
+- [ ] 모니터링: Sentry 에러 트래킹
 - [ ] 테스트: 동시 100 사용자 시나리오
 
 ### 3.6 수익화 (Pricing)
@@ -347,10 +318,10 @@
 | 1 | 001_requirement | Phase 1 "완료" 반영, 댓글/임베드/테마/프레젠테이션 추가 |
 | 2 | 002_component | 38개 컴포넌트 목록 반영, Zustand 5개 스토어 |
 | 3 | 003_user-flow | 프레젠테이션/초대/가입요청/임베드 플로우 추가 |
-| 4 | 004_data-model | ID bigserial, slug 제거, theme/embed 테이블, comments 상세 |
-| 5 | 005_api-spec | /relations 경로, ✅/⏳/📋 상태, 추가 엔드포인트 |
-| 6 | 006_test-spec | 26개 테스트 파일 현황, 팩토리 함수 문서화 |
-| 7 | 007_architecture | Fastify/Next.js 16/Zustand 5, 배포 포트, cleanup-trash |
+| 4 | 004_data-model | ID bigserial, slug 제거, theme/embed 테이블, comments 상세, password_reset 필드 추가 |
+| 5 | 005_api-spec | /relations 경로, forgot-password/reset-password 추가, 상태 업데이트 |
+| 6 | 006_test-spec | 30개 테스트 파일 현황, 팩토리 함수 문서화, 테스트 DB 분리 |
+| 7 | 007_architecture | Fastify/Next.js 16/Zustand 5, Rate Limiting 추가 |
 | 8 | 008_roadmap | Phase 1 ✅ 완료 반영 |
 | 9 | 009_media-embed | POST /link-preview 미구현 명시 |
 
@@ -363,26 +334,43 @@
 - [ ] document_versions.author_id 추가
 - [ ] comments 테이블 추가
 - [ ] embed_tokens 테이블 추가
+- [ ] users.password_reset_token, password_reset_expires_at 추가 ← **2026-04-07 추가**
 
 ### 보안 잔여
 
+- [x] 문서 PATCH 서버측 작성자/어드민 권한 검증 ← **2026-04-07 완료**
+- [x] 워크스페이스 unique constraint 수정 (name → owner_id+name 복합) ← **2026-04-07 완료**
+- [x] 순환 참조 방지 로직 수정 (관계 삭제 전 cycle detection) ← **2026-04-07 완료**
 - [ ] R2 Worker CORS 정책 문서화 (SECURITY.md)
 - [ ] R2 Worker public POST 보안 검토 (인증 없는 업로드)
 - [ ] SVG 업로드 보안 (에디터 허용, Avatar 거부 — 근거 문서화)
-- [ ] Cloudflare R2 무료 티어 한도 (10GB, 1000만 읽기/월) 대응 계획
 
 ---
 
-## 진행 중 작업 (2026-04-05 기준)
+## 2026-04-07 세션 변경 내역
 
-| 파일 | 변경 내용 | 상태 |
-|------|----------|------|
-| `apps/web/lib/image-upload.ts` | 통합 이미지 업로드 모듈 + 토글 유틸 | ✅ 완료 |
-| `apps/web/components/storage-guide-panel.tsx` | R2 설정 가이드 패널 (에디터+설정 공유) | ✅ 완료 |
-| `apps/web/app/.../settings/storage/page.tsx` | 이미지 저장소 설정 페이지 (토글+가이드 패널) | ✅ 완료 |
-| `apps/web/app/.../doc/[docId]/page.tsx` | 에디터 이미지 업로드 토글 연동 | ✅ 완료 |
-| `apps/web/components/profile-edit-modal.tsx` | Avatar R2 업로드 연동 (수정) | 🔄 진행 중 |
-| `apps/web/components/app-header.tsx` | 헤더 수정 | 🔄 진행 중 |
+| 항목 | 설명 |
+|------|------|
+| DB 마이그레이션 복구 | 0002 마이그레이션 수동 적용, migration record 재정렬 |
+| 워크스페이스 unique constraint | `UNIQUE(name)` → `UNIQUE(owner_id, name)` 복합 유니크로 수정 |
+| 비밀번호 재설정 플로우 | forgot-password/reset-password API + 프론트 UI 완성 |
+| 새 문서 생성 흐름 변경 | 모달 제거 → `/doc/new` 경로에서 저장 전까지 DB 미기록 |
+| 문서 에디터 UX 개선 | 제목 placeholder 처리, 빈 제목 저장 방지, 기본 미리보기 모드 |
+| 문서 권한 분리 | 작성자/어드민 편집 권한 (서버 + 클라이언트), 어드민 편집 전환 모달 |
+| 에디터 마크다운 복사 | Editor pane header에 Copy 버튼 추가 |
+| 외부 링크 새 탭 열기 | rehypeExternalLinks 플러그인으로 모든 링크 `target="_blank"` |
+| 태그 입력 포커스 | 태그 저장 완료 후 input 자동 포커스 |
+| 사이드바 실시간 갱신 | refreshKey 패턴으로 저장 시 사이드바 즉시 반영 |
+| 워크스페이스 가입 신청 UI | /settings/members에 가입 신청 관리 섹션, /workspaces에 뱃지 표시 |
+| 워크스페이스 행 클릭 | /workspaces 목록에서 행 클릭 시 문서 메인 이동 |
+| 로고 교체 | 모든 auth 페이지 MarkFlowLogo → markflow-logo.png |
+| 회원가입 변경 | 자동 워크스페이스 생성 제거, 로그인 후 /workspaces로 이동 |
+| 공개 워크스페이스 API 수정 | request.userId → request.currentUser!.userId |
+| 테스트 DB 분리 | markdown_web_test DB 생성, `_test` suffix 강제 검증 |
+| 테스트 수정 | slug 관련 assertion 제거, auth-login rate limit 격리, circular-ref 순서 수정, slug.test.ts 삭제 |
+| Rate Limit 설정 중복 제거 | authRateLimit() 헬퍼 추출 |
+| .bak 파일 삭제 | 15개 .bak 파일 정리 |
+| 보안 수정 | 문서 PATCH 서버측 authorId 검증, JoinRequestSection 행별 역할 상태 분리 |
 
 ---
 
@@ -390,33 +378,34 @@
 
 ### 즉시 (Phase 1 잔여 + Phase 2 P1)
 
-1. **이미지 업로드 통합** — 현재 진행 중, Avatar + Editor R2 연동
-2. **비밀번호 재설정 플로우** — forgot/reset/change 3개 엔드포인트 + UI
+1. ~~**비밀번호 재설정 플로우**~~ ✅ 완료
+2. **이미지 업로드 통합** — Avatar R2 연동 남음
 3. **이메일 서비스 연동** — Resend (console.log 대체)
 4. **댓글 수정/해결** — PATCH /comments/:id
-5. **Spec 문서 v1_3 동기화** — 9건 불일치 해소
+5. **비밀번호 변경 (로그인 상태)** — PATCH /users/me/password
+6. **Spec 문서 v1_3 동기화** — 9건 불일치 해소
 
 ### 단기 (Phase 2 P2, 4~6주)
 
-6. **워크스페이스 전체 검색** — PostgreSQL 풀텍스트 + 필터 UI
-7. **버전 Diff** — Myers 알고리즘 + 2-패널 UI
-8. **카테고리 Graph API** — ancestors/descendants
-9. **단일 문서 DAG 컨텍스트** — 메타 패널 인라인
-10. **퍼블릭 임베드 페이지** — Guest Token + iframe
-11. **OG Link Preview** — 프록시 API + 에디터 카드
-12. **D&D 폴더 이동** — 사이드바 카테고리 트리
+7. **워크스페이스 전체 검색** — PostgreSQL 풀텍스트 + 필터 UI
+8. **버전 Diff** — Myers 알고리즘 + 2-패널 UI
+9. **카테고리 Graph API** — ancestors/descendants
+10. **단일 문서 DAG 컨텍스트** — 메타 패널 인라인
+11. **퍼블릭 임베드 페이지** — Guest Token + iframe
+12. **OG Link Preview** — 프록시 API + 에디터 카드
+13. **D&D 폴더 이동** — 사이드바 카테고리 트리
 
 ### 중기 (Phase 2 마무리, 2~4주)
 
-13. **실시간 협업** — y-websocket CRDT
-14. **ERD & 문서 최종 동기화**
-15. **베타 온보딩 & QA**
+14. **실시간 협업** — y-websocket CRDT
+15. **ERD & 문서 최종 동기화**
+16. **베타 온보딩 & QA**
 
 ### 장기 (Phase 3)
 
-16. **OAuth 2.0** — Google + GitHub
-17. **Activity Feed & 알림**
-18. **Public Pages** — 커스텀 도메인
-19. **AI Writing Assistant** — Claude API
-20. **성능 최적화 & 부하 테스트**
-21. **수익화** — Stripe 결제
+17. **OAuth 2.0** — Google + GitHub
+18. **Activity Feed & 알림**
+19. **Public Pages** — 커스텀 도메인
+20. **AI Writing Assistant** — Claude API
+21. **성능 최적화 & 부하 테스트**
+22. **수익화** — Stripe 결제

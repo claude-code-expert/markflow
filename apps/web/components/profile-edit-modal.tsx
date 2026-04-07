@@ -189,7 +189,11 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
               <button
                 type="button"
                 onClick={handleAvatarClick}
-                className="absolute -bottom-1 -right-1 rounded-full border-2 border-white bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200"
+                className={`absolute -bottom-1 -right-1 rounded-full border-2 border-white p-1.5 ${
+                  hasWorkerUrl
+                    ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-50 text-gray-300 cursor-default'
+                }`}
                 aria-label="사진 변경"
               >
                 <svg
@@ -220,9 +224,27 @@ export function ProfileEditModal({ open, onClose }: ProfileEditModalProps) {
               className="hidden"
               onChange={(e) => handleAvatarSelect(e.target.files?.[0])}
             />
-            <p className="text-xs text-gray-500">
-              JPG, PNG, WebP (최대 5MB)
-            </p>
+            {hasWorkerUrl ? (
+              <p className="text-xs text-gray-500">
+                JPG, PNG, WebP (최대 5MB)
+              </p>
+            ) : (
+              <div className="text-center">
+                <p className="text-xs text-gray-400 mb-1">JPG, PNG, WebP (최대 5MB)</p>
+                <p className="text-xs text-amber-600 font-medium">
+                  이미지 업로드 연동을 진행하세요
+                </p>
+                {currentWorkspace && (
+                  <Link
+                    href={`/${encodeURIComponent(currentWorkspace.name)}/settings/storage`}
+                    className="mt-1 inline-block text-xs text-blue-600 hover:text-blue-800 underline"
+                    onClick={onClose}
+                  >
+                    저장소 설정으로 이동 →
+                  </Link>
+                )}
+              </div>
+            )}
 
             {/* 저장소 미설정 시 가이드 */}
             {showStorageGuide && currentWorkspace && (

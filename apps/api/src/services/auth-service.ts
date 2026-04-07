@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
 import {
   users,
-  workspaces,
-  workspaceMembers,
   refreshTokens,
   eq,
   and,
@@ -83,26 +81,6 @@ export function createAuthService(db: Db) {
     if (!user) {
       throw new Error('Failed to insert user');
     }
-
-    const insertedWorkspace = await db
-      .insert(workspaces)
-      .values({
-        name: 'My Notes',
-        isRoot: true,
-        ownerId: user.id,
-      })
-      .returning();
-
-    const workspace = insertedWorkspace[0];
-    if (!workspace) {
-      throw new Error('Failed to create root workspace');
-    }
-
-    await db.insert(workspaceMembers).values({
-      workspaceId: workspace.id,
-      userId: user.id,
-      role: 'owner',
-    });
 
     logger.info(`Email verification link for ${user.email}: /api/v1/auth/verify-email?token=${emailVerifyToken}`);
 
@@ -258,5 +236,70 @@ export function createAuthService(db: Db) {
       .where(eq(refreshTokens.tokenHash, tokenHash));
   }
 
-  return { register, verifyEmail, login, refresh, logout };
+  async function forgotPassword(email: string) {
+    const found = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    const user = found[0];
+    if (!user) {
+      return { sent: true };
+    }
+
+    const token = crypto.randomUUID();
+    const passwordResetExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await db
+      .update(users)
+      .set({
+        passwordResetToken: token,
+        passwordResetExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    logger.info(`Password reset link for ${user.email}: /reset-password?token=${token}`);
+
+    return { sent: true };
+  }
+
+  async function resetPassword(token: string, newPassword: string) {
+    const validation = validatePassword(newPassword);
+    if (!validation.valid) {
+      throw badRequest('INVALID_PASSWORD', validation.message ?? 'Invalid password');
+    }
+
+    const found = await db
+      .select()
+      .from(users)
+      .where(eq(users.passwordResetToken, token))
+      .limit(1);
+
+    const user = found[0];
+    if (!user) {
+      throw badRequest('INVALID_TOKEN', '유효하지 않은 비밀번호 재설정 링크입니다.');
+    }
+
+    if (user.passwordResetExpiresAt && user.passwordResetExpiresAt < new Date()) {
+      throw gone('TOKEN_EXPIRED', '비밀번호 재설정 링크가 만료되었습니다.');
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    await db
+      .update(users)
+      .set({
+        passwordHash,
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    return { reset: true };
+  }
+
+  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword };
 }

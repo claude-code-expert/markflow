@@ -29,7 +29,7 @@ export async function workspacesRoutes(app: FastifyInstance, opts: WorkspacesRou
   app.get<{
     Querystring: { q?: string; page?: string; limit?: string };
   }>('/workspaces/public', async (request) => {
-    const userId = (request as FastifyRequest & { userId: string }).userId;
+    const userId = request.currentUser!.userId;
     const q = request.query.q ?? '';
     const page = Math.max(1, Number(request.query.page ?? '1'));
     const limit = Math.min(50, Math.max(1, Number(request.query.limit ?? '20')));

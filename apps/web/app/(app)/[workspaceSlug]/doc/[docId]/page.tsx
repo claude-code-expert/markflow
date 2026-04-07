@@ -8,6 +8,7 @@ import '@markflow/editor/styles';
 import { apiFetch, ApiError } from '../../../../../lib/api';
 import { uploadImage, getWorkerUrl, isImageUploadEnabled } from '../../../../../lib/image-upload';
 import { useEditorStore } from '../../../../../stores/editor-store';
+import { useAuthStore } from '../../../../../stores/auth-store';
 import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
 import type { DocumentResponse, Category } from '../../../../../lib/types';
@@ -17,6 +18,7 @@ import { DocumentMetaPanel } from '../../../../../components/document-meta-panel
 import { VersionHistoryPanel } from '../../../../../components/version-history-panel';
 import { VersionHistoryModal } from '../../../../../components/version-history-modal';
 import { useToastStore } from '../../../../../stores/toast-store';
+import { useSidebarStore } from '../../../../../stores/sidebar-store';
 import { LinkPreview } from '../../../../../components/link-preview';
 import { CommentPanel } from '../../../../../components/comment-panel';
 import { StorageGuidePanel } from '../../../../../components/storage-guide-panel';
@@ -29,7 +31,9 @@ export default function DocEditorPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const refreshSidebar = useSidebarStore((s) => s.refresh);
 
+  const currentUser = useAuthStore((s) => s.user);
   const { currentWorkspace } = useWorkspaceStore();
   const wsId = currentWorkspace?.id;
   const permissions = usePermissions(currentWorkspace?.role);
@@ -49,6 +53,8 @@ export default function DocEditorPage() {
   const [showStorageGuide, setShowStorageGuide] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [adminEditUnlocked, setAdminEditUnlocked] = useState(false);
+  const [showAdminEditConfirm, setShowAdminEditConfirm] = useState(false);
   const [storageBannerDismissed, setStorageBannerDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
     const dismissedAt = localStorage.getItem('mf-storage-banner-dismissed-at');
@@ -59,7 +65,7 @@ export default function DocEditorPage() {
   const togglePanel = (panel: 'meta' | 'version' | 'comment') => {
     setActivePanel((prev) => (prev === panel ? null : panel));
   };
-  const [editorLayout, setEditorLayout] = useState<'editor' | 'split' | 'preview'>('split');
+  const [editorLayout, setEditorLayout] = useState<'editor' | 'split' | 'preview'>('preview');
   const [editorTheme, setEditorTheme] = useState<'light' | 'dark'>('light');
   const isMountedRef = useRef(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +144,8 @@ export default function DocEditorPage() {
   // Initialize editor store
   useEffect(() => {
     if (documentQuery.data) {
-      setDocument(documentQuery.data.id, documentQuery.data.title, documentQuery.data.content);
+      const loadedTitle = documentQuery.data.title === '제목 없음' ? '' : documentQuery.data.title;
+      setDocument(documentQuery.data.id, loadedTitle, documentQuery.data.content);
     }
   }, [documentQuery.data, setDocument]);
 
@@ -160,16 +167,23 @@ export default function DocEditorPage() {
     }
 
     const { title: currentTitle, content: currentContent } = useEditorStore.getState();
+
+    if (!currentTitle.trim()) {
+      addToast({ message: '제목을 입력해주세요', type: 'error' });
+      return;
+    }
+
     setSaveStatus('saving');
     setError('');
     try {
       await apiFetch(
         `/workspaces/${currentWsId}/documents/${docId}`,
-        { method: 'PATCH', body: { title: currentTitle, content: currentContent } },
+        { method: 'PATCH', body: { title: currentTitle.trim(), content: currentContent } },
       );
       if (isMountedRef.current) {
         setSaveStatus('saved');
         void queryClient.invalidateQueries({ queryKey: ['documents', currentWsId] });
+        refreshSidebar();
         addToast({ message: '저장되었습니다', type: 'success' });
       }
     } catch (err) {
@@ -284,7 +298,10 @@ export default function DocEditorPage() {
   const doc = documentQuery.data;
   if (!doc) return null;
 
-  const isReadOnly = !permissions.canEditDocument;
+  const isAuthor = currentUser != null && doc.authorId === currentUser.id;
+  const isAdmin = currentWorkspace?.role === 'admin' || currentWorkspace?.role === 'owner';
+  const canEdit = permissions.canEditDocument && (isAuthor || (isAdmin && adminEditUnlocked));
+  const isReadOnly = !canEdit;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -336,15 +353,34 @@ export default function DocEditorPage() {
             aria-label="문서 제목"
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontSize: '24px', fontWeight: 700, color: 'var(--text)',
+              fontSize: '24px', fontWeight: 700,
+              color: title ? 'var(--text)' : 'var(--text-3)',
               fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em',
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
             {isReadOnly && (
-              <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px', marginLeft: '4px' }}>
-                읽기 전용
-              </span>
+              <>
+                <span style={{ padding: '2px 8px', background: 'var(--amber-lt)', color: 'var(--amber)', borderRadius: '100px', fontSize: '11px', marginLeft: '4px' }}>
+                  읽기 전용
+                </span>
+                {isAdmin && !isAuthor && permissions.canEditDocument && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminEditConfirm(true)}
+                    style={{
+                      padding: '4px 12px', fontSize: '11px', fontWeight: 500,
+                      color: 'var(--accent)', background: 'var(--accent-2)',
+                      border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer', marginLeft: '4px', transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent-2)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                  >
+                    편집 전환
+                  </button>
+                )}
+              </>
             )}
             {!isReadOnly && (
               <>
@@ -628,6 +664,20 @@ export default function DocEditorPage() {
           onRestore={(restoredContent) => setContent(restoredContent)}
         />
       )}
+
+      {/* Admin Edit Confirm Modal */}
+      <ConfirmModal
+        open={showAdminEditConfirm}
+        onClose={() => setShowAdminEditConfirm(false)}
+        onConfirm={() => {
+          setAdminEditUnlocked(true);
+          setShowAdminEditConfirm(false);
+        }}
+        title="문서 수정"
+        message="다른 사용자가 작성한 문서입니다. 수정하시겠습니까?"
+        confirmLabel="수정"
+        cancelLabel="취소"
+      />
 
       {/* Delete Confirm Modal */}
       <ConfirmModal

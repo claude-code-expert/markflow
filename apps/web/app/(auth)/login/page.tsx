@@ -3,7 +3,6 @@
 import { useState, useEffect, type FormEvent, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useWorkspaceStore } from '../../../stores/workspace-store';
 import { useAuthStore } from '../../../stores/auth-store';
 import { ApiError } from '../../../lib/api';
 import { MarkFlowLogo } from '../../../components/mark-flow-logo';
@@ -193,7 +192,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 8,
   } satisfies CSSProperties,
 
   checkbox: {
@@ -338,15 +337,7 @@ export default function LoginPage() {
     try {
       await login(email, password, rememberMe);
 
-      // FR-003: 로그인 후 워크스페이스 1개면 바로 이동
-      const { fetchWorkspaces } = useWorkspaceStore.getState();
-      await fetchWorkspaces();
-      const { workspaces } = useWorkspaceStore.getState();
-      if (workspaces.length === 1 && workspaces[0]?.name) {
-        router.push(`/${encodeURIComponent(workspaces[0].name)}/doc`);
-      } else {
-        router.push('/workspaces');
-      }
+      router.push('/workspaces');
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorCode(err.code);
@@ -388,7 +379,8 @@ export default function LoginPage() {
     <div style={styles.card}>
       {/* Logo */}
       <div style={styles.logoWrap}>
-        <MarkFlowLogo height={28} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
       </div>
 
       {/* Auth tabs */}
@@ -461,6 +453,13 @@ export default function LoginPage() {
           <label htmlFor="rememberMe" style={styles.checkboxLabel}>
             로그인 상태 유지
           </label>
+        </div>
+
+        {/* Forgot password link */}
+        <div style={{ textAlign: 'right', marginBottom: 16 }}>
+          <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
+            비밀번호를 잊으셨나요?
+          </Link>
         </div>
 
         {/* Submit button */}

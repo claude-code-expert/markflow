@@ -171,12 +171,16 @@ describe('POST /api/v1/auth/login', () => {
       emailVerified: true,
     });
 
+    // Use a unique IP to avoid rate limit interference from other tests
+    const remoteAddress = '10.0.0.99';
+
     // Fail 5 times
     for (let i = 0; i < 5; i++) {
       const failRes = await app.inject({
         method: 'POST',
         url: LOGIN_URL,
         payload: { email: 'lockme@example.com', password: 'Wr0ng!Password' },
+        remoteAddress,
       });
 
       // First 4 should be INVALID_CREDENTIALS, 5th may trigger lock
@@ -192,6 +196,7 @@ describe('POST /api/v1/auth/login', () => {
       method: 'POST',
       url: LOGIN_URL,
       payload: { email: 'lockme@example.com', password: 'Str0ng!Pass' },
+      remoteAddress,
     });
 
     expect(lockedRes.statusCode).toBe(401);
@@ -215,8 +220,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(lockedUntil).toBeLessThanOrEqual(now + 16 * 60 * 1000);
   });
 
-  // TODO: Rate limiting middleware is not yet implemented. Enable this test when @fastify/rate-limit is added.
-  it.skip('should return 429 RATE_LIMITED after 10+ login attempts from the same IP', async () => {
+  it('should return 429 RATE_LIMITED after 10+ login attempts from the same IP', async () => {
     const app = getApp();
     const db = getDb();
 

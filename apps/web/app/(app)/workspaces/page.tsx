@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Settings, FolderOpen, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Settings, FolderOpen, FileText, UserPlus } from 'lucide-react';
 import { useWorkspaceStore } from '../../../stores/workspace-store';
 import type { Workspace } from '../../../lib/types';
 import { CreateWorkspaceModal } from '../../../components/create-workspace-modal';
@@ -62,16 +63,22 @@ function RoleBadge({ role }: { role: string }) {
 
 function WorkspaceRow({ workspace }: { workspace: Workspace }) {
   const encodedName = encodeURIComponent(workspace.name);
+  const router = useRouter();
 
   return (
     <div
+      onClick={() => router.push(`/${encodedName}/doc`)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
         padding: '16px',
         borderBottom: '1px solid var(--border)',
+        cursor: 'pointer',
+        transition: 'background 0.15s',
       }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
     >
       {/* Icon */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -108,11 +115,22 @@ function WorkspaceRow({ workspace }: { workspace: Workspace }) {
           <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
             {formatRelativeTime(workspace.lastActivityAt)}
           </span>
+          {(workspace.pendingJoinCount ?? 0) > 0 && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              fontSize: '11px', fontWeight: 600,
+              color: 'var(--amber)', background: 'var(--amber-lt)',
+              padding: '2px 8px', borderRadius: '100px',
+            }}>
+              <UserPlus size={11} />
+              가입신청 {workspace.pendingJoinCount}명
+            </span>
+          )}
         </div>
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
         <Link
           href={`/${encodedName}/doc`}
           style={{

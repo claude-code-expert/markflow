@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { users, workspaces, workspaceMembers } from '@markflow/db';
+import { users, workspaces } from '@markflow/db';
 import { getApp, getDb } from '../helpers/setup.js';
 
 const REGISTER_URL = '/api/v1/auth/register';
@@ -57,7 +57,7 @@ describe('POST /api/v1/auth/register', () => {
     expect(dbUser!.passwordHash).not.toBe(payload.password);
   });
 
-  it('should auto-create a root workspace for the new user', async () => {
+  it('should not auto-create a workspace for the new user', async () => {
     const app = getApp();
     const db = getDb();
 
@@ -74,27 +74,12 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.statusCode).toBe(201);
     const body = res.json() as { user: { id: number } };
 
-    // Root workspace should exist
     const userWorkspaces = await db
       .select()
       .from(workspaces)
       .where(eq(workspaces.ownerId, body.user.id));
 
-    expect(userWorkspaces.length).toBeGreaterThanOrEqual(1);
-
-    const rootWs = userWorkspaces.find((ws) => ws.isRoot);
-    expect(rootWs).toBeDefined();
-    expect(rootWs!.ownerId).toBe(body.user.id);
-
-    // User should be an owner member of the root workspace
-    const members = await db
-      .select()
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, rootWs!.id));
-
-    const ownerMember = members.find((m) => m.userId === body.user.id);
-    expect(ownerMember).toBeDefined();
-    expect(ownerMember!.role).toBe('owner');
+    expect(userWorkspaces.length).toBe(0);
   });
 
   // ─── Error Cases ───

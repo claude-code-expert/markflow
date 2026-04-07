@@ -9,6 +9,8 @@ export const users = pgTable('users', {
   emailVerified: boolean('email_verified').notNull().default(false),
   emailVerifyToken: varchar('email_verify_token', { length: 255 }),
   emailVerifyExpiresAt: timestamp('email_verify_expires_at', { withTimezone: true }),
+  passwordResetToken: varchar('password_reset_token', { length: 255 }),
+  passwordResetExpiresAt: timestamp('password_reset_expires_at', { withTimezone: true }),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   loginFailCount: integer('login_fail_count').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

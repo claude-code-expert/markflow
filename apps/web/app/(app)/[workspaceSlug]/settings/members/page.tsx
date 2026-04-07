@@ -9,6 +9,8 @@ import type {
   WorkspaceRole,
   MembersResponse,
   InvitationResponse,
+  JoinRequest,
+  JoinRequestsResponse,
 } from '../../../../../lib/types';
 import { useWorkspaceStore } from '../../../../../stores/workspace-store';
 import { usePermissions } from '../../../../../hooks/use-permissions';
@@ -392,6 +394,136 @@ function InviteForm({ workspaceId }: { workspaceId: number }) {
   );
 }
 
+// ─── JoinRequestSection ─────────────────────────────────────────────────────
+
+function JoinRequestSection({ workspaceId }: { workspaceId: number }) {
+  const queryClient = useQueryClient();
+  const [rolePerRequest, setRolePerRequest] = useState<Record<number, WorkspaceRole>>({});
+
+  const { data, isLoading } = useQuery<JoinRequestsResponse>({
+    queryKey: ['join-requests', workspaceId],
+    queryFn: () =>
+      apiFetch<JoinRequestsResponse>(`/workspaces/${workspaceId}/join-requests?status=pending`),
+    enabled: !!workspaceId,
+  });
+
+  const pendingRequests = data?.joinRequests ?? [];
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ requestId, action, role }: { requestId: number; action: 'approve' | 'reject'; role?: WorkspaceRole }) =>
+      apiFetch(`/workspaces/${workspaceId}/join-requests/${requestId}`, {
+        method: 'PATCH',
+        body: { action, ...(role ? { role } : {}) },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['join-requests', workspaceId] });
+      void queryClient.invalidateQueries({ queryKey: ['members', workspaceId] });
+    },
+  });
+
+  function handleApprove(requestId: number) {
+    reviewMutation.mutate({ requestId, action: 'approve', role: rolePerRequest[requestId] ?? 'editor' });
+  }
+
+  function handleReject(requestId: number) {
+    reviewMutation.mutate({ requestId, action: 'reject' });
+  }
+
+  return (
+    <div style={s.card}>
+      <h2 style={s.sectionTitle}>
+        가입 신청
+        {pendingRequests.length > 0 && (
+          <span style={{
+            marginLeft: 8, fontSize: 12, fontWeight: 600,
+            color: 'var(--amber)', background: 'var(--amber-lt)',
+            padding: '2px 8px', borderRadius: '100px',
+          }}>
+            {pendingRequests.length}
+          </span>
+        )}
+      </h2>
+
+      {isLoading ? (
+        <p style={{ fontSize: 14, color: 'var(--text-3)', textAlign: 'center', padding: '24px 0' }}>
+          불러오는 중...
+        </p>
+      ) : pendingRequests.length === 0 ? (
+        <p style={{ fontSize: 14, color: 'var(--text-3)', textAlign: 'center', padding: '24px 0' }}>
+          대기 중인 가입 신청이 없습니다.
+        </p>
+      ) : (
+        <div>
+          {pendingRequests.map((req) => (
+            <div key={req.id} style={{ ...s.memberRow, flexWrap: 'wrap' as const, gap: 10 }}>
+              {/* Avatar */}
+              {req.userAvatarUrl ? (
+                <img
+                  src={req.userAvatarUrl}
+                  alt={req.userName}
+                  style={{ ...s.avatar, objectFit: 'cover' as const }}
+                />
+              ) : (
+                <div style={s.avatar}>{getInitial(req.userName)}</div>
+              )}
+
+              {/* Info */}
+              <div style={{ ...s.memberInfo, minWidth: 120 }}>
+                <div style={s.memberName}>{req.userName}</div>
+                <div style={s.memberEmail}>{req.userEmail}</div>
+                {req.message && (
+                  <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 4, fontStyle: 'italic' }}>
+                    &ldquo;{req.message}&rdquo;
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <select
+                  value={rolePerRequest[req.id] ?? 'editor'}
+                  onChange={(e) => setRolePerRequest((prev) => ({ ...prev, [req.id]: e.target.value as WorkspaceRole }))}
+                  disabled={reviewMutation.isPending}
+                  style={{ ...s.select, padding: '6px 10px', fontSize: 12 }}
+                >
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleApprove(req.id)}
+                  disabled={reviewMutation.isPending}
+                  style={{
+                    padding: '6px 14px', fontSize: 12, fontWeight: 500,
+                    color: '#fff', background: 'var(--green)',
+                    border: 'none', borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer', transition: 'opacity 0.15s',
+                    ...(reviewMutation.isPending ? s.disabled : {}),
+                  }}
+                >
+                  승인
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReject(req.id)}
+                  disabled={reviewMutation.isPending}
+                  style={{
+                    ...s.removeBtn,
+                    ...(reviewMutation.isPending ? s.disabled : {}),
+                  }}
+                >
+                  거절
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function MembersPage() {
@@ -498,6 +630,11 @@ export default function MembersPage() {
           </div>
         )}
       </div>
+
+      {/* Join Requests (admin+ only) */}
+      {permissions.canManageJoinRequests && (
+        <JoinRequestSection workspaceId={workspaceId} />
+      )}
 
     </div>
   );

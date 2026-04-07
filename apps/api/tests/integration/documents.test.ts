@@ -13,7 +13,7 @@ import { createUser, createWorkspace, addMember } from '../helpers/factory.js';
 // POST /api/v1/workspaces/:wsId/documents
 // ─────────────────────────────────────────────
 describe('POST /api/v1/workspaces/:wsId/documents', () => {
-  it('should create a document with auto-generated slug and return 201', async () => {
+  it('should create a document and return 201', async () => {
     const app = getApp();
     const db = getDb();
 
@@ -36,7 +36,6 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
       document: {
         id: number;
         title: string;
-        slug: string;
         content: string;
         categoryId: number | null;
         currentVersion: number;
@@ -45,10 +44,7 @@ describe('POST /api/v1/workspaces/:wsId/documents', () => {
     };
 
     expect(body.document.title).toBe('Getting Started Guide');
-    expect(body.document.slug).toBeTruthy();
-    expect(body.document.slug.length).toBeGreaterThan(0);
-    // POST create ignores content payload; documents are created with empty content
-    expect(body.document.content).toBe('');
+    expect(body.document.content).toBe('# Getting Started\n\nWelcome!');
     expect(body.document.categoryId).toBeNull();
     expect(body.document.currentVersion).toBe(1);
     expect(body.document.authorId).toBe(user.id);
