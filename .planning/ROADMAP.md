@@ -30,11 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 로그인한 사용자가 현재 비밀번호 확인 후 새 비밀번호로 변경할 수 있다
   4. graph-service가 워크스페이스 소속 문서의 relation만 조회하고, relation-service가 JOIN 기반 배치 쿼리를 사용한다
   5. SECURITY.md에 Avatar(SVG 거부)/Editor(SVG 허용) 분리 근거와 렌더링 규칙이 명시되어 있다
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md -- R2 Worker CORS strict + Bearer auth + upload-token API
+- [ ] 01-02-PLAN.md -- graph/relation 서비스 쿼리 최적화 + SVG 보안 문서화
+- [ ] 01-03-PLAN.md -- 비밀번호 변경 API (백엔드: changePassword + PUT /me/password)
+- [ ] 01-04-PLAN.md -- 비밀번호 변경 UI (프론트엔드: PasswordChangeModal + 설정 페이지)
 
 ### Phase 2: Test Coverage
 **Goal**: Phase 1 보안 변경과 기존 핵심 기능(댓글, 이미지 업로드)이 통합 테스트로 검증되어, 이후 기능 추가 시 회귀를 방지한다
@@ -100,7 +102,7 @@ Note: Phase 3 and 4 can execute in parallel (both depend only on Phase 1).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security & Auth Hardening | 0/2 | Not started | - |
+| 1. Security & Auth Hardening | 0/4 | Planning complete | - |
 | 2. Test Coverage | 0/1 | Not started | - |
 | 3. Category & Document Context API | 0/1 | Not started | - |
 | 4. Search & Version Diff | 0/2 | Not started | - |
