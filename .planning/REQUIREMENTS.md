@@ -61,8 +61,8 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Email
 
-- **EMAIL-01**: 이메일 재발송 API (POST /auth/resend-verification) — 이메일 서비스 연동과 함께 구현
-- **EMAIL-02**: 실제 이메일 발송 서비스 연동 (Resend/SendGrid) — logger.info() 대체
+- **EMAIL-01**: 이메일 재발송 API (POST /auth/resend-verification) -- 이메일 서비스 연동과 함께 구현
+- **EMAIL-02**: 실제 이메일 발송 서비스 연동 (Resend/SendGrid) -- logger.info() 대체
 
 ### Collaboration
 
@@ -78,11 +78,11 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| OAuth 2.0 (Google/GitHub) | Phase 3 — 소셜 로그인은 베타 후 결정 |
-| Activity Feed & 알림 | Phase 3 — 현재 사용자 수에서 불필요 |
-| Public Pages & 커스텀 도메인 | Phase 3 — embed로 기본 공유 충족 |
-| AI Writing Assistant | Phase 3 — 핵심 기능 안정화 우선 |
-| 수익화 (Stripe) | Phase 3 — 베타 피드백 후 결정 |
+| OAuth 2.0 (Google/GitHub) | Phase 3 -- 소셜 로그인은 베타 후 결정 |
+| Activity Feed & 알림 | Phase 3 -- 현재 사용자 수에서 불필요 |
+| Public Pages & 커스텀 도메인 | Phase 3 -- embed로 기본 공유 충족 |
+| AI Writing Assistant | Phase 3 -- 핵심 기능 안정화 우선 |
+| 수익화 (Stripe) | Phase 3 -- 베타 피드백 후 결정 |
 | Split diff 뷰 | 리서치에서 차별화 기능으로 분류, MVP에 불필요 |
 | Embed 브랜딩 커스터마이징 | 차별화 기능, MVP에 불필요 |
 | 외부 검색 엔진 (Meilisearch) | 10팀 규모에서 과도한 인프라 |
@@ -91,33 +91,33 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| SEC-01 | — | Pending |
-| SEC-02 | — | Pending |
-| SEC-03 | — | Pending |
-| SEC-04 | — | Pending |
-| SEC-05 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| SRCH-01 | — | Pending |
-| SRCH-02 | — | Pending |
-| VER-01 | — | Pending |
-| VER-02 | — | Pending |
-| CAT-01 | — | Pending |
-| CAT-02 | — | Pending |
-| DOC-01 | — | Pending |
-| DOC-02 | — | Pending |
-| EMBD-01 | — | Pending |
-| EMBD-02 | — | Pending |
-| EMBD-03 | — | Pending |
-| LINK-01 | — | Pending |
-| LINK-02 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Pending |
+| SEC-05 | Phase 1 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| CAT-01 | Phase 3 | Pending |
+| CAT-02 | Phase 3 | Pending |
+| DOC-01 | Phase 3 | Pending |
+| DOC-02 | Phase 3 | Pending |
+| SRCH-01 | Phase 4 | Pending |
+| SRCH-02 | Phase 4 | Pending |
+| VER-01 | Phase 4 | Pending |
+| VER-02 | Phase 4 | Pending |
+| EMBD-01 | Phase 5 | Pending |
+| EMBD-02 | Phase 5 | Pending |
+| EMBD-03 | Phase 5 | Pending |
+| LINK-01 | Phase 5 | Pending |
+| LINK-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-11*
-*Last updated: 2026-04-11 after initial definition*
+*Last updated: 2026-04-11 after roadmap creation*
