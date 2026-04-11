@@ -1,7 +1,8 @@
 ---
 phase: 1
 slug: security-auth-hardening
-status: draft
+status: approved
+reviewed_at: 2026-04-11
 shadcn_initialized: false
 preset: none
 created: 2026-04-11
@@ -37,7 +38,7 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, hint pill internal padding |
-| sm | 8px | Compact element spacing, field group margins |
+| sm | 8px | Compact element spacing, field group margins, label bottom margin |
 | md | 16px | Default element spacing, field group bottom margin |
 | lg | 24px | Section padding, form section gaps |
 | xl | 32px | Card padding (auth cards use 32px) |
@@ -52,18 +53,28 @@ Exceptions: none
 
 ## Typography
 
+4 sizes, 2 weights:
+
 | Role | Size | Weight | Line Height | Font Family |
 |------|------|--------|-------------|-------------|
 | Body | 14px | 400 | 1.6 | DM Sans (`var(--font-sans)`) |
-| Label | 13px | 500 | 1.0 (inline) | DM Sans (`var(--font-sans)`) |
+| Label | 13px | 600 | 1.0 (inline) | DM Sans (`var(--font-sans)`) |
 | Heading | 18px | 600 | 1.0 (inline) | Sora (`var(--font-heading)`) |
 | Description | 14px | 400 | 1.6 | DM Sans (`var(--font-sans)`) |
 | Field Error | 12px | 400 | 1.0 (inline) | DM Sans (`var(--font-sans)`) |
 | Alert | 13px | 400 | 1.5 | DM Sans (`var(--font-sans)`) |
-| Hint Pill | 11px | 400 | 1.0 (inline) | DM Sans (`var(--font-sans)`) |
+| Hint Pill | 12px | 400 | 1.0 (inline) | DM Sans (`var(--font-sans)`) |
 | Countdown Badge | 12px | 600 | 1.0 (inline) | JetBrains Mono (`var(--font-mono)`) |
 
-**Source:** Existing `reset-password/page.tsx` and `login/page.tsx` inline style objects.
+**Sizes declared (4):** 12px, 13px, 14px, 18px
+**Weights declared (2):** 400 (regular), 600 (semibold)
+
+**Changes from existing codebase patterns:**
+- Hint Pill: 11px -> 12px (consolidated with Field Error / Countdown Badge size)
+- Label: weight 500 -> 600 (consolidated to 2-weight system)
+- Primary button: weight 500 -> 600 (consolidated to 2-weight system)
+
+**Source:** Existing `reset-password/page.tsx` and `login/page.tsx` inline style objects, with consolidation for design contract compliance.
 
 ---
 
@@ -97,6 +108,17 @@ Additional semantic colors used:
 ---
 
 ## Component Inventory
+
+### Visual Hierarchy & Focal Point
+
+**Primary focal point:** The "비밀번호 변경" submit button (accent background, full-width, 600 weight text). This is the single most prominent interactive element and the endpoint of the form's visual flow.
+
+**Visual flow (top to bottom):**
+1. Heading "비밀번호 변경" (18px, 600 weight) -- establishes context
+2. Description text (14px, 400 weight, muted) -- explains purpose
+3. Three input fields (sequential, labeled) -- data entry
+4. Password hint pills (12px, inline row) -- real-time feedback
+5. **Submit button (primary focal point)** -- accent color, full-width, draws the eye as the action target
 
 ### New Component: Password Change Form
 
@@ -133,7 +155,7 @@ Reuse `getPasswordChecks()` pattern from `reset-password/page.tsx`:
 - "숫자 포함" -- `/\d/.test(password)`
 - "특수문자 포함" -- `/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)`
 
-Pill style: `fontSize: 11px`, `padding: 2px 8px`, `borderRadius: 9999`, green when passed, gray when not.
+Pill style: `fontSize: 12px`, `padding: '4px 8px'`, `borderRadius: 9999`, green when passed, gray when not.
 
 ### Style Pattern
 
@@ -147,10 +169,10 @@ Follow the inline `CSSProperties` object pattern established in `reset-password/
 { marginBottom: 16, textAlign: 'left' }
 
 // Label
-{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-2)', marginBottom: 6 }
+{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }
 
 // Input
-{ width: '100%', borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 13px', fontSize: 14, color: 'var(--text)', background: 'var(--surface)' }
+{ width: '100%', borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 14, color: 'var(--text)', background: 'var(--surface)' }
 
 // Input focus
 { borderColor: 'var(--accent)', boxShadow: '0 0 0 3px rgba(26,86,219,.1)' }
@@ -158,17 +180,17 @@ Follow the inline `CSSProperties` object pattern established in `reset-password/
 // Input error
 { borderColor: 'var(--red)' }
 
-// Primary button
-{ width: '100%', padding: 10, fontSize: 14, fontWeight: 500, color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius)' }
+// Primary button (focal point)
+{ width: '100%', padding: 12, fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius)' }
 
 // Primary button disabled
 { opacity: 0.55, cursor: 'not-allowed' }
 
 // Alert error
-{ borderRadius: 'var(--radius-sm)', padding: '10px 14px', fontSize: 13, lineHeight: 1.5, background: 'var(--red-lt)', border: '1px solid var(--red)', color: 'var(--red)' }
+{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', fontSize: 13, lineHeight: 1.5, background: 'var(--red-lt)', border: '1px solid var(--red)', color: 'var(--red)' }
 
 // Alert warning (lockout)
-{ borderRadius: 'var(--radius-sm)', padding: '10px 14px', fontSize: 13, lineHeight: 1.5, background: 'var(--amber-lt)', border: '1px solid var(--amber)', color: 'var(--amber)' }
+{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', fontSize: 13, lineHeight: 1.5, background: 'var(--amber-lt)', border: '1px solid var(--amber)', color: 'var(--amber)' }
 ```
 
 ### Existing Components to Reuse
