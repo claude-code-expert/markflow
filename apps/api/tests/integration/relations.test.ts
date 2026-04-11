@@ -270,6 +270,53 @@ describe('GET /api/v1/workspaces/:wsId/documents/:docId/relations', () => {
     expect(body.related).toHaveLength(0);
   });
 
+  it('should exclude soft-deleted documents from relation results', async () => {
+    const app = getApp();
+    const db = getDb();
+
+    const { user, accessToken } = await createUser(db);
+    const ws = await createWorkspace(db, user.id, { name: 'Del Rel WS' });
+
+    const docA = await createDocument(app, ws.id, accessToken, 'Doc A');
+    const docB = await createDocument(app, ws.id, accessToken, 'Doc B');
+    const docC = await createDocument(app, ws.id, accessToken, 'Doc C');
+
+    // Set A.next = B, A.related = [C]
+    await app.inject({
+      method: 'PUT',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docA.id}/relations`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { next: docB.id, related: [docC.id] },
+    });
+
+    // Soft-delete doc B
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docB.id}`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    // Get relations for A — B should be excluded from next
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${ws.id}/documents/${docA.id}/relations`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as {
+      prev: { id: number } | null;
+      next: { id: number } | null;
+      related: Array<{ id: number; title: string }>;
+    };
+
+    // Next should be null because B is deleted
+    expect(body.next).toBeNull();
+    // Related (C) should still be present
+    expect(body.related).toHaveLength(1);
+    expect(String(body.related[0]?.id)).toBe(docC.id);
+  });
+
   it('should allow viewer to read relations', async () => {
     const app = getApp();
     const db = getDb();
