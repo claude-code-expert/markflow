@@ -220,6 +220,89 @@ describe('GET /api/v1/workspaces/:wsId/graph', () => {
     expect(res.statusCode).toBe(200);
   });
 
+  it('should not include cross-workspace relations in graph edges', async () => {
+    const app = getApp();
+    const db = getDb();
+
+    const { user, accessToken } = await createUser(db);
+    const ws1 = await createWorkspace(db, user.id, { name: 'Isolation WS1' });
+    const ws2 = await createWorkspace(db, user.id, { name: 'Isolation WS2' });
+
+    // Create docs in WS1
+    const docA = await createDocument(app, ws1.id, accessToken, 'WS1 Doc A');
+    const docB = await createDocument(app, ws1.id, accessToken, 'WS1 Doc B');
+
+    // Create docs in WS2 and set up relations there
+    const docC = await createDocument(app, ws2.id, accessToken, 'WS2 Doc C');
+    const docD = await createDocument(app, ws2.id, accessToken, 'WS2 Doc D');
+
+    // Set relation in WS1: A → B
+    await app.inject({
+      method: 'PUT',
+      url: `/api/v1/workspaces/${ws1.id}/documents/${docA.id}/relations`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { next: docB.id },
+    });
+
+    // Set relation in WS2: C → D
+    await app.inject({
+      method: 'PUT',
+      url: `/api/v1/workspaces/${ws2.id}/documents/${docC.id}/relations`,
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { next: docD.id },
+    });
+
+    // Query WS1 graph — should only see WS1 edges
+    const res1 = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${ws1.id}/graph`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(res1.statusCode).toBe(200);
+    const body1 = res1.json() as GraphResponse;
+
+    // WS1 should only have 2 nodes (A and B)
+    expect(body1.nodes).toHaveLength(2);
+    const nodeIds1 = body1.nodes.map((n) => String(n.id));
+    expect(nodeIds1).toContain(docA.id);
+    expect(nodeIds1).toContain(docB.id);
+    expect(nodeIds1).not.toContain(docC.id);
+    expect(nodeIds1).not.toContain(docD.id);
+
+    // WS1 edges should only contain A→B, not C→D
+    const ws2Edges = body1.edges.filter(
+      (e) =>
+        String(e.source) === docC.id ||
+        String(e.target) === docC.id ||
+        String(e.source) === docD.id ||
+        String(e.target) === docD.id,
+    );
+    expect(ws2Edges).toHaveLength(0);
+
+    // Verify A→B edge exists
+    const aToBEdge = body1.edges.find(
+      (e) => String(e.source) === docA.id && String(e.target) === docB.id && e.type === 'next',
+    );
+    expect(aToBEdge).toBeDefined();
+
+    // Query WS2 graph — should only see WS2 edges
+    const res2 = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${ws2.id}/graph`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+
+    expect(res2.statusCode).toBe(200);
+    const body2 = res2.json() as GraphResponse;
+
+    expect(body2.nodes).toHaveLength(2);
+    const nodeIds2 = body2.nodes.map((n) => String(n.id));
+    expect(nodeIds2).toContain(docC.id);
+    expect(nodeIds2).toContain(docD.id);
+    expect(nodeIds2).not.toContain(docA.id);
+  });
+
   it('should return 401 without auth token', async () => {
     const app = getApp();
     const db = getDb();
