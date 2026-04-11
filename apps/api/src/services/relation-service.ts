@@ -56,7 +56,8 @@ export function createRelationService(db: Db) {
   }
 
   /**
-   * DFS cycle detection for prev/next chain.
+   * Batch-preload cycle detection for prev/next chain.
+   * Loads all 'next' relations once, then traverses in-memory.
    * Starting from `startId`, follows `next` relations and checks if we reach `targetId`.
    * Also checks the reverse direction: from `targetId` following `next` relations.
    */
@@ -65,74 +66,46 @@ export function createRelationService(db: Db) {
     targetId: string,
     direction: 'prev' | 'next',
   ): Promise<boolean> {
-    // If setting A.prev = B, the chain is B -> A.
-    // We need to check that A's "next" chain doesn't eventually reach B.
-    // If setting A.next = B, the chain is A -> B.
-    // We need to check that B's "next" chain doesn't eventually reach A.
-
-    // For prev: docId.prev = targetId means targetId -> docId
-    // Check if following docId's next chain reaches targetId
-    // For next: docId.next = targetId means docId -> targetId
-    // Check if following targetId's next chain reaches docId
-
     const numDocId = Number(docId);
     const numTargetId = Number(targetId);
     const startNode = direction === 'prev' ? numDocId : numTargetId;
     const searchFor = direction === 'prev' ? numTargetId : numDocId;
 
+    // Batch preload: load all type='next' relations in a single query
+    const nextRelations = await db
+      .select({
+        sourceId: documentRelations.sourceId,
+        targetId: documentRelations.targetId,
+      })
+      .from(documentRelations)
+      .where(eq(documentRelations.type, 'next'));
+
+    // Build Map<sourceId, targetId> for O(1) lookup
+    const nextMap = new Map<number, number>();
+    for (const rel of nextRelations) {
+      nextMap.set(rel.sourceId, rel.targetId);
+    }
+
+    // Forward traversal: startNode -> ... -> searchFor?
     const visited = new Set<number>();
     let current: number | null = startNode;
-
     while (current !== null) {
       if (visited.has(current)) break;
       visited.add(current);
-
-      const [rel] = await db
-        .select({ targetId: documentRelations.targetId })
-        .from(documentRelations)
-        .where(
-          and(
-            eq(documentRelations.sourceId, current),
-            eq(documentRelations.type, 'next'),
-          ),
-        )
-        .limit(1);
-
-      if (!rel) break;
-
-      if (rel.targetId === searchFor) {
-        return true; // cycle detected
-      }
-
-      current = rel.targetId;
+      const next = nextMap.get(current) ?? null;
+      if (next === searchFor) return true;
+      current = next;
     }
 
-    // Also check prev chain in reverse
+    // Reverse traversal: searchFor -> ... -> startNode?
     const visited2 = new Set<number>();
     let current2: number | null = searchFor;
-
     while (current2 !== null) {
       if (visited2.has(current2)) break;
       visited2.add(current2);
-
-      const [rel] = await db
-        .select({ targetId: documentRelations.targetId })
-        .from(documentRelations)
-        .where(
-          and(
-            eq(documentRelations.sourceId, current2),
-            eq(documentRelations.type, 'next'),
-          ),
-        )
-        .limit(1);
-
-      if (!rel) break;
-
-      if (rel.targetId === startNode) {
-        return true; // cycle detected
-      }
-
-      current2 = rel.targetId;
+      const next = nextMap.get(current2) ?? null;
+      if (next === startNode) return true;
+      current2 = next;
     }
 
     return false;
@@ -264,13 +237,22 @@ export function createRelationService(db: Db) {
   }
 
   async function getRelations(docId: string): Promise<RelationsResult> {
-    // Get all relations where this doc is the source
+    // Single JOIN query: fetch relations + target document info in one round-trip
     const rows = await db
       .select({
         type: documentRelations.type,
         targetId: documentRelations.targetId,
+        docId: documents.id,
+        docTitle: documents.title,
       })
       .from(documentRelations)
+      .innerJoin(
+        documents,
+        and(
+          eq(documentRelations.targetId, documents.id),
+          eq(documents.isDeleted, false),
+        ),
+      )
       .where(eq(documentRelations.sourceId, Number(docId)));
 
     let prevDoc: RelationDoc | null = null;
@@ -278,26 +260,10 @@ export function createRelationService(db: Db) {
     const relatedDocs: RelationDoc[] = [];
 
     for (const row of rows) {
-      const [target] = await db
-        .select({ id: documents.id, title: documents.title })
-        .from(documents)
-        .where(
-          and(
-            eq(documents.id, row.targetId),
-            eq(documents.isDeleted, false),
-          ),
-        )
-        .limit(1);
-
-      if (!target) continue;
-
-      if (row.type === 'prev') {
-        prevDoc = target;
-      } else if (row.type === 'next') {
-        nextDoc = target;
-      } else if (row.type === 'related') {
-        relatedDocs.push(target);
-      }
+      const doc = { id: row.docId, title: row.docTitle };
+      if (row.type === 'prev') prevDoc = doc;
+      else if (row.type === 'next') nextDoc = doc;
+      else if (row.type === 'related') relatedDocs.push(doc);
     }
 
     return {

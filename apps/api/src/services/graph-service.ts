@@ -3,6 +3,7 @@ import {
   documents,
   eq,
   and,
+  inArray,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
 
@@ -40,38 +41,38 @@ export function createGraphService(db: Db) {
         ),
       );
 
-    const docIds = new Set<number>(docs.map((d) => d.id));
-
     const nodes: GraphNode[] = docs.map((d) => ({
       id: d.id,
       title: d.title,
       categoryId: d.categoryId,
     }));
 
-    // Fetch all relations involving these documents
+    // Guard: empty workspace returns empty graph (no DB query needed)
     if (docs.length === 0) {
       return { nodes: [], edges: [] };
     }
 
-    const allRelations = await db
+    // Fetch only relations where both source and target belong to this workspace
+    const docIdArray = docs.map((d) => d.id);
+    const relations = await db
       .select({
         sourceId: documentRelations.sourceId,
         targetId: documentRelations.targetId,
         type: documentRelations.type,
       })
-      .from(documentRelations);
+      .from(documentRelations)
+      .where(
+        and(
+          inArray(documentRelations.sourceId, docIdArray),
+          inArray(documentRelations.targetId, docIdArray),
+        ),
+      );
 
-    // Filter to only include edges where both source and target are in this workspace
-    const edges: GraphEdge[] = [];
-    for (const rel of allRelations) {
-      if (docIds.has(rel.sourceId) && docIds.has(rel.targetId)) {
-        edges.push({
-          source: rel.sourceId,
-          target: rel.targetId,
-          type: rel.type as 'prev' | 'next' | 'related',
-        });
-      }
-    }
+    const edges: GraphEdge[] = relations.map((rel) => ({
+      source: rel.sourceId,
+      target: rel.targetId,
+      type: rel.type as 'prev' | 'next' | 'related',
+    }));
 
     return { nodes, edges };
   }
