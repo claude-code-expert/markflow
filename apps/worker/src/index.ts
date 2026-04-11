@@ -1,50 +1,14 @@
 // ─── Cloudflare Worker — R2 Image Upload ─────────────────────────────────────
 
-interface Env {
-  BUCKET: R2Bucket
-  PUBLIC_URL: string
-  ALLOWED_ORIGINS?: string // comma-separated origins, default: "*"
-}
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-const ALLOWED_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-])
-
-function corsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('Origin') ?? '*'
-  const allowed = env.ALLOWED_ORIGINS?.split(',').map((s) => s.trim()) ?? ['*']
-  const allowOrigin = allowed.includes('*') || allowed.includes(origin) ? origin : ''
-
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400',
-  }
-}
-
-function jsonResponse(body: object, status: number, cors: Record<string, string>): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...cors },
-  })
-}
-
-function getExtension(contentType: string): string {
-  const map: Record<string, string> = {
-    'image/png': 'png',
-    'image/jpeg': 'jpg',
-    'image/gif': 'gif',
-    'image/webp': 'webp',
-    'image/svg+xml': 'svg',
-  }
-  return map[contentType] ?? 'bin'
-}
+import {
+  type Env,
+  MAX_FILE_SIZE,
+  ALLOWED_TYPES,
+  corsHeaders,
+  jsonResponse,
+  getExtension,
+  checkAuth,
+} from './helpers'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -63,6 +27,10 @@ export default {
 
     // ── Upload ─────────────────────────────────────────────────────────────
     if (url.pathname === '/upload' && request.method === 'POST') {
+      // Bearer token authentication (D-05: skip if API_SECRET not set)
+      const authError = checkAuth(request, env, cors)
+      if (authError) return authError
+
       try {
         const formData = await request.formData()
         const file = formData.get('file')
