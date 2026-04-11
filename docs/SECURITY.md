@@ -28,6 +28,37 @@ attributes: { '*': ['onclick', 'onerror', 'onload', 'style'] }
 - SVG 업로드: `image/svg+xml` 허용하되, SVG 내부 `<script>` 태그 주의
 - 업로드 URL은 Cloudflare R2 도메인만 허용 (Worker에서 강제)
 
+### SVG 파일 보안 — Avatar/Editor 분리 정책
+
+#### 규칙
+
+| 컨텍스트 | SVG 허용 | 렌더링 방식 | 위험도 |
+|----------|----------|------------|--------|
+| **Avatar (프로필 이미지)** | 거부 | `<img src="...">` 태그 | 높음 — `<img>` 태그로 SVG를 렌더링하면 내장 스크립트가 실행될 수 있음 |
+| **Editor (문서 본문 이미지)** | 허용 | `<img src="...">` + rehype-sanitize | 낮음 — 에디터 출력은 반드시 rehype-sanitize를 통과한 HTML에서만 렌더링 |
+
+#### 근거
+
+**Avatar에서 SVG를 거부하는 이유:**
+- Avatar는 `<img>` 태그로 렌더링되며, 브라우저에 따라 SVG 내 `<script>` 태그, `onload` 이벤트 핸들러, `<foreignObject>` 등이 실행될 수 있음
+- Avatar URL은 프로필 카드, 댓글, 멤버 목록 등 다양한 곳에서 렌더링되므로 XSS 공격 표면이 넓음
+- Avatar 업로드 시 서버 측에서 SVG MIME 타입(`image/svg+xml`)을 거부하여 원천 차단
+
+**Editor에서 SVG를 허용하는 이유:**
+- 문서 본문의 이미지는 마크다운 `![alt](url)` 문법으로 삽입되며, `<img>` 태그로 렌더링됨
+- 에디터의 HTML 출력은 반드시 `parseMarkdown()` -> `rehype-sanitize`를 거침
+- rehype-sanitize가 `<script>`, `on*` 이벤트 속성, `javascript:` URL 스킴을 모두 제거
+- SVG 파일 자체는 R2에 저장되고, `<img src="r2-url">` 태그로만 참조되므로 내부 스크립트가 실행되지 않음
+- 기술 문서에서 SVG 다이어그램(flowchart, 아키텍처도 등)은 필수 요소
+
+#### 구현 체크리스트
+
+- [ ] Avatar 업로드 API: `image/svg+xml` MIME 타입 거부 (400 에러)
+- [x] R2 Worker: `image/svg+xml` 허용 (문서 이미지용)
+- [x] Editor Preview: `rehype-sanitize` 적용 (`parseMarkdown()`)
+- [x] `dangerouslySetInnerHTML`: sanitize 통과한 HTML에만 사용
+- [ ] SVG를 `<img>` 태그 외의 방식(inline SVG, `<object>`, `<embed>`)으로 렌더링하지 않음
+
 ### KMS Phase 1+ 보안 (계획됨)
 
 **인증:**
