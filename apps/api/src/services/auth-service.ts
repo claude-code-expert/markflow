@@ -301,5 +301,94 @@ export function createAuthService(db: Db) {
     return { reset: true };
   }
 
-  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword };
+  async function changePassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. DB에서 user 조회
+    const found = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        loginFailCount: users.loginFailCount,
+        lockedUntil: users.lockedUntil,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const user = found[0];
+    if (!user) {
+      throw unauthorized('User not found');
+    }
+
+    // 2. 계정 잠금 확인 (D-02: 로그인 정책 동일 적용)
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMs = user.lockedUntil.getTime() - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new AppError('ACCOUNT_LOCKED', `계정이 잠겼습니다. ${remainingMin}분 후에 다시 시도해주세요.`, 401);
+    }
+
+    // 3. 현재 비밀번호 검증
+    const passwordMatch = await comparePassword(currentPassword, user.passwordHash);
+    if (!passwordMatch) {
+      // D-02: 실패 카운트 증가 (loginFailCount 재사용)
+      const newFailCount = user.loginFailCount + 1;
+      const updates: { loginFailCount: number; lockedUntil?: Date; updatedAt: Date } = {
+        loginFailCount: newFailCount,
+        updatedAt: new Date(),
+      };
+      if (newFailCount >= 5) {
+        updates.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15분 잠금
+        logger.warn(`Account locked for user ${userId} due to ${newFailCount} failed password change attempts`);
+      }
+      await db.update(users).set(updates).where(eq(users.id, userId));
+      throw new AppError('INVALID_CREDENTIALS', '현재 비밀번호가 올바르지 않습니다.', 401);
+    }
+
+    // 4. 새 비밀번호 유효성 검사
+    const validation = validatePassword(newPassword);
+    if (!validation.valid) {
+      throw badRequest('INVALID_PASSWORD', validation.message ?? 'Invalid password');
+    }
+
+    // 5. 새 비밀번호 해시
+    const newHash = await hashPassword(newPassword);
+
+    // 6. D-01 + D-03: Atomic 트랜잭션 — 비밀번호 변경 + 전체 세션 무효화 + 새 토큰 발급
+    const tokenPair = signTokenPair({ userId: String(userId), email: user.email });
+    const newTokenHash = hashToken(tokenPair.refreshToken);
+    const expiresAt = getRefreshTokenExpiry(false);
+
+    await db.transaction(async (tx) => {
+      // a. 비밀번호 업데이트 + 실패 카운트 리셋
+      await tx.update(users).set({
+        passwordHash: newHash,
+        loginFailCount: 0,
+        lockedUntil: null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, userId));
+
+      // b. 해당 사용자의 모든 refresh token 삭제 (전체 세션 무효화)
+      await tx.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
+
+      // c. 새 refresh token 삽입 (현재 세션 유지)
+      await tx.insert(refreshTokens).values({
+        userId,
+        tokenHash: newTokenHash,
+        expiresAt,
+      });
+    });
+
+    logger.info('Password changed successfully', { userId });
+
+    return {
+      accessToken: tokenPair.accessToken,
+      refreshToken: tokenPair.refreshToken,
+    };
+  }
+
+  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword, changePassword };
 }
