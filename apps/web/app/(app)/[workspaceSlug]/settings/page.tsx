@@ -6,6 +6,7 @@ import { apiFetch, ApiError } from '../../../../lib/api';
 import type { WorkspaceResponse } from '../../../../lib/types';
 import { useWorkspaceStore } from '../../../../stores/workspace-store';
 import { usePermissions } from '../../../../hooks/use-permissions';
+import { PasswordChangeModal } from '../../../../components/password-change-modal';
 
 /* ---------- Styles ---------- */
 
@@ -313,6 +314,9 @@ export default function WorkspaceSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // Password change
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   // Delete
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
@@ -535,6 +539,34 @@ export default function WorkspaceSettingsPage() {
           </div>
         </form>
       </div>
+
+      {/* Security Section */}
+      <div style={styles.card}>
+        <h2 style={styles.sectionTitle}>보안</h2>
+        <button
+          type="button"
+          onClick={() => setIsPasswordModalOpen(true)}
+          style={{
+            padding: '8px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--text)',
+            background: 'var(--surface)',
+            border: '1.5px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            cursor: 'pointer',
+            transition: 'background 0.15s ease',
+          }}
+        >
+          비밀번호 변경
+        </button>
+      </div>
+
+      {/* Password Change Modal */}
+      <PasswordChangeModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
 
       {/* Danger Zone */}
       <div style={styles.dangerCard}>
