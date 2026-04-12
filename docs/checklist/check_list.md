@@ -1,6 +1,6 @@
 # MarkFlow KMS -- 전체 Phase 체크리스트
 
-> **최종 수정:** 2026-04-08
+> **최종 수정:** 2026-04-11
 > **기준:** develop 브랜치
 > **범위:** Phase 0 ~ Phase 3 전체
 
@@ -12,7 +12,7 @@
 |-------|------|--------|----------|
 | Phase 0 (Editor) | ✅ 완료 | 100% | npm 배포 가능, 24개 의존성, ESM+CJS |
 | Phase 1 (Prototype) | ✅ 완료 (잔여 1건) | ~98% | API 44/56, 프론트 15/15 페이지, DB 15/15 |
-| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~30% | 비밀번호 재설정 완료, 이미지 업로드 완료, 댓글 수정/해결 완료, D&D 완료 |
+| Phase 2 (MVP) | 📋 계획 (일부 진행 중) | ~32% | 비밀번호 재설정 완료, 이미지 업로드 완료, 댓글 수정/해결 완료, D&D 완료, 카테고리 Closure Table 구현 |
 | Phase 3 (Launch) | 📋 계획 | 0% | 미착수 |
 
 ---
@@ -206,11 +206,12 @@
 
 #### 2.2.2 버전 Diff
 
-> **부분 구현** — `version-history-panel.tsx`에 diff UI 존재 (added/removed line count), 전용 API 없음
+> **부분 구현** — `version-history-panel.tsx` + `version-history-modal.tsx`에서 클라이언트사이드 `diff` 패키지(`diffLines`) 사용하여 diff 표시. 전용 서버 API 없음. GET /versions가 content 포함 반환하므로 클라이언트에서 비교 가능.
 
-- [ ] GET .../versions/:versionNum — 특정 버전 내용 조회
-- [ ] GET .../versions/diff — Myers 알고리즘 기반 diff API
-- [ ] VersionHistoryModal 2-패널 UI 고도화 (현재 기본 diff 표시 존재)
+- [x] GET .../versions — 전체 버전 목록 + content 조회 ✅ (versions.ts:21-32)
+- [ ] GET .../versions/diff — 서버사이드 Myers diff API (현재 클라이언트에서 처리)
+- [x] VersionHistoryModal diff UI (클라이언트 `diffLines` 기반) ✅
+- [ ] 서버사이드 diff 최적화 (대용량 문서 성능)
 - [ ] 테스트: 긴 문서 diff 성능, 복원 후 상태
 
 #### 2.2.3 OG Link Preview 프록시
@@ -231,16 +232,22 @@
 
 #### 2.2.5 카테고리 Graph API
 
-- [ ] GET /categories/:id/ancestors — Breadcrumb 경로
-- [ ] GET /categories/:id/descendants — 하위 전체 조회
+> **부분 구현** — `category-service.ts`에서 Closure Table 패턴(`categoryClosure` 테이블) 사용하여 ancestors/descendants를 내부적으로 관리. `GET /categories/tree`가 계층 구조 반환. 전용 REST 엔드포인트(ancestors/descendants)는 미구현.
+
+- [x] Closure Table 기반 ancestor/descendant 관계 관리 (category-service.ts) ✅
+- [x] GET /categories/tree — 계층적 트리 구조 조회 ✅
+- [ ] GET /categories/:id/ancestors — Breadcrumb 전용 REST 엔드포인트
+- [ ] GET /categories/:id/descendants — 하위 전체 조회 전용 REST 엔드포인트
 - [ ] 테스트: 깊은 트리, 순환 참조 방어
 
 #### 2.2.6 단일 문서 DAG 컨텍스트
 
-> **부분 구현** — `mini-dag-diagram.tsx` + `dag-structure-modal.tsx` 컴포넌트 존재, 전용 API 없음
+> **부분 구현** — `mini-dag-diagram.tsx` + `dag-structure-modal.tsx` 프론트 컴포넌트 존재. `GET /workspaces/:wsId/graph`에서 워크스페이스 전체 그래프 반환(`graph-service.ts`). 단일 문서 중심 필터링 전용 API 없음.
 
-- [ ] GET /documents/:id/dag-context — 단일 문서 중심 그래프
-- [ ] MiniDagDiagram, DagStructureModal API 연동
+- [x] 워크스페이스 전체 그래프 API (GET /graph) ✅
+- [x] MiniDagDiagram, DagStructureModal 프론트 컴포넌트 ✅
+- [ ] GET /documents/:id/dag-context — 단일 문서 중심 서브그래프 API
+- [ ] MiniDagDiagram API 연동 (현재 프론트 컴포넌트만 존재)
 - [ ] 테스트: 고립 문서, 순환 참조
 
 #### 2.2.7 실시간 협업
@@ -260,15 +267,17 @@
 
 ### 2.3 프론트엔드 미완성 기능
 
-| 페이지 | 미완료 항목 | 우선순위 |
-|--------|-----------|---------|
-| 랜딩 `/` | 소셜 로그인 버튼 (OAuth 연동 전 비활성 — UI만 존재) | P3 (Phase 3) |
-| 로그인/가입 | Google/GitHub OAuth (UI 버튼 존재, 백엔드 미구현) | P3 (Phase 3) |
-| 문서 에디터 | 실시간 협업, 고급 검색 필터 | P2 |
-| 그래프 뷰 | 텍스트 검색 (카테고리 필터는 존재) | P2 |
-| 프레젠테이션 | Export/Share 기능 | P3 |
-| 설정 - 테마 | 커스텀 테마 Import | P3 |
-| 설정 - 임베드 | 실제 임베드 프리뷰 페이지 (가이드 탭은 존재) | P2 |
+| 페이지 | 미완료 항목 | 코드 상태 | 우선순위 |
+|--------|-----------|----------|---------|
+| 랜딩 `/` | 소셜 로그인 버튼 (OAuth 연동 전 비활성 — UI만 존재) | UI 버튼만 존재 | P3 (Phase 3) |
+| 로그인/가입 | Google/GitHub OAuth (UI 버튼 존재, 백엔드 미구현) | UI 버튼만 존재 | P3 (Phase 3) |
+| 문서 에디터 | 실시간 협업 (y-websocket/CRDT 미구현) | 의존성 없음 | P2 |
+| 문서 에디터 | 고급 검색 필터 (현재 title ILIKE만 지원) | 기본 검색 동작 | P2 |
+| 그래프 뷰 | 텍스트 검색 (카테고리/링크타입 필터만 존재) | `mind-map-canvas.tsx` | P2 |
+| 프레젠테이션 | Export/Share 기능 | 미착수 | P3 |
+| 설정 - 테마 | 커스텀 테마 Import | 미착수 | P3 |
+| 설정 - 임베드 | 실제 임베드 프리뷰 페이지 (토큰 CRUD + 가이드 3탭만 존재) | `embed-tokens.ts` 토큰 관리만 | P2 |
+| 이메일 인증 | 재발송 버튼 404 에러 (API 미구현) | 프론트 호출 중 | **P1** ⚠️ |
 
 ### 2.4 Phase 2 QA & 출시 기준
 
@@ -342,9 +351,29 @@
 - [x] 문서 PATCH 서버측 작성자/어드민 권한 검증
 - [x] 워크스페이스 unique constraint 수정 (name → owner_id+name 복합)
 - [x] 순환 참조 방지 로직 수정 (관계 삭제 전 cycle detection)
-- [ ] R2 Worker CORS 정책 문서화 (SECURITY.md)
-- [ ] R2 Worker public POST 보안 검토 (인증 없는 업로드)
-- [ ] SVG 업로드 보안 (에디터 허용, Avatar 거부 — 근거 문서화)
+- [x] SVG 업로드 코드 분리 ✅ — Avatar: JPG/PNG/WebP만 허용 (`image-upload.ts`), Editor: SVG 포함 허용 (`imageValidation.ts`), Worker: SVG 허용 (`index.ts`)
+- [ ] SVG 업로드 보안 근거 문서화 (SECURITY.md에 Avatar/Editor 구분 이유 기술)
+- [ ] R2 Worker CORS 정책 문서화 — `ALLOWED_ORIGINS` 현재 주석 처리(기본 `*`), wrangler.toml 설정 가이드 필요
+- [ ] R2 Worker public POST 보안 검토 — 인증 없는 업로드 (`POST /upload`) 위험 분석 및 대응 방안 문서화
+- [ ] SECURITY.md CORS 섹션 보강 — `corsHeaders()` 함수 존재하나 ALLOWED_ORIGINS 미설정 상태
+
+---
+
+## 2026-04-11 세션 변경 내역
+
+| 항목 | 설명 |
+|------|------|
+| 코드베이스 전수 대조 검증 | Phase 2 P1/P2 전 항목, 보안 잔여 작업을 실제 코드와 대조 |
+| 카테고리 Graph API 상태 보정 | Closure Table 패턴 구현 확인 (`categoryClosure`), tree 엔드포인트 존재 → 부분 구현 반영 |
+| 버전 Diff 상태 보정 | 클라이언트사이드 `diff` 패키지(`diffLines`) 사용 확인, GET /versions content 포함 반환 → 부분 완료 반영 |
+| DAG 컨텍스트 상태 보정 | 워크스페이스 전체 그래프 API 존재, 프론트 컴포넌트 존재 → 부분 구현 반영 |
+| SVG 업로드 보안 코드 검증 | Avatar(`image-upload.ts`): SVG 거부, Editor(`imageValidation.ts`): SVG 허용, Worker(`index.ts`): SVG 허용 — 코드 분리 완료 확인 |
+| SECURITY.md 상태 확인 | 파일 존재하나 R2 Worker CORS 상세 문서 미비, ALLOWED_ORIGINS 주석 처리 상태 |
+| 이메일 서비스 상태 확인 | 여전히 `logger.info()` 사용, Resend/SendGrid 등 미연동 확인 |
+| Phase 2 P1 API 상태 확인 | `PATCH /users/me/password` 미구현, `POST /auth/resend-verification` 미구현 (프론트 404 에러 지속) |
+| 테스트 커버리지 확인 | 댓글/이미지 업로드 테스트 파일 미존재 확인 |
+| Phase 2 완성도 조정 | ~30% → ~32%. Closure Table, 클라이언트 diff, DAG 프론트 컴포넌트 부분 구현 반영 |
+| 보안 잔여 작업 재분류 | SVG 코드 분리 완료 → 문서화만 잔여로 분리, CORS 항목 세분화 |
 
 ---
 
@@ -395,33 +424,41 @@
 
 ## 우선순위 요약 (실행 순서)
 
-### 즉시 (Phase 2 P1)
+### 즉시 (Phase 2 P1) — 핵심 완성
 
-1. ~~**이미지 업로드 통합**~~ — ✅ 완료
-2. **이메일 서비스 연동** — Resend (console.log 대체)
-3. ~~**댓글 수정/해결**~~ — ✅ 완료 (테스트 잔여)
-4. **비밀번호 변경 (로그인 상태)** — PATCH /users/me/password
-5. **이메일 재발송 API** — POST /auth/resend-verification
+| # | 항목 | 상태 | 비고 |
+|---|------|------|------|
+| 1 | ~~이미지 업로드 통합~~ | ✅ 완료 | R2 Worker 직접 업로드 |
+| 2 | ~~댓글 수정/해결~~ | ✅ 완료 | 테스트 잔여 |
+| 3 | **이메일 재발송 API** | ⚠️ **긴급** | 프론트에서 404 발생 중 |
+| 4 | **비밀번호 변경 (로그인 상태)** | ❌ 미구현 | PATCH /users/me/password |
+| 5 | **이메일 서비스 연동** | ❌ 미구현 | 현재 logger.info() 대체 |
 
-### 단기 (Phase 2 P2, 4~6주)
+### 단기 (Phase 2 P2, 4~6주) — 기능 확장
 
-6. **워크스페이스 전체 검색** — PostgreSQL 풀텍스트 + 필터 UI
-7. **버전 Diff** — Myers 알고리즘 + 2-패널 UI (프론트 부분 구현 존재)
-8. **카테고리 Graph API** — ancestors/descendants
-9. **단일 문서 DAG 컨텍스트** — 메타 패널 인라인 (프론트 컴포넌트 존재)
-10. **퍼블릭 임베드 페이지** — Guest Token + iframe (설정 가이드 존재)
-11. **OG Link Preview** — 프록시 API + 에디터 카드 (프론트 컴포넌트 존재)
+| # | 항목 | 구현 상태 | 비고 |
+|---|------|----------|------|
+| 6 | **워크스페이스 전체 검색** | 기본 ILIKE만 | pg_trgm/FTS 필요 |
+| 7 | **버전 Diff** | 클라이언트 diff 완료 | 서버사이드 최적화 잔여 |
+| 8 | **카테고리 Graph API** | Closure Table 구현 | REST 엔드포인트 추가 필요 |
+| 9 | **단일 문서 DAG 컨텍스트** | 프론트 컴포넌트 존재 | 전용 API 미구현 |
+| 10 | **퍼블릭 임베드 페이지** | 토큰 CRUD 완료 | 렌더링 페이지 미구현 |
+| 11 | **OG Link Preview** | 프론트 컴포넌트 존재 | 프록시 API 미구현 |
 
 ### 중기 (Phase 2 마무리, 2~4주)
 
-12. **실시간 협업** — y-websocket CRDT
-13. **베타 온보딩 & QA**
+| # | 항목 | 구현 상태 | 비고 |
+|---|------|----------|------|
+| 12 | **실시간 협업** | ❌ 미착수 | y-websocket CRDT, 의존성 없음 |
+| 13 | **베타 온보딩 & QA** | ❌ 미착수 | — |
 
 ### 장기 (Phase 3)
 
-14. **OAuth 2.0** — Google + GitHub
-15. **Activity Feed & 알림**
-16. **Public Pages** — 커스텀 도메인
-17. **AI Writing Assistant** — Claude API
-18. **성능 최적화 & 부하 테스트**
-19. **수익화** — Stripe 결제
+| # | 항목 | 구현 상태 | 비고 |
+|---|------|----------|------|
+| 14 | **OAuth 2.0** | UI 버튼만 존재 | Google + GitHub |
+| 15 | **Activity Feed & 알림** | ❌ 미착수 | — |
+| 16 | **Public Pages** | ❌ 미착수 | 커스텀 도메인 |
+| 17 | **AI Writing Assistant** | ❌ 미착수 | Claude API |
+| 18 | **성능 최적화 & 부하 테스트** | ❌ 미착수 | — |
+| 19 | **수익화** | ❌ 미착수 | Stripe 결제 |
