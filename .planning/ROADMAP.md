@@ -33,10 +33,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- R2 Worker CORS strict + Bearer auth + upload-token API
-- [ ] 01-02-PLAN.md -- graph/relation 서비스 쿼리 최적화 + SVG 보안 문서화
-- [ ] 01-03-PLAN.md -- 비밀번호 변경 API (백엔드: changePassword + PUT /me/password)
-- [ ] 01-04-PLAN.md -- 비밀번호 변경 UI (프론트엔드: PasswordChangeModal + 설정 페이지)
+- [x] 01-01-PLAN.md -- R2 Worker CORS strict + Bearer auth + upload-token API
+- [x] 01-02-PLAN.md -- graph/relation 서비스 쿼리 최적화 + SVG 보안 문서화
+- [x] 01-03-PLAN.md -- 비밀번호 변경 API (백엔드: changePassword + PUT /me/password)
+- [x] 01-04-PLAN.md -- 비밀번호 변경 UI (프론트엔드: PasswordChangeModal + 설정 페이지)
 
 ### Phase 2: Test Coverage
 **Goal**: Phase 1 보안 변경과 기존 핵심 기능(댓글, 이미지 업로드)이 통합 테스트로 검증되어, 이후 기능 추가 시 회귀를 방지한다

@@ -59,6 +59,14 @@ attributes: { '*': ['onclick', 'onerror', 'onload', 'style'] }
 - [x] `dangerouslySetInnerHTML`: sanitize 통과한 HTML에만 사용
 - [ ] SVG를 `<img>` 태그 외의 방식(inline SVG, `<object>`, `<embed>`)으로 렌더링하지 않음
 
+### 수용된 위험 (Accepted Risks)
+
+| 위협 ID | 범주 | 수용 근거 | 재검토 조건 |
+|---------|------|----------|------------|
+| T-01-03 | Information Disclosure | Cloudflare Workers 런타임 고정 실행 시간으로 timing 공격 벡터 극히 작음. MVP 규모에서 수용. | 운영 트래픽에서 timing 편차 감지 시 constant-time 비교로 교체 |
+| T-01-10 | Tampering | SVG는 `<img src="r2-url">` 태그로만 참조; rehype-sanitize가 script/on*/javascript: 모두 제거. inline SVG 경로 없음. | rehype-sanitize 우회 취약점 발견 시 즉시 재검토 |
+| T-01-18 | Tampering | 클라이언트 검증은 UX 보조. 서버에서 validatePassword()/comparePassword()로 최종 강제. | 서버 검증 로직 변경 시 재검토 |
+
 ### KMS Phase 1+ 보안 (계획됨)
 
 **인증:**

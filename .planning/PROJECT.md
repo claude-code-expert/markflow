@@ -28,9 +28,9 @@
 ### Active
 
 - [ ] 이메일 재발송 API (POST /auth/resend-verification) — P1 긴급
-- [ ] 비밀번호 변경 API (PATCH /users/me/password) — P1 긴급
-- [ ] R2 Worker 보안 보강 (CORS + 인증) — 보안
-- [ ] SVG 업로드 보안 문서화 — 보안
+- [x] 비밀번호 변경 API (PUT /users/me/password) — Validated in Phase 1: Security & Auth Hardening
+- [x] R2 Worker 보안 보강 (CORS strict + Bearer auth) — Validated in Phase 1: Security & Auth Hardening
+- [x] SVG 업로드 보안 문서화 — Validated in Phase 1: Security & Auth Hardening
 - [ ] 댓글 CRUD 통합 테스트 — 테스트
 - [ ] 이미지 업로드 테스트 — 테스트
 - [ ] 워크스페이스 풀텍스트 검색 (pg_trgm) — P2 기능
@@ -55,10 +55,10 @@
 
 - **기술 스택**: TypeScript 5+ (strict), Next.js 16 (App Router), Fastify, Drizzle ORM, PostgreSQL 16, Cloudflare R2
 - **모노레포**: pnpm workspace + Turborepo (`packages/editor`, `apps/web`, `apps/api`, `apps/worker`)
-- **현재 상태**: Phase 1 ~98% 완료, Phase 2 ~32% 진행 중
-- **코드 규모**: API 73 엔드포인트, 프론트 20 페이지, DB 15 테이블
+- **현재 상태**: Phase 2 MVP Phase 1(Security & Auth Hardening) 완료, Phase 2(Test Coverage) 진행 예정
+- **코드 규모**: API 74 엔드포인트(+upload-token, +PUT /me/password), 프론트 20 페이지, DB 15 테이블
 - **긴급 이슈**: 프론트에서 `POST /auth/resend-verification` 호출 시 404 에러 발생 중
-- **보안 이슈**: R2 Worker CORS 기본값 `*`, 인증 없는 업로드 POST 허용
+- **보안 상태**: R2 Worker CORS strict(fail-closed) + Bearer auth 적용 완료
 
 ## Constraints
 
@@ -74,7 +74,7 @@
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | 이메일 서비스를 Phase 2에서 제외 | 현재 logger.info()로 충분, 실제 발송은 베타 온보딩 시 결정 | — Pending |
-| R2 Worker에 인증 토큰 추가 | 비인증 업로드 위험 해소 | — Pending |
+| R2 Worker에 인증 토큰 추가 | 비인증 업로드 위험 해소 | ✓ Phase 1 완료 |
 | 클라이언트사이드 diff 유지 + 서버 API 추가 | 현재 동작하는 기능 유지하면서 서버사이드 최적화 병행 | — Pending |
 | pg_trgm 풀텍스트 검색 도입 | ILIKE만으로는 대용량 문서 검색 성능 부족 | — Pending |
 
@@ -96,4 +96,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-11 after initialization*
+*Last updated: 2026-04-11 after Phase 1 completion*
