@@ -109,6 +109,19 @@ export async function categoriesRoutes(app: FastifyInstance, opts: CategoriesRou
     return reply.status(200).send({ ok: true });
   });
 
+  // GET /api/v1/workspaces/:wsId/categories/:id/ancestors
+  app.get<{
+    Params: { wsId: string; id: string };
+  }>('/workspaces/:wsId/categories/:id/ancestors', {
+    preHandler: requireRole('viewer'),
+  }, async (request, reply) => {
+    const result = await categoryService.ancestors(
+      request.params.id,
+      request.params.wsId,
+    );
+    return reply.status(200).send({ ancestors: result });
+  });
+
   // DELETE /api/v1/workspaces/:wsId/categories/:id
   app.delete<{
     Params: { wsId: string; id: string };

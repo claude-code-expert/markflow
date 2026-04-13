@@ -6,6 +6,9 @@ import {
   and,
   isNull,
   asc,
+  desc,
+  gt,
+  inArray,
   sql,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
@@ -337,5 +340,44 @@ export function createCategoryService(db: Db) {
     }
   }
 
-  return { create, list, tree, rename, remove, reorder };
+  async function ancestors(categoryId: string, workspaceId: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
+
+    // Verify category exists in workspace
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
+      ))
+      .limit(1);
+
+    if (!category) {
+      throw notFound('Category not found');
+    }
+
+    // Query closure table for ancestors (depth > 0 excludes self-reference)
+    // Order by depth DESC so root comes first (root-to-leaf order)
+    const rows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        parentId: categories.parentId,
+        depth: categoryClosure.depth,
+        createdAt: categories.createdAt,
+      })
+      .from(categoryClosure)
+      .innerJoin(categories, eq(categoryClosure.ancestorId, categories.id))
+      .where(and(
+        eq(categoryClosure.descendantId, numCategoryId),
+        gt(categoryClosure.depth, 0),
+      ))
+      .orderBy(desc(categoryClosure.depth));
+
+    return rows;
+  }
+
+  return { create, list, tree, rename, remove, reorder, ancestors };
 }
