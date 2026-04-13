@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-04-11T13:07:33.690Z"
+stopped_at: Phase 01.1 context gathered
+last_updated: "2026-04-13T03:43:23.850Z"
 last_activity: 2026-04-11
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 1
   total_plans: 4
   completed_plans: 4
@@ -64,6 +64,10 @@ Recent decisions affecting current work:
 - pg_trgm 한국어: GIN 가속 ILIKE 사용, fuzzy는 영문 한정. Phase 3에서 pg_bigm 검토.
 - embed 보안: parseMarkdown() 재사용 강제 + CSP script-src 'none'.
 
+### Roadmap Evolution
+
+- Phase 01.1 inserted after Phase 1: Email Service & Resend Verification API (URGENT) — resend-verification 프론트 404 해결 + logger.info() → Resend 실제 메일 발송 연동
+
 ### Pending Todos
 
 None yet.
@@ -76,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T11:30:38.768Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-security-auth-hardening/01-UI-SPEC.md
+Last session: 2026-04-13T03:43:23.848Z
+Stopped at: Phase 01.1 context gathered
+Resume file: .planning/phases/01.1-email-service-resend-verification-api/01.1-CONTEXT.md
