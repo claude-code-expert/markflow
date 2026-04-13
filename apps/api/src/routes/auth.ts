@@ -65,6 +65,20 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
     },
   );
 
+  // POST /api/v1/auth/resend-verification
+  app.post<{ Body: { email: string } }>(
+    '/resend-verification',
+    authRateLimit(),
+    async (request, reply) => {
+      const { email } = request.body;
+      if (!email) {
+        throw badRequest('MISSING_FIELDS', 'email is required');
+      }
+      const result = await authService.resendVerification(email);
+      return reply.status(200).send(result);
+    },
+  );
+
   // POST /api/v1/auth/login
   app.post(
     '/login',

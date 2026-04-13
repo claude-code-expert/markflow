@@ -401,5 +401,42 @@ export function createAuthService(db: Db) {
     };
   }
 
-  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword, changePassword };
+  async function resendVerification(email: string) {
+    const found = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    const user = found[0];
+
+    // User not found or already verified: same response (email enumeration prevention)
+    if (!user || user.emailVerified) {
+      return { sent: true };
+    }
+
+    // Issue new token (invalidates previous link)
+    const emailVerifyToken = crypto.randomUUID();
+    const emailVerifyExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db
+      .update(users)
+      .set({
+        emailVerifyToken,
+        emailVerifyExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'MarkFlow 이메일 인증',
+      html: verificationEmailHtml(verifyUrl),
+    });
+
+    return { sent: true };
+  }
+
+  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword, changePassword, resendVerification };
 }
