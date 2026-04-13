@@ -10,6 +10,7 @@ import { hashPassword, comparePassword, validatePassword } from '../utils/passwo
 import { signTokenPair, signAccessToken, verifyRefreshToken, getRefreshTokenExpiry } from '../utils/jwt.js';
 import { AppError, badRequest, conflict, unauthorized, gone } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { sendEmail, verificationEmailHtml, passwordResetEmailHtml, FRONTEND_URL } from '../utils/email.js';
 
 interface SafeUser {
   id: number;
@@ -82,7 +83,12 @@ export function createAuthService(db: Db) {
       throw new Error('Failed to insert user');
     }
 
-    logger.info(`Email verification link for ${user.email}: /api/v1/auth/verify-email?token=${emailVerifyToken}`);
+    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'MarkFlow 이메일 인증',
+      html: verificationEmailHtml(verifyUrl),
+    });
 
     return { user: toSafeUser(user) };
   }
@@ -260,7 +266,12 @@ export function createAuthService(db: Db) {
       })
       .where(eq(users.id, user.id));
 
-    logger.info(`Password reset link for ${user.email}: /reset-password?token=${token}`);
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
+    await sendEmail({
+      to: user.email,
+      subject: 'MarkFlow 비밀번호 재설정',
+      html: passwordResetEmailHtml(resetUrl),
+    });
 
     return { sent: true };
   }

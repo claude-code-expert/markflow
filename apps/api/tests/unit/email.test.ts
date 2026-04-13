@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock logger before importing email module
+const mockLogger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+};
+
 vi.mock('../../src/utils/logger.js', () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
+  logger: mockLogger,
 }));
 
 // Ensure no RESEND_API_KEY is set (fallback mode)
@@ -20,8 +21,13 @@ describe('email utility', () => {
 
   describe('sendEmail() fallback mode', () => {
     it('calls logger.info with [EMAIL FALLBACK] when RESEND_API_KEY is not set', async () => {
+      vi.resetModules();
+
+      vi.doMock('../../src/utils/logger.js', () => ({
+        logger: mockLogger,
+      }));
+
       const { sendEmail } = await import('../../src/utils/email.js');
-      const { logger } = await import('../../src/utils/logger.js');
 
       await sendEmail({
         to: 'test@example.com',
@@ -29,15 +35,21 @@ describe('email utility', () => {
         html: '<p>Test body</p>',
       });
 
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('[EMAIL FALLBACK]'),
       );
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining('test@example.com'),
       );
     });
 
     it('does not throw when RESEND_API_KEY is not set', async () => {
+      vi.resetModules();
+
+      vi.doMock('../../src/utils/logger.js', () => ({
+        logger: mockLogger,
+      }));
+
       const { sendEmail } = await import('../../src/utils/email.js');
 
       await expect(
