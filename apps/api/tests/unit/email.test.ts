@@ -31,11 +31,9 @@ describe('email utility', () => {
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining('[EMAIL FALLBACK]'),
-        undefined,
       );
       expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining('test@example.com'),
-        undefined,
       );
     });
 
