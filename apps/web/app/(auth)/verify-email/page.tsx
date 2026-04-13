@@ -199,7 +199,7 @@ export default function VerifyEmailPage({
       try {
         await apiFetch<VerifyEmailResponse>(
           `/auth/verify-email?token=${encodeURIComponent(token as string)}`,
-          { method: 'POST' },
+          { method: 'GET' },
         );
         if (!cancelled) {
           setStatus('success');
