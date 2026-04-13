@@ -1,0 +1,84 @@
+# Components
+
+- **RootLayout** — `apps/demo/app/layout.tsx`
+- **Home** [client] — `apps/demo/app/page.tsx`
+- **DocLayout** — props: params — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
+- **DocEditorPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
+- **NewDocPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`
+- **DocsPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`
+- **GraphPage** [client] — `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`
+- **WorkspaceLayout** [client] — `apps/web/app/(app)/[workspaceSlug]/layout.tsx`
+- **WorkspaceHomePage** [client] — `apps/web/app/(app)/[workspaceSlug]/page.tsx`
+- **EmbedSettingsPage** [client] — `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx`
+- **MembersPage** [client] — `apps/web/app/(app)/[workspaceSlug]/settings/members/page.tsx`
+- **WorkspaceSettingsPage** [client] — `apps/web/app/(app)/[workspaceSlug]/settings/page.tsx`
+- **StorageSettingsPage** [client] — `apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx`
+- **ThemeSettingsPage** [client] — `apps/web/app/(app)/[workspaceSlug]/settings/theme/page.tsx`
+- **TrashPage** [client] — props: params — `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx`
+- **AppLayout** [client] — `apps/web/app/(app)/layout.tsx`
+- **WorkspaceListPage** [client] — `apps/web/app/(app)/workspaces/page.tsx`
+- **ForgotPasswordPage** [client] — `apps/web/app/(auth)/forgot-password/page.tsx`
+- **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
+- **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
+- **LoginPage** [client] — `apps/web/app/(auth)/login/page.tsx`
+- **RegisterLayout** — `apps/web/app/(auth)/register/layout.tsx`
+- **RegisterPage** [client] — `apps/web/app/(auth)/register/page.tsx`
+- **ResetPasswordPage** [client] — props: searchParams — `apps/web/app/(auth)/reset-password/page.tsx`
+- **VerifyEmailLayout** — `apps/web/app/(auth)/verify-email/layout.tsx`
+- **VerifyEmailPage** [client] — props: searchParams — `apps/web/app/(auth)/verify-email/page.tsx`
+- **PublicLayout** — `apps/web/app/(public)/layout.tsx`
+- **RootPage** [client] — `apps/web/app/(public)/page.tsx`
+- **InviteAcceptPage** [client] — props: params — `apps/web/app/invite/[token]/page.tsx`
+- **InviteLayout** — `apps/web/app/invite/layout.tsx`
+- **RootLayout** — `apps/web/app/layout.tsx`
+- **OGImage** — `apps/web/app/opengraph-image.tsx`
+- **PresentPage** [client] — `apps/web/app/present/[workspaceSlug]/[docId]/page.tsx`
+- **Providers** [client] — `apps/web/app/providers.tsx`
+- **AppHeader** [client] — props: onSearchClick, onNewDoc — `apps/web/components/app-header.tsx`
+- **CategoryTree** [client] — props: categories, workspaceSlug, currentCategoryId, currentDocId, onContextMenu, onDocContextMenu, onReorder, onMoveDoc, basePl, indentPx — `apps/web/components/category-tree.tsx`
+- **CommentPanel** [client] — props: workspaceId, documentId, onClose — `apps/web/components/comment-panel.tsx`
+- **ConfirmModal** [client] — props: open, onClose, onConfirm, title, message, confirmLabel, cancelLabel, isLoading, variant — `apps/web/components/confirm-modal.tsx`
+- **CreateWorkspaceModal** [client] — props: open, onClose — `apps/web/components/create-workspace-modal.tsx`
+- **DagStructureModal** [client] — props: open, onClose, nodes, edges, currentDocId, currentTitle, categoryName, workspaceSlug, onEditLinks — `apps/web/components/dag-structure-modal.tsx`
+- **DocContextMenu** [client] — props: doc, workspaceSlug, workspaceId, position, onClose, onRefresh — `apps/web/components/doc-context-menu.tsx`
+- **DocumentLinksModal** [client] — props: open, onClose, workspaceId, documentId, onSaved — `apps/web/components/document-links-modal.tsx`
+- **DocumentMetaPanel** [client] — props: doc, workspaceSlug, workspaceId, role, onClose — `apps/web/components/document-meta-panel.tsx`
+- **FolderContextMenu** [client] — props: category, workspaceSlug, workspaceId, position, onClose, onNewDoc, onRefresh — `apps/web/components/folder-context-menu.tsx`
+- **GraphPreviewModal** [client] — props: open, onClose, workspaceSlug, doc — `apps/web/components/graph-preview-modal.tsx`
+- **ImportExportModal** [client] — props: open, onClose, workspaceId, workspaceSlug, currentDocId, currentCategoryId — `apps/web/components/import-export-modal.tsx`
+- **JoinRequestPanel** [client] — props: onRequestSent — `apps/web/components/join-request-panel.tsx`
+- **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
+- **Footer** — `apps/web/components/landing/footer.tsx`
+- **Hero** — `apps/web/components/landing/hero.tsx`
+- **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
+- **LinkPreview** [client] — props: containerRef, workspaceId — `apps/web/components/link-preview.tsx`
+- **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`
+- **MindMapCanvas** [client] — props: nodes, edges, categories, selectedDocId, onSelectDoc, onRightClickDoc, tagLinks, dark — `apps/web/components/mind-map-canvas.tsx`
+- **MiniDagDiagram** [client] — props: currentTitle, categoryName, prev, next, related, onClickFullView — `apps/web/components/mini-dag-diagram.tsx`
+- **NewDocModal** [client] — props: open, onClose, workspaceSlug, workspaceId, categories — `apps/web/components/new-doc-modal.tsx`
+- **NewFolderModal** [client] — props: open, onClose, workspaceId, categories, defaultParentId, onCreated — `apps/web/components/new-folder-modal.tsx`
+- **PasswordChangeModal** [client] — props: isOpen, onClose — `apps/web/components/password-change-modal.tsx`
+- **PresentationMode** [client] — props: open, onClose, content, title — `apps/web/components/presentation-mode.tsx`
+- **ProfileEditModal** [client] — props: open, onClose — `apps/web/components/profile-edit-modal.tsx`
+- **SearchModal** [client] — props: open, onClose — `apps/web/components/search-modal.tsx`
+- **InviteStatusTab** [client] — props: workspaceId — `apps/web/components/settings/invite-status-tab.tsx`
+- **MemberExportTab** [client] — `apps/web/components/settings/member-export-tab.tsx`
+- **EmptyState** [client] — props: icon, title, description, actionLabel, onAction — `apps/web/components/states/empty.tsx`
+- **ErrorState** [client] — props: title, message, onRetry, onNavigateHome — `apps/web/components/states/error.tsx`
+- **Skeleton** — props: width, height, borderRadius — `apps/web/components/states/loading.tsx`
+- **WorkspaceListSkeleton** — `apps/web/components/states/loading.tsx`
+- **DocumentListSkeleton** — `apps/web/components/states/loading.tsx`
+- **EditorSkeleton** — `apps/web/components/states/loading.tsx`
+- **StorageGuidePanel** [client] — props: onClose, onConfigured — `apps/web/components/storage-guide-panel.tsx`
+- **TagInput** [client] — props: workspaceSlug, workspaceId, documentId, initialTags, disabled — `apps/web/components/tag-input.tsx`
+- **ToastProvider** [client] — `apps/web/components/toast-provider.tsx`
+- **VersionHistoryModal** [client] — props: open, onClose, workspaceId, documentId, currentContent, hasUnsavedChanges, onRestore — `apps/web/components/version-history-modal.tsx`
+- **VersionHistoryPanel** [client] — props: open, onClose, workspaceId, documentId, currentContent, onOpenFullModal, onRestore — `apps/web/components/version-history-panel.tsx`
+- **WikiPage** — `docs/seo/page.tsx`
+- **MarkdownEditor** — props: value, defaultValue, onChange, layoutProp, themeProp, height, placeholder, readOnly, className, themeVars — `packages/editor/src/MarkdownEditor.tsx`
+- **EditorPane** — props: value, onChange, theme, placeholder, readOnly, onScrollRatio, onImageFile, onWikiLinkSearch — `packages/editor/src/editor/EditorPane.tsx`
+- **PreviewPane** — props: markdown, scrollRatio, onScrollRatio — `packages/editor/src/preview/PreviewPane.tsx`
+- **ImageUploadGuide** — props: isOpen, onClose, onGoToSettings — `packages/editor/src/toolbar/ImageUploadGuide.tsx`
+- **SettingsModal** — props: isOpen, onClose, onSave — `packages/editor/src/toolbar/SettingsModal.tsx`
+- **Toolbar** — props: onAction, layout, onLayoutChange, theme, onThemeChange, onSettingsClick, onImageUploadClick, hasImageUpload — `packages/editor/src/toolbar/Toolbar.tsx`
