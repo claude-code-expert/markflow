@@ -62,8 +62,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- 카테고리 ancestors/descendants 서비스 + 라우트 + 통합 테스트
-- [ ] 03-02-PLAN.md -- 문서 DAG context 서비스 + 라우트 + 통합 테스트
+- [x] 03-01-PLAN.md -- 카테고리 ancestors/descendants 서비스 + 라우트 + 통합 테스트
+- [x] 03-02-PLAN.md -- 문서 DAG context 서비스 + 라우트 + 통합 테스트
 
 ### Phase 4: Search & Version Diff
 **Goal**: 워크스페이스 내 문서를 빠르게 검색하고, 두 버전 간 변경사항을 서버에서 구조화된 diff로 확인할 수 있다

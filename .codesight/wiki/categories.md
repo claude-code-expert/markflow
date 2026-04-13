@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Route list and file locations extracted via AST. Read the source files listed below before implementing or modifying this subsystem.
 
-The Categories subsystem handles **6 routes** and touches: auth.
+The Categories subsystem handles **8 routes** and touches: auth.
 
 ## Routes
 
@@ -15,6 +15,10 @@ The Categories subsystem handles **6 routes** and touches: auth.
 - `PATCH` `/workspaces/:wsId/categories/:id` params(wsId, id) [auth]
   `apps/api/src/routes/categories.ts`
 - `PUT` `/workspaces/:wsId/categories/reorder` params(wsId) [auth]
+  `apps/api/src/routes/categories.ts`
+- `GET` `/workspaces/:wsId/categories/:id/ancestors` params(wsId, id) [auth]
+  `apps/api/src/routes/categories.ts`
+- `GET` `/workspaces/:wsId/categories/:id/descendants` params(wsId, id) [auth]
   `apps/api/src/routes/categories.ts`
 - `DELETE` `/workspaces/:wsId/categories/:id` params(wsId, id) [auth]
   `apps/api/src/routes/categories.ts`

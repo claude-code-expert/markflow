@@ -1,7 +1,7 @@
 # Test Coverage
 
-> **81%** of routes and models are covered by tests
-> 60 test files found
+> **82%** of routes and models are covered by tests
+> 62 test files found
 
 ## Covered Routes
 
@@ -12,6 +12,8 @@
 - GET:/workspaces/:wsId/categories/tree
 - PATCH:/workspaces/:wsId/categories/:id
 - PUT:/workspaces/:wsId/categories/reorder
+- GET:/workspaces/:wsId/categories/:id/ancestors
+- GET:/workspaces/:wsId/categories/:id/descendants
 - DELETE:/workspaces/:wsId/categories/:id
 - GET:/workspaces/:wsId/documents/:docId/comments
 - POST:/workspaces/:wsId/documents/:docId/comments
@@ -26,6 +28,7 @@
 - GET:/workspaces/:id/embed-tokens
 - DELETE:/workspaces/:id/embed-tokens/:tokenId
 - GET:/workspaces/:wsId/graph
+- GET:/workspaces/:wsId/graph/documents/:id/context
 - POST:/workspaces/:id/invitations
 - GET:/invitations/:token
 - POST:/invitations/:token/accept

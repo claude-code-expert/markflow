@@ -23,7 +23,10 @@
 - `POST` `/logout` params() [auth, email]
 - `GET` `/workspaces/:wsId/categories/tree` params(wsId) [auth] ✓
 - `PUT` `/workspaces/:wsId/categories/reorder` params(wsId) [auth] ✓
+- `GET` `/workspaces/:wsId/categories/:id/ancestors` params(wsId, id) [auth] ✓
+- `GET` `/workspaces/:wsId/categories/:id/descendants` params(wsId, id) [auth] ✓
 - `GET` `/workspaces/:wsId/graph` params(wsId) [auth] ✓
+- `GET` `/workspaces/:wsId/graph/documents/:id/context` params(wsId, id) [auth] ✓
 - `POST` `/workspaces/:wsId/import` params(wsId) [auth, upload]
 - `GET` `/workspaces/:wsId/documents/:docId/export` params(wsId, docId) [auth, upload]
 - `GET` `/workspaces/:wsId/categories/:catId/export` params(wsId, catId) [auth, upload]
