@@ -3,9 +3,9 @@
 > **Stack:** fastify, next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
-> 64 routes | 15 models | 82 components | 42 lib files | 22 env vars | 16 middleware | 76% test coverage
-> **Token savings:** this file is ~8,700 tokens. Without it, AI exploration would cost ~92,800 tokens. **Saves ~84,100 tokens per conversation.**
-> **Last scanned:** 2026-04-13 07:43 — re-run after significant changes
+> 64 routes | 15 models | 82 components | 42 lib files | 22 env vars | 16 middleware | 81% test coverage
+> **Token savings:** this file is ~8,800 tokens. Without it, AI exploration would cost ~92,800 tokens. **Saves ~84,000 tokens per conversation.**
+> **Last scanned:** 2026-04-13 08:34 — re-run after significant changes
 
 ---
 
@@ -446,8 +446,8 @@
 
 - `apps/web/lib/api.ts` — imported by **40** files
 - `apps/api/src/utils/errors.ts` — imported by **32** files
-- `apps/api/tests/helpers/setup.ts` — imported by **31** files
-- `apps/api/tests/helpers/factory.ts` — imported by **30** files
+- `apps/api/tests/helpers/setup.ts` — imported by **32** files
+- `apps/api/tests/helpers/factory.ts` — imported by **31** files
 - `apps/web/stores/toast-store.ts` — imported by **21** files
 - `apps/web/stores/workspace-store.ts` — imported by **19** files
 - `apps/api/src/middleware/auth.ts` — imported by **17** files
@@ -469,8 +469,8 @@
 
 - `apps/web/lib/api.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx` +35 more
 - `apps/api/src/utils/errors.ts` ← `apps/api/src/index.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/middleware/rbac.ts`, `apps/api/src/middleware/workspace-scope.ts` +27 more
-- `apps/api/tests/helpers/setup.ts` ← `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-register.test.ts`, `apps/api/tests/integration/auth-resend-verification.test.ts` +26 more
-- `apps/api/tests/helpers/factory.ts` ← `apps/api/tests/helpers/setup.ts`, `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-reset-password.test.ts` +25 more
+- `apps/api/tests/helpers/setup.ts` ← `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-register.test.ts`, `apps/api/tests/integration/auth-resend-verification.test.ts` +27 more
+- `apps/api/tests/helpers/factory.ts` ← `apps/api/tests/helpers/setup.ts`, `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-reset-password.test.ts` +26 more
 - `apps/web/stores/toast-store.ts` ← `apps/web/__tests__/stores/toast-store.test.ts`, `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx` +16 more
 - `apps/web/stores/workspace-store.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/layout.tsx` +14 more
 - `apps/api/src/middleware/auth.ts` ← `apps/api/src/routes/auth.ts`, `apps/api/src/routes/categories.ts`, `apps/api/src/routes/comments.ts`, `apps/api/src/routes/documents.ts`, `apps/api/src/routes/embed-tokens.ts` +12 more
@@ -482,8 +482,8 @@
 
 # Test Coverage
 
-> **76%** of routes and models are covered by tests
-> 57 test files found
+> **81%** of routes and models are covered by tests
+> 60 test files found
 
 ## Covered Routes
 
@@ -495,6 +495,10 @@
 - PATCH:/workspaces/:wsId/categories/:id
 - PUT:/workspaces/:wsId/categories/reorder
 - DELETE:/workspaces/:wsId/categories/:id
+- GET:/workspaces/:wsId/documents/:docId/comments
+- POST:/workspaces/:wsId/documents/:docId/comments
+- PATCH:/workspaces/:wsId/documents/:docId/comments/:commentId
+- DELETE:/workspaces/:wsId/documents/:docId/comments/:commentId
 - POST:/workspaces/:wsId/documents
 - GET:/workspaces/:wsId/documents
 - GET:/workspaces/:wsId/documents/:id

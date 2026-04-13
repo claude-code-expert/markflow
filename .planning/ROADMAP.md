@@ -48,8 +48,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- 댓글 CRUD 통합 테스트 (factory 확장 + 7개 시나리오)
-- [ ] 02-02-PLAN.md -- 이미지 업로드 클라이언트 검증 테스트 (editor vitest 설정 + 5개 시나리오)
+- [x] 02-01-PLAN.md -- 댓글 CRUD 통합 테스트 (factory 확장 + 7개 시나리오)
+- [x] 02-02-PLAN.md -- 이미지 업로드 클라이언트 검증 테스트 (editor vitest 설정 + 5개 시나리오)
 
 ### Phase 3: Category & Document Context API
 **Goal**: 카테고리 계층 탐색과 문서 관계 컨텍스트를 단일 API 호출로 제공하여, 프론트엔드가 breadcrumb과 관계 그래프를 효율적으로 렌더링할 수 있다

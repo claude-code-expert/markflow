@@ -1,7 +1,7 @@
 # Test Coverage
 
-> **76%** of routes and models are covered by tests
-> 57 test files found
+> **81%** of routes and models are covered by tests
+> 60 test files found
 
 ## Covered Routes
 
@@ -13,6 +13,10 @@
 - PATCH:/workspaces/:wsId/categories/:id
 - PUT:/workspaces/:wsId/categories/reorder
 - DELETE:/workspaces/:wsId/categories/:id
+- GET:/workspaces/:wsId/documents/:docId/comments
+- POST:/workspaces/:wsId/documents/:docId/comments
+- PATCH:/workspaces/:wsId/documents/:docId/comments/:commentId
+- DELETE:/workspaces/:wsId/documents/:docId/comments/:commentId
 - POST:/workspaces/:wsId/documents
 - GET:/workspaces/:wsId/documents
 - GET:/workspaces/:wsId/documents/:id

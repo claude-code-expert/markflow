@@ -42,8 +42,8 @@ Changes to these files have the widest blast radius across the codebase:
 
 - `apps/web/lib/api.ts` — imported by **40** files
 - `apps/api/src/utils/errors.ts` — imported by **32** files
-- `apps/api/tests/helpers/setup.ts` — imported by **31** files
-- `apps/api/tests/helpers/factory.ts` — imported by **30** files
+- `apps/api/tests/helpers/setup.ts` — imported by **32** files
+- `apps/api/tests/helpers/factory.ts` — imported by **31** files
 - `apps/web/stores/toast-store.ts` — imported by **21** files
 - `apps/web/stores/workspace-store.ts` — imported by **19** files
 
