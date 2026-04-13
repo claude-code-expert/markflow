@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.3.0] - 2026-04-13
+
+### Phase 3: Category & Document Context API
+
+카테고리 계층 탐색(ancestors/descendants)과 문서 관계 DAG 컨텍스트를 read-only API로 노출하여, 프론트엔드가 breadcrumb과 관계 그래프를 효율적으로 렌더링할 수 있다.
+
+#### New API Endpoints
+
+- **feat: 카테고리 Ancestors API** — `GET /workspaces/:wsId/categories/:id/ancestors`
+  - categoryClosure 테이블 직접 조회, Root → Leaf 순서 반환
+  - 풀 카테고리 객체 `{id, name, parentId, depth, createdAt}` 포함
+- **feat: 카테고리 Descendants API** — `GET /workspaces/:wsId/categories/:id/descendants`
+  - nested tree 구조로 모든 하위 카테고리 반환
+  - 각 카테고리에 소속 문서 `{id, title, updatedAt}` 포함
+- **feat: 문서 DAG Context API** — `GET /workspaces/:wsId/graph/documents/:id/context`
+  - incoming / outgoing / related 3분류로 문서 관계 반환
+  - 관련 문서 메타에 title + categoryId + categoryName + tags 포함
+  - 배치 JOIN으로 N+1 방지
+
+#### Tests
+
+- `category-context.test.ts`: 10개 통합 테스트 (ancestors 5 + descendants 5)
+- `dag-context.test.ts`: 7개 통합 테스트 (관계 분류, 태그, soft-delete, 워크스페이스 격리)
+
+#### Files Changed (6 files, +980 lines)
+
+- `apps/api/src/services/category-service.ts` — `ancestors()`, `descendants()` 추가
+- `apps/api/src/services/graph-service.ts` — `getDocumentContext()` 추가
+- `apps/api/src/routes/categories.ts` — ancestors, descendants 라우트 추가
+- `apps/api/src/routes/graph.ts` — document context 라우트 추가
+- `apps/api/tests/integration/category-context.test.ts` — 신규
+- `apps/api/tests/integration/dag-context.test.ts` — 신규
+
+---
+
 ## [0.2.0] - 2026-04-03
 
 ### API 보완
