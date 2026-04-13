@@ -362,6 +362,16 @@ export default function RegisterPage() {
             메일에 포함된 링크를 클릭하여 이메일 인증을 완료해주세요.
           </p>
 
+          <Link
+            href={`/verify-email?email=${encodeURIComponent(email)}`}
+            style={{
+              ...styles.link,
+              display: 'block',
+              marginBottom: 8,
+            }}
+          >
+            이메일 확인 페이지로 이동
+          </Link>
           <Link href="/login" style={styles.link}>
             로그인 페이지로 이동
           </Link>
