@@ -80,12 +80,11 @@ export async function authRoutes(app: FastifyInstance, opts: AuthRoutesOptions) 
   );
 
   // POST /api/v1/auth/login
-  app.post(
+  app.post<{ Body: { email: string; password: string; rememberMe?: boolean } }>(
     '/login',
     authRateLimit(),
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const body = request.body as { email: string; password: string; rememberMe?: boolean };
-      const { email, password, rememberMe } = body;
+    async (request, reply) => {
+      const { email, password, rememberMe } = request.body;
 
       if (!email || !password) {
         throw badRequest('MISSING_FIELDS', 'email and password are required');
