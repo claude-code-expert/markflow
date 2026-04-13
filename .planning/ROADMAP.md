@@ -59,10 +59,11 @@ Plans:
   1. 특정 카테고리 ID로 ancestors API 호출 시 루트까지의 모든 조상이 순서대로 반환된다
   2. 특정 카테고리 ID로 descendants API 호출 시 모든 하위 카테고리가 트리 구조로 반환된다
   3. 단일 문서 ID로 DAG context API 호출 시 incoming/outgoing 관계와 관련 문서의 제목, 카테고리가 포함된 응답을 받는다
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md -- 카테고리 ancestors/descendants 서비스 + 라우트 + 통합 테스트
+- [ ] 03-02-PLAN.md -- 문서 DAG context 서비스 + 라우트 + 통합 테스트
 
 ### Phase 4: Search & Version Diff
 **Goal**: 워크스페이스 내 문서를 빠르게 검색하고, 두 버전 간 변경사항을 서버에서 구조화된 diff로 확인할 수 있다
@@ -105,6 +106,6 @@ Note: Phase 3 and 4 can execute in parallel (both depend only on Phase 1).
 |-------|----------------|--------|-----------|
 | 1. Security & Auth Hardening | 0/4 | Planning complete | - |
 | 2. Test Coverage | 0/2 | Planning complete | - |
-| 3. Category & Document Context API | 0/1 | Not started | - |
+| 3. Category & Document Context API | 0/2 | Planning complete | - |
 | 4. Search & Version Diff | 0/2 | Not started | - |
 | 5. Public Services | 0/2 | Not started | - |
