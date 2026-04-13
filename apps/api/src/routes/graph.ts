@@ -26,4 +26,17 @@ export async function graphRoutes(app: FastifyInstance, opts: GraphRoutesOptions
     const graph = await graphService.getWorkspaceGraph(request.params.wsId);
     return reply.status(200).send(graph);
   });
+
+  // GET /api/v1/workspaces/:wsId/graph/documents/:id/context
+  app.get<{
+    Params: { wsId: string; id: string };
+  }>('/workspaces/:wsId/graph/documents/:id/context', {
+    preHandler: requireRole('viewer'),
+  }, async (request, reply) => {
+    const context = await graphService.getDocumentContext(
+      request.params.id,
+      request.params.wsId,
+    );
+    return reply.status(200).send(context);
+  });
 }
