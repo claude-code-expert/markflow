@@ -84,11 +84,15 @@ export function createAuthService(db: Db) {
     }
 
     const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'MarkFlow 이메일 인증',
-      html: verificationEmailHtml(verifyUrl),
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 이메일 인증',
+        html: verificationEmailHtml(verifyUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send verification email', { email: user.email, error: err });
+    }
 
     return { user: toSafeUser(user) };
   }
@@ -267,11 +271,15 @@ export function createAuthService(db: Db) {
       .where(eq(users.id, user.id));
 
     const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'MarkFlow 비밀번호 재설정',
-      html: passwordResetEmailHtml(resetUrl),
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 비밀번호 재설정',
+        html: passwordResetEmailHtml(resetUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send password reset email', { email: user.email, error: err });
+    }
 
     return { sent: true };
   }
@@ -429,11 +437,15 @@ export function createAuthService(db: Db) {
       .where(eq(users.id, user.id));
 
     const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
-    await sendEmail({
-      to: user.email,
-      subject: 'MarkFlow 이메일 인증',
-      html: verificationEmailHtml(verifyUrl),
-    });
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 이메일 인증',
+        html: verificationEmailHtml(verifyUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send verification email', { email: user.email, error: err });
+    }
 
     return { sent: true };
   }

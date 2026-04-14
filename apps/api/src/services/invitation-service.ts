@@ -56,15 +56,19 @@ export function createInvitationService(db: Db) {
       .limit(1);
 
     const inviteUrl = `${FRONTEND_URL}/invitations/${token}`;
-    await sendEmail({
-      to: email,
-      subject: 'MarkFlow 워크스페이스 초대',
-      html: invitationEmailHtml(
-        inviteUrl,
-        workspace?.name ?? 'MarkFlow 워크스페이스',
-        inviter?.name ?? '팀원',
-      ),
-    });
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'MarkFlow 워크스페이스 초대',
+        html: invitationEmailHtml(
+          inviteUrl,
+          workspace?.name ?? 'MarkFlow 워크스페이스',
+          inviter?.name ?? '팀원',
+        ),
+      });
+    } catch (err) {
+      logger.error('Failed to send invitation email', { email, error: err });
+    }
 
     return invitation;
   }
