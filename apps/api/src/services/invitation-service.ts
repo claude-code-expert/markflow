@@ -10,6 +10,7 @@ import {
 import type { Db } from '@markflow/db';
 import { conflict, gone, notFound } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { sendEmail, invitationEmailHtml, FRONTEND_URL } from '../utils/email.js';
 
 const INVITATION_EXPIRY_HOURS = 72;
 
@@ -42,7 +43,32 @@ export function createInvitationService(db: Db) {
       throw new Error('Failed to create invitation');
     }
 
-    logger.info(`Invitation link for ${email}: /api/v1/invitations/${token}`);
+    // Fetch workspace name and inviter name for the email template
+    const [workspace] = await db
+      .select({ name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, Number(workspaceId)))
+      .limit(1);
+    const [inviter] = await db
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, Number(inviterId)))
+      .limit(1);
+
+    const inviteUrl = `${FRONTEND_URL}/invitations/${token}`;
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'MarkFlow 워크스페이스 초대',
+        html: invitationEmailHtml(
+          inviteUrl,
+          workspace?.name ?? 'MarkFlow 워크스페이스',
+          inviter?.name ?? '팀원',
+        ),
+      });
+    } catch (err) {
+      logger.error('Failed to send invitation email', { email, error: err });
+    }
 
     return invitation;
   }

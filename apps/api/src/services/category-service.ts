@@ -6,6 +6,9 @@ import {
   and,
   isNull,
   asc,
+  desc,
+  gt,
+  inArray,
   sql,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
@@ -337,5 +340,160 @@ export function createCategoryService(db: Db) {
     }
   }
 
-  return { create, list, tree, rename, remove, reorder };
+  async function ancestors(categoryId: string, workspaceId: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
+
+    // Verify category exists in workspace
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
+      ))
+      .limit(1);
+
+    if (!category) {
+      throw notFound('Category not found');
+    }
+
+    // Query closure table for ancestors (depth > 0 excludes self-reference)
+    // Order by depth DESC so root comes first (root-to-leaf order)
+    const rows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        parentId: categories.parentId,
+        depth: categoryClosure.depth,
+        createdAt: categories.createdAt,
+      })
+      .from(categoryClosure)
+      .innerJoin(categories, eq(categoryClosure.ancestorId, categories.id))
+      .where(and(
+        eq(categoryClosure.descendantId, numCategoryId),
+        gt(categoryClosure.depth, 0),
+      ))
+      .orderBy(desc(categoryClosure.depth));
+
+    return rows;
+  }
+
+  async function descendants(categoryId: string, workspaceId: string) {
+    const numCategoryId = Number(categoryId);
+    const numWorkspaceId = Number(workspaceId);
+
+    // Verify category exists in workspace
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(
+        eq(categories.id, numCategoryId),
+        eq(categories.workspaceId, numWorkspaceId),
+      ))
+      .limit(1);
+
+    if (!category) {
+      throw notFound('Category not found');
+    }
+
+    // Step 1: Get descendant IDs from closure table (depth > 0 excludes self)
+    const closureRows = await db
+      .select({ descendantId: categoryClosure.descendantId })
+      .from(categoryClosure)
+      .where(and(
+        eq(categoryClosure.ancestorId, numCategoryId),
+        gt(categoryClosure.depth, 0),
+      ));
+
+    const descendantIds = closureRows.map((r) => r.descendantId);
+
+    if (descendantIds.length === 0) {
+      return { children: [], documents: [] };
+    }
+
+    // Step 2: Fetch category details (workspace-scoped)
+    const categoryRows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        parentId: categories.parentId,
+      })
+      .from(categories)
+      .where(and(
+        inArray(categories.id, descendantIds),
+        eq(categories.workspaceId, numWorkspaceId),
+      ))
+      .orderBy(asc(categories.orderIndex), asc(categories.name));
+
+    // Step 3: Fetch active documents for descendant categories (workspace-scoped)
+    const docRows = await db
+      .select({
+        id: documents.id,
+        title: documents.title,
+        categoryId: documents.categoryId,
+        updatedAt: documents.updatedAt,
+      })
+      .from(documents)
+      .where(and(
+        inArray(documents.categoryId, descendantIds),
+        eq(documents.workspaceId, numWorkspaceId),
+        eq(documents.isDeleted, false),
+      ))
+      .orderBy(asc(documents.title));
+
+    // Step 4: Build tree using nodeMap pattern (same as tree())
+    const nodeMap = new Map<number, CategoryTreeNode>();
+
+    for (const c of categoryRows) {
+      nodeMap.set(c.id, { id: c.id, name: c.name, parentId: c.parentId, children: [], documents: [] });
+    }
+
+    // Assign documents to their categories
+    for (const d of docRows) {
+      const doc: CategoryTreeDocument = { id: d.id, title: d.title, updatedAt: d.updatedAt };
+      if (d.categoryId) {
+        const node = nodeMap.get(d.categoryId);
+        if (node) {
+          node.documents.push(doc);
+        }
+      }
+    }
+
+    // Build tree: direct children of the target category are roots
+    const directChildren: CategoryTreeNode[] = [];
+    for (const c of categoryRows) {
+      const node = nodeMap.get(c.id)!;
+      if (c.parentId === numCategoryId) {
+        directChildren.push(node);
+      } else if (c.parentId) {
+        const parent = nodeMap.get(c.parentId);
+        if (parent) {
+          parent.children.push(node);
+        }
+      }
+    }
+
+    // Collect documents directly under target category
+    const directDocs = await db
+      .select({
+        id: documents.id,
+        title: documents.title,
+        updatedAt: documents.updatedAt,
+      })
+      .from(documents)
+      .where(and(
+        eq(documents.categoryId, numCategoryId),
+        eq(documents.workspaceId, numWorkspaceId),
+        eq(documents.isDeleted, false),
+      ))
+      .orderBy(asc(documents.title));
+
+    return {
+      children: directChildren,
+      documents: directDocs,
+    };
+  }
+
+  return { create, list, tree, rename, remove, reorder, ancestors, descendants };
 }

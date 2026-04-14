@@ -45,10 +45,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. 댓글 통합 테스트가 생성/조회/수정/삭제/해결/권한/스레딩 7개 시나리오를 검증하고 모두 통과한다
   2. 이미지 업로드 테스트가 타입 검증/크기 제한/CORS/성공 업로드/에러 처리 5개 시나리오를 검증하고 모두 통과한다
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [x] 02-01-PLAN.md -- 댓글 CRUD 통합 테스트 (factory 확장 + 7개 시나리오)
+- [x] 02-02-PLAN.md -- 이미지 업로드 클라이언트 검증 테스트 (editor vitest 설정 + 5개 시나리오)
 
 ### Phase 3: Category & Document Context API
 **Goal**: 카테고리 계층 탐색과 문서 관계 컨텍스트를 단일 API 호출로 제공하여, 프론트엔드가 breadcrumb과 관계 그래프를 효율적으로 렌더링할 수 있다
@@ -58,10 +59,11 @@ Plans:
   1. 특정 카테고리 ID로 ancestors API 호출 시 루트까지의 모든 조상이 순서대로 반환된다
   2. 특정 카테고리 ID로 descendants API 호출 시 모든 하위 카테고리가 트리 구조로 반환된다
   3. 단일 문서 ID로 DAG context API 호출 시 incoming/outgoing 관계와 관련 문서의 제목, 카테고리가 포함된 응답을 받는다
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [x] 03-01-PLAN.md -- 카테고리 ancestors/descendants 서비스 + 라우트 + 통합 테스트
+- [x] 03-02-PLAN.md -- 문서 DAG context 서비스 + 라우트 + 통합 테스트
 
 ### Phase 4: Search & Version Diff
 **Goal**: 워크스페이스 내 문서를 빠르게 검색하고, 두 버전 간 변경사항을 서버에서 구조화된 diff로 확인할 수 있다
@@ -103,7 +105,7 @@ Note: Phase 3 and 4 can execute in parallel (both depend only on Phase 1).
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security & Auth Hardening | 0/4 | Planning complete | - |
-| 2. Test Coverage | 0/1 | Not started | - |
-| 3. Category & Document Context API | 0/1 | Not started | - |
+| 2. Test Coverage | 0/2 | Planning complete | - |
+| 3. Category & Document Context API | 0/2 | Planning complete | - |
 | 4. Search & Version Diff | 0/2 | Not started | - |
 | 5. Public Services | 0/2 | Not started | - |

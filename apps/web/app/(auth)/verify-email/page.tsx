@@ -173,7 +173,8 @@ export default function VerifyEmailPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { token } = use(searchParams);
+  const { token, email: emailParam } = use(searchParams);
+  const userEmail = typeof emailParam === 'string' ? emailParam : undefined;
   const [status, setStatus] = useState<VerifyStatus>(token ? 'loading' : 'pending');
   const [message, setMessage] = useState('');
   const [errorCode, setErrorCode] = useState('');
@@ -198,7 +199,7 @@ export default function VerifyEmailPage({
       try {
         await apiFetch<VerifyEmailResponse>(
           `/auth/verify-email?token=${encodeURIComponent(token as string)}`,
-          { method: 'POST' },
+          { method: 'GET' },
         );
         if (!cancelled) {
           setStatus('success');
@@ -225,16 +226,19 @@ export default function VerifyEmailPage({
   }, [token]);
 
   async function handleResend() {
+    if (!userEmail) return;
     setIsResending(true);
     setResendSuccess(false);
 
     try {
       await apiFetch<VerifyEmailResponse>('/auth/resend-verification', {
         method: 'POST',
+        body: { email: userEmail },
       });
       setResendSuccess(true);
     } catch {
       setResendSuccess(false);
+      setMessage('인증 메일 발송에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsResending(false);
     }
@@ -301,11 +305,11 @@ export default function VerifyEmailPage({
             <button
               type="button"
               onClick={handleResend}
-              disabled={isResending || resendSuccess}
+              disabled={isResending || resendSuccess || !userEmail}
               style={{
                 ...primaryButtonStyle,
-                opacity: isResending || resendSuccess ? 0.6 : 1,
-                cursor: isResending || resendSuccess ? 'not-allowed' : 'pointer',
+                opacity: isResending || resendSuccess || !userEmail ? 0.6 : 1,
+                cursor: isResending || resendSuccess || !userEmail ? 'not-allowed' : 'pointer',
               }}
             >
               {isResending
@@ -314,6 +318,12 @@ export default function VerifyEmailPage({
                   ? '인증 메일을 다시 보냈습니다'
                   : '인증 메일 재발송'}
             </button>
+
+            {!userEmail && status === 'pending' && (
+              <p style={{ color: 'var(--text-2)', fontSize: 13, marginTop: 8 }}>
+                이메일 주소를 확인할 수 없습니다. 로그인 페이지에서 다시 시도해주세요.
+              </p>
+            )}
 
             <div style={{ marginTop: 20 }}>
               <Link href="/login" style={linkStyle}>

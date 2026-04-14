@@ -10,6 +10,7 @@ import { hashPassword, comparePassword, validatePassword } from '../utils/passwo
 import { signTokenPair, signAccessToken, verifyRefreshToken, getRefreshTokenExpiry } from '../utils/jwt.js';
 import { AppError, badRequest, conflict, unauthorized, gone } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { sendEmail, verificationEmailHtml, passwordResetEmailHtml, FRONTEND_URL } from '../utils/email.js';
 
 interface SafeUser {
   id: number;
@@ -82,7 +83,16 @@ export function createAuthService(db: Db) {
       throw new Error('Failed to insert user');
     }
 
-    logger.info(`Email verification link for ${user.email}: /api/v1/auth/verify-email?token=${emailVerifyToken}`);
+    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 이메일 인증',
+        html: verificationEmailHtml(verifyUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send verification email', { email: user.email, error: err });
+    }
 
     return { user: toSafeUser(user) };
   }
@@ -260,7 +270,16 @@ export function createAuthService(db: Db) {
       })
       .where(eq(users.id, user.id));
 
-    logger.info(`Password reset link for ${user.email}: /reset-password?token=${token}`);
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${token}`;
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 비밀번호 재설정',
+        html: passwordResetEmailHtml(resetUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send password reset email', { email: user.email, error: err });
+    }
 
     return { sent: true };
   }
@@ -390,5 +409,46 @@ export function createAuthService(db: Db) {
     };
   }
 
-  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword, changePassword };
+  async function resendVerification(email: string) {
+    const found = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+
+    const user = found[0];
+
+    // User not found or already verified: same response (email enumeration prevention)
+    if (!user || user.emailVerified) {
+      return { sent: true };
+    }
+
+    // Issue new token (invalidates previous link)
+    const emailVerifyToken = crypto.randomUUID();
+    const emailVerifyExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await db
+      .update(users)
+      .set({
+        emailVerifyToken,
+        emailVerifyExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    const verifyUrl = `${FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'MarkFlow 이메일 인증',
+        html: verificationEmailHtml(verifyUrl),
+      });
+    } catch (err) {
+      logger.error('Failed to send verification email', { email: user.email, error: err });
+    }
+
+    return { sent: true };
+  }
+
+  return { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword, changePassword, resendVerification };
 }

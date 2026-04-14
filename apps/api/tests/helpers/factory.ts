@@ -1,7 +1,8 @@
-import { users, workspaces, workspaceMembers, invitations, joinRequests } from '@markflow/db';
+import { users, workspaces, workspaceMembers, invitations, joinRequests, comments } from '@markflow/db';
 import { hashPassword } from '../../src/utils/password.js';
 import { signAccessToken } from '../../src/utils/jwt.js';
 import type { Db } from '@markflow/db';
+import type { FastifyInstance } from 'fastify';
 import crypto from 'node:crypto';
 
 let counter = 0;
@@ -121,4 +122,42 @@ export async function createJoinRequest(
   }).returning();
 
   return joinRequest!;
+}
+
+export async function createDocument(
+  app: FastifyInstance,
+  wsId: number,
+  accessToken: string,
+  title?: string,
+) {
+  const id = nextId();
+  const res = await app.inject({
+    method: 'POST',
+    url: `/api/v1/workspaces/${wsId}/documents`,
+    headers: { authorization: `Bearer ${accessToken}` },
+    payload: { title: title ?? `Test Document ${id}` },
+  });
+  const doc = (res.json() as { document: { id: number; title: string } }).document;
+  return { id: doc.id, title: doc.title };
+}
+
+interface CreateCommentOptions {
+  content?: string;
+  parentId?: number;
+}
+
+export async function createComment(
+  db: Db,
+  documentId: number,
+  authorId: number,
+  options: CreateCommentOptions = {},
+) {
+  const id = nextId();
+  const [comment] = await db.insert(comments).values({
+    documentId,
+    authorId,
+    content: options.content ?? `Test comment ${id}`,
+    parentId: options.parentId ?? null,
+  }).returning();
+  return comment!;
 }
