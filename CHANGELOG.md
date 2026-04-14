@@ -1,37 +1,41 @@
 # Changelog
 
-## [0.3.0] - 2026-04-13
+## [0.3.0] - 2026-04-14
+
+Phase 1.1(이메일 서비스), Phase 2(테스트 커버리지), Phase 3(카테고리/문서 컨텍스트 API)를 포함하는 릴리스.
+
+### Phase 1.1: Email Service & Resend Verification API
+
+Resend SDK 기반 이메일 발송 인프라 구축 및 이메일 재인증 API 추가.
+
+- **feat: 이메일 유틸리티** — Resend SDK 연동, HTML 템플릿, XSS 방어(`escapeHtml`)
+- **feat: 인증 이메일 재발송 API** — `POST /resend-verification`, 10req/15min 레이트 리밋
+- **feat: 회원가입/인증 페이지 연동** — verify-email 페이지 GET 전환, 회원가입 후 인증 링크 안내
+- **fix: verify-email HTTP 메서드** — POST → GET 수정 (CR-01)
+- **fix: 이메일 템플릿 URL 파라미터 이스케이프** — HTML injection 방어 (WR-01)
+- **fix: 로그인 라우트 타입 안전성** — Fastify generic 타입 파라미터 사용 (WR-03)
+
+### Phase 2: Test Coverage
+
+Phase 1 변경사항 검증을 위한 통합/유닛 테스트 추가.
+
+- **test: 댓글 CRUD 통합 테스트** — 7개 시나리오, 13개 테스트 (생성/조회/수정/삭제/해결/권한/스레딩)
+- **test: 이미지 업로드 클라이언트 검증** — imageValidation 타입/크기 테스트, cloudflareUploader CORS/성공/에러 테스트
+- **chore: editor 패키지 vitest 설정** 추가
+- **feat: factory 헬퍼** — `createDocument()`, `createComment()` 추가
 
 ### Phase 3: Category & Document Context API
 
-카테고리 계층 탐색(ancestors/descendants)과 문서 관계 DAG 컨텍스트를 read-only API로 노출하여, 프론트엔드가 breadcrumb과 관계 그래프를 효율적으로 렌더링할 수 있다.
+카테고리 계층 탐색과 문서 관계 DAG 컨텍스트를 read-only API로 노출.
 
-#### New API Endpoints
+- **feat: 카테고리 Ancestors API** — `GET /workspaces/:wsId/categories/:id/ancestors` (Root→Leaf 순서, 풀 카테고리 객체)
+- **feat: 카테고리 Descendants API** — `GET /workspaces/:wsId/categories/:id/descendants` (nested tree + 소속 문서)
+- **feat: 문서 DAG Context API** — `GET /workspaces/:wsId/graph/documents/:id/context` (incoming/outgoing/related 3분류, title+categoryName+tags)
+- **test:** 17개 통합 테스트 (ancestors 5 + descendants 5 + DAG context 7)
 
-- **feat: 카테고리 Ancestors API** — `GET /workspaces/:wsId/categories/:id/ancestors`
-  - categoryClosure 테이블 직접 조회, Root → Leaf 순서 반환
-  - 풀 카테고리 객체 `{id, name, parentId, depth, createdAt}` 포함
-- **feat: 카테고리 Descendants API** — `GET /workspaces/:wsId/categories/:id/descendants`
-  - nested tree 구조로 모든 하위 카테고리 반환
-  - 각 카테고리에 소속 문서 `{id, title, updatedAt}` 포함
-- **feat: 문서 DAG Context API** — `GET /workspaces/:wsId/graph/documents/:id/context`
-  - incoming / outgoing / related 3분류로 문서 관계 반환
-  - 관련 문서 메타에 title + categoryId + categoryName + tags 포함
-  - 배치 JOIN으로 N+1 방지
+### Chore
 
-#### Tests
-
-- `category-context.test.ts`: 10개 통합 테스트 (ancestors 5 + descendants 5)
-- `dag-context.test.ts`: 7개 통합 테스트 (관계 분류, 태그, soft-delete, 워크스페이스 격리)
-
-#### Files Changed (6 files, +980 lines)
-
-- `apps/api/src/services/category-service.ts` — `ancestors()`, `descendants()` 추가
-- `apps/api/src/services/graph-service.ts` — `getDocumentContext()` 추가
-- `apps/api/src/routes/categories.ts` — ancestors, descendants 라우트 추가
-- `apps/api/src/routes/graph.ts` — document context 라우트 추가
-- `apps/api/tests/integration/category-context.test.ts` — 신규
-- `apps/api/tests/integration/dag-context.test.ts` — 신규
+- **chore: .gitignore** — `.env.local`, `**/.mcp.json` 추적 제외
 
 ---
 

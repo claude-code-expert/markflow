@@ -13,6 +13,10 @@ node_modules
 # testing
 /coverage
 
+.env.local
+.env.example
+**/.mcp.json
+
 docs/phase
 # backups
 *.bak
@@ -46,7 +50,6 @@ yarn-error.log*
 
 # env files
 .env*
-!.env.local
 
 # vercel
 .vercel
