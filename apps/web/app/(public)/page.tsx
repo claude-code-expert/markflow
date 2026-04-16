@@ -6,7 +6,7 @@ import { useAuthStore } from '../../stores/auth-store';
 import { NavBar } from '../../components/landing/nav-bar';
 import { Hero } from '../../components/landing/hero';
 import { FeaturesGrid } from '../../components/landing/features-grid';
-import { PricingSection } from '../../components/landing/pricing-section';
+// import { PricingSection } from '../../components/landing/pricing-section'; // 나중에 사용 예정
 import { Footer } from '../../components/landing/footer';
 
 export default function RootPage() {
@@ -49,7 +49,7 @@ export default function RootPage() {
         <main>
           <Hero />
           <FeaturesGrid />
-          <PricingSection />
+          {/* <PricingSection /> */} {/* 나중에 사용 예정 */}
         </main>
         <Footer />
       </div>

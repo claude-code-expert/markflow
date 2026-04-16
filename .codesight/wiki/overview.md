@@ -55,13 +55,13 @@ Changes to these files have the widest blast radius across the codebase:
 - `E2E_USER_PASSWORD` — `apps/web/tests/e2e/document-management.spec.ts`
 - `E2E_WORKSPACE_NAME` — `apps/web/tests/e2e/team-management.spec.ts`
 - `E2E_WORKSPACE_SLUG` — `apps/web/tests/e2e/document-management.spec.ts`
-- `EMAIL_FROM` — `apps/api/src/utils/email.ts`
-- `FRONTEND_URL` — `apps/api/src/utils/email.ts`
 - `NEXT_PUBLIC_API_URL` — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
 - `NEXT_PUBLIC_R2_WORKER_URL` — `apps/web/lib/image-upload.ts`
 - `NEXT_PUBLIC_SITE_URL` — `apps/web/app/layout.tsx`
-- `NODE_ENV` — `apps/api/src/routes/auth.ts`
-- _...2 more_
+- `R2_UPLOAD_SECRET` — `apps/api/src/routes/upload-token.ts`
+- `RESEND_API_KEY` — `apps/api/src/utils/email.ts`
+- `TEST_DATABASE_URL` — `apps/api/tests/helpers/setup.ts`
+- _...1 more_
 
 ---
-_Back to [index.md](./index.md) · Generated 2026-04-14_
+_Back to [index.md](./index.md) · Generated 2026-04-16_

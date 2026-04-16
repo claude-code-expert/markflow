@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>MarkFlow R2 Worker 배포 가이드</title>
+  <style>
+    :root {
+      --surface: #FFFFFF;
+      --surface-2: #F5F4F0;
+      --text: #1A1916;
+      --text-2: #3F3E39;
+      --text-3: #77756E;
+      --border: #E2E0D8;
+      --accent: #1A56DB;
+      --accent-2: #E8EEFA;
+      --amber: #92400e;
+      --amber-lt: #fef3c7;
+      --green: #16a34a;
+      --green-lt: #dcfce7;
+      --red: #dc2626;
+      --red-lt: #fee2e2;
+      --radius-sm: 6px;
+      --radius: 8px;
+      --radius-xl: 16px;
+      --shadow-lg: 0 10px 30px rgba(0,0,0,.08);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", sans-serif;
+      --font-mono: "SF Mono", Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .badge-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-2);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .lede {
+      color: var(--text-2);
+      font-size: 14px;
+      margin: 8px 0 32px;
+      max-width: 560px;
+    }
+
+    .meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card + .card { margin-top: 24px; }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step:last-child { border-bottom: none; padding-bottom: 4px; }
+    .step:first-child { padding-top: 4px; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-body { flex: 1; min-width: 0; }
+
+    .step-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 3px 0 8px;
+    }
+
+    .step-desc {
+      color: var(--text-2);
+      font-size: 13.5px;
+      margin: 0 0 8px;
+    }
+
+    a.link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    a.link:hover { text-decoration: underline; }
+
+    pre.code {
+      position: relative;
+      background: var(--text);
+      color: #e2e8f0;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin: 6px 0;
+      white-space: pre;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.08);
+      border: none;
+      border-radius: 5px;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .copy-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .copy-btn.copied { color: #4ade80; }
+
+    code.inline {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    ul.bullet, ol.substeps {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      font-size: 13px;
+      line-height: 1.9;
+      color: var(--text-2);
+    }
+
+    ul.bullet li, ol.substeps li { margin-bottom: 2px; }
+    ul.bullet b, ol.substeps b { color: var(--text); font-weight: 600; }
+
+    .tip {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: var(--amber-lt);
+      color: var(--amber);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+    }
+
+    table.api {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+
+    table.api th, table.api td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table.api th {
+      font-weight: 600;
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    /* Connect section */
+    .connect {
+      background: var(--accent-2);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-xl);
+      padding: 24px 28px;
+      margin-top: 24px;
+    }
+
+    .connect h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .connect p.desc {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    .connect label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-2);
+      margin-bottom: 6px;
+    }
+
+    .connect input[type="url"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      background: var(--surface);
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .connect input[type="url"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .15s, border-color .15s, opacity .15s;
+    }
+
+    .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: 1.5px solid var(--accent);
+    }
+
+    .btn-primary:not([disabled]):hover { background: #1343B0; }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:not([disabled]):hover { border-color: var(--text-3); }
+
+    .btn-danger {
+      background: var(--surface);
+      color: var(--red);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-danger:not([disabled]):hover { border-color: var(--red); background: var(--red-lt); }
+
+    .status {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .status.success { background: var(--green-lt); color: var(--green); }
+    .status.error { background: var(--red-lt); color: var(--red); }
+    .status.info { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); }
+
+    .status .url-echo {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      opacity: .8;
+      word-break: break-all;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .saved-url {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .saved-url code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: var(--surface);
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      word-break: break-all;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: var(--accent-2);
+      border-radius: var(--radius);
+      color: var(--text-2);
+      font-size: 13px;
+    }
+
+    .footer-note strong { color: var(--text); }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 32px 16px 64px; }
+      .card, .connect { padding: 20px; }
+      h1 { font-size: 19px; }
+      .step { padding: 16px 0; gap: 12px; }
+      .step-num { width: 24px; height: 24px; font-size: 12px; }
+      .step-title { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="meta">Cloudflare R2 Worker · 무료 10GB · 10만 요청/일</div>
+
+    <header>
+      <div class="badge-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
+      </div>
+      <h1>R2 Worker 배포 &amp; 연결 가이드</h1>
+    </header>
+
+    <p class="lede">
+      MarkFlow Editor의 이미지 업로드용 Cloudflare Worker를 배포하고, 아래 <b>연결하기</b> 섹션에서 Worker URL을 바로 입력해 연동합니다.
+      전체 절차는 약 5분 소요됩니다.
+    </p>
+
+    <!-- Deployment steps card -->
+    <section class="card">
+      <!-- Step 1 -->
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h2 class="step-title">R2 버킷 생성</h2>
+          <p class="step-desc">
+            <a class="link" href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer">Cloudflare 대시보드</a>
+            → <b>R2 Object Storage</b> → <b>Create bucket</b>
+          </p>
+          <ul class="bullet">
+            <li>버킷 이름: <code class="inline">markflow-images</code> (또는 원하는 이름)</li>
+            <li>생성 후 <b>Settings</b> → <b>Public access</b> → <b>Allow Access</b> 활성화</li>
+            <li>공개 URL 확인 (예: <code class="inline">https://pub-xxxxxxxx.r2.dev</code>)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h2 class="step-title">설정 편집 (<code class="inline">wrangler.toml</code>)</h2>
+          <p class="step-desc">
+            <code class="inline">apps/worker/wrangler.toml</code>을 열고 아래 값을 수정합니다.
+          </p>
+          <pre class="code"><button class="copy-btn" data-copy="# account_id = &quot;YOUR_ACCOUNT_ID&quot;  # 주석 해제 후 입력&#10;&#10;[[r2_buckets]]&#10;bucket_name = &quot;markflow-images&quot;    # 위에서 생성한 버킷 이름&#10;&#10;[vars]&#10;PUBLIC_URL = &quot;https://pub-xxxxxxxx.r2.dev&quot;  # 버킷 공개 URL" aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button># account_id = "YOUR_ACCOUNT_ID"  # 주석 해제 후 입력
+
+[[r2_buckets]]
+bucket_name = "markflow-images"    # 위에서 생성한 버킷 이름
+
+[vars]
+PUBLIC_URL = "https://pub-xxxxxxxx.r2.dev"  # 버킷 공개 URL</pre>
+          <div class="tip">
+            <b>Account ID 확인:</b> Cloudflare 대시보드 → 아무 도메인 클릭 → 우측 하단 <b>API</b> 섹션에서 복사.
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h2 class="step-title">의존성 설치 &amp; 배포</h2>
+          <pre class="code"><button class="copy-btn" data-copy="cd apps/worker&#10;npm install&#10;npm run deploy" aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>cd apps/worker
+npm install
+npm run deploy</pre>
+          <p class="step-desc" style="margin-top:8px;">
+            배포가 끝나면 터미널에 Worker URL이 출력됩니다.
+          </p>
+          <pre class="code" style="background:#0f172a;">https://markflow-r2-uploader.YOUR_SUBDOMAIN.workers.dev</pre>
+          <div class="tip">
+            처음 배포 시 Wrangler가 Cloudflare 로그인을 요구하면 <code class="inline">npx wrangler login</code> 실행 후 다시 시도하세요.
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h2 class="step-title">에디터에 Worker URL 연결</h2>
+          <p class="step-desc">
+            3단계에서 받은 URL을 <b>아래 "연결하기"</b> 섹션에 붙여넣고 <b>테스트 업로드</b> → <b>저장</b> 순으로 완료합니다.
+          </p>
+          <p class="step-desc">
+            저장된 값은 브라우저의 <code class="inline">localStorage</code>에 보관되며, 에디터에서 이미지를 붙여넣거나 드래그할 때 자동으로 사용됩니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Connect section — Worker URL restore -->
+    <section class="connect">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        Worker URL 연결하기
+      </h2>
+      <p class="desc">
+        배포한 Cloudflare Worker의 URL을 입력하고 <b>테스트 업로드</b>로 실제 동작을 확인한 뒤 <b>저장</b>하세요.
+      </p>
+
+      <label for="worker-url">Worker URL</label>
+      <input
+        id="worker-url"
+        type="url"
+        placeholder="https://markflow-r2-uploader.YOUR_SUBDOMAIN.workers.dev"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div id="saved-info" class="saved-url" hidden>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>저장된 URL:</span>
+        <code id="saved-url-echo"></code>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-test" type="button" class="btn btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          테스트 업로드
+        </button>
+        <button id="btn-save" type="button" class="btn btn-primary" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          저장
+        </button>
+        <button id="btn-clear" type="button" class="btn btn-danger">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          </svg>
+          삭제
+        </button>
+      </div>
+
+      <div id="status" class="status info" hidden></div>
+    </section>
+
+    <!-- API Reference card -->
+    <section class="card" style="margin-top:24px;">
+      <h2 style="font-size:15px;font-weight:700;margin:0 0 12px;">API 레퍼런스</h2>
+
+      <div style="font-size:13px;font-weight:600;margin:8px 0 6px;">
+        <code class="inline">POST /upload</code>
+      </div>
+      <table class="api">
+        <thead>
+          <tr><th>필드</th><th>타입</th><th>설명</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">file</code></td>
+            <td>File (multipart)</td>
+            <td>이미지 파일 (png, jpg, gif, webp, svg)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="step-desc" style="margin-top:12px;"><b>성공 응답</b></p>
+      <pre class="code"><button class="copy-btn" data-copy='{ &quot;success&quot;: true, &quot;url&quot;: &quot;https://pub-xxx.r2.dev/images/1234-uuid.png&quot; }' aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>{ "success": true, "url": "https://pub-xxx.r2.dev/images/1234-uuid.png" }</pre>
+
+      <p class="step-desc" style="margin-top:12px;"><b>에러 응답</b></p>
+      <pre class="code">{ "success": false, "error": "File too large: 15.2MB. Max: 10MB" }</pre>
+
+      <div style="font-size:13px;font-weight:600;margin:16px 0 6px;">
+        <code class="inline">GET /</code> &nbsp;또는&nbsp; <code class="inline">GET /health</code>
+      </div>
+      <p class="step-desc">상태 확인용 엔드포인트.</p>
+
+      <p class="step-desc" style="margin-top:16px;"><b>로컬 테스트</b></p>
+      <pre class="code"><button class="copy-btn" data-copy="cd apps/worker&#10;npm run dev&#10;# → http://localhost:8787 에서 실행&#10;curl -F &quot;file=@test.png&quot; http://localhost:8787/upload" aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>cd apps/worker
+npm run dev
+# → http://localhost:8787 에서 실행
+curl -F "file=@test.png" http://localhost:8787/upload</pre>
+    </section>
+
+    <!-- Free tier card -->
+    <section class="card" style="margin-top:24px;">
+      <h2 style="font-size:15px;font-weight:700;margin:0 0 12px;">무료 한도 (Cloudflare)</h2>
+      <table class="api">
+        <tbody>
+          <tr><td>R2 저장</td><td>10 GB</td></tr>
+          <tr><td>R2 읽기</td><td>1,000만 회/월</td></tr>
+          <tr><td>R2 쓰기</td><td>100만 회/월</td></tr>
+          <tr><td>Worker 요청</td><td>10만 회/일</td></tr>
+        </tbody>
+      </table>
+      <p class="step-desc" style="margin-top:10px;">개인/소규모 팀 사용에는 충분합니다.</p>
+    </section>
+
+    <div class="footer-note">
+      <strong>참고:</strong>
+      이 페이지는 브라우저 <code class="inline">localStorage</code>에 <code class="inline">mf-cf-worker-url</code> 키로 Worker URL을 저장합니다.
+      동일 도메인의 MarkFlow 앱이 이 값을 자동으로 읽어 이미지 업로드에 사용합니다.
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var STORAGE_KEY = 'mf-cf-worker-url';
+
+      var input = document.getElementById('worker-url');
+      var btnTest = document.getElementById('btn-test');
+      var btnSave = document.getElementById('btn-save');
+      var btnClear = document.getElementById('btn-clear');
+      var statusEl = document.getElementById('status');
+      var savedInfo = document.getElementById('saved-info');
+      var savedEcho = document.getElementById('saved-url-echo');
+
+      // ── Load existing saved URL ─────────────────────────────────────
+      function loadSaved() {
+        var saved = '';
+        try { saved = localStorage.getItem(STORAGE_KEY) || ''; } catch (_e) { saved = ''; }
+        input.value = saved;
+        if (saved) {
+          savedInfo.hidden = false;
+          savedEcho.textContent = saved;
+        } else {
+          savedInfo.hidden = true;
+          savedEcho.textContent = '';
+        }
+      }
+      loadSaved();
+
+      // ── Status helpers ──────────────────────────────────────────────
+      function showStatus(kind, html) {
+        statusEl.hidden = false;
+        statusEl.className = 'status ' + kind;
+        statusEl.innerHTML = html;
+      }
+      function clearStatus() {
+        statusEl.hidden = true;
+        statusEl.className = 'status info';
+        statusEl.innerHTML = '';
+      }
+
+      // ── Build 1x1 transparent PNG File ──────────────────────────────
+      function createTestPng() {
+        var base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+        var binary = atob(base64);
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return new File([bytes], 'test.png', { type: 'image/png' });
+      }
+
+      // ── Normalize URL (strip trailing slash, ensure http/https) ─────
+      function normalizeUrl(raw) {
+        var url = (raw || '').trim();
+        if (!url) return '';
+        // allow scheme-less → assume https
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        // strip trailing slash from origin
+        return url.replace(/\/+$/, '');
+      }
+
+      // ── Test upload ─────────────────────────────────────────────────
+      async function runTest() {
+        var url = normalizeUrl(input.value);
+        if (!url) {
+          showStatus('error', '<strong>URL을 입력해주세요.</strong>');
+          btnSave.disabled = true;
+          return;
+        }
+
+        btnTest.disabled = true;
+        btnSave.disabled = true;
+        showStatus('info', '<div class="spinner" aria-hidden="true"></div><span>테스트 업로드 중...</span>');
+
+        try {
+          var form = new FormData();
+          form.append('file', createTestPng());
+
+          var res = await fetch(url + '/upload', {
+            method: 'POST',
+            body: form,
+            mode: 'cors',
+          });
+
+          var data = null;
+          try { data = await res.json(); } catch (_e) { /* non-JSON response */ }
+
+          if (!res.ok || !data || data.success === false) {
+            var msg = (data && data.error) || ('HTTP ' + res.status + ' ' + res.statusText);
+            throw new Error(msg);
+          }
+
+          var imageUrl = (data && data.url) || '';
+          showStatus(
+            'success',
+            '<div>' +
+              '<strong>✓ 연결 성공</strong> — 저장 버튼을 눌러 URL을 등록하세요.' +
+              (imageUrl ? '<div class="url-echo" style="margin-top:4px;">업로드 테스트 이미지: ' + escapeHtml(imageUrl) + '</div>' : '') +
+            '</div>'
+          );
+          btnSave.disabled = false;
+        } catch (err) {
+          var message = (err && err.message) ? err.message : '연결 실패';
+          showStatus(
+            'error',
+            '<div><strong>✗ 연결 실패</strong> — ' + escapeHtml(message) + '</div>'
+          );
+          btnSave.disabled = true;
+        } finally {
+          btnTest.disabled = false;
+        }
+      }
+
+      // ── Save URL ────────────────────────────────────────────────────
+      function runSave() {
+        var url = normalizeUrl(input.value);
+        if (!url) return;
+        try {
+          localStorage.setItem(STORAGE_KEY, url);
+          showStatus('success', '<strong>✓ 저장 완료</strong> — 이제 에디터에서 이미지 업로드가 동작합니다.');
+          loadSaved();
+        } catch (err) {
+          showStatus('error', '<strong>✗ 저장 실패</strong> — ' + escapeHtml((err && err.message) || 'localStorage 접근 불가'));
+        }
+      }
+
+      // ── Clear URL ───────────────────────────────────────────────────
+      function runClear() {
+        if (!confirm('저장된 Worker URL을 삭제할까요?\n이미지 업로드가 더 이상 동작하지 않습니다.')) return;
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          input.value = '';
+          loadSaved();
+          showStatus('info', '저장된 Worker URL을 삭제했습니다.');
+          btnSave.disabled = true;
+        } catch (err) {
+          showStatus('error', '<strong>삭제 실패</strong> — ' + escapeHtml((err && err.message) || 'localStorage 접근 불가'));
+        }
+      }
+
+      // ── XSS-safe text → HTML ────────────────────────────────────────
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      // ── Input change invalidates prior test ─────────────────────────
+      input.addEventListener('input', function () {
+        btnSave.disabled = true;
+        clearStatus();
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (!btnSave.disabled) runSave();
+          else runTest();
+        }
+      });
+
+      btnTest.addEventListener('click', runTest);
+      btnSave.addEventListener('click', runSave);
+      btnClear.addEventListener('click', runClear);
+
+      // ── Copy-to-clipboard for code blocks ───────────────────────────
+      document.querySelectorAll('.copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function (e) {
+          e.stopPropagation();
+          var text = btn.getAttribute('data-copy') || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.classList.add('copied');
+            var origHtml = btn.innerHTML;
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            setTimeout(function () {
+              btn.classList.remove('copied');
+              btn.innerHTML = origHtml;
+            }, 1500);
+          } catch (_e) { /* noop */ }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
