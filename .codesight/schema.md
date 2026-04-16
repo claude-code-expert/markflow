@@ -39,6 +39,7 @@
 - title: varchar (required)
 - content: text (default, required)
 - currentVersion: integer (default, required)
+- status: varchar (default, required)
 - isDeleted: boolean (default, required)
 - _relations_: workspaceId -> workspaces.id, categoryId -> categories.id, authorId -> users.id
 

@@ -10,6 +10,7 @@ import {
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
 import { notFound } from '../utils/errors.js';
+import { draftVisibilityClause } from './document-visibility.js';
 
 interface GraphNode {
   id: number;
@@ -29,7 +30,7 @@ interface WorkspaceGraph {
 }
 
 export function createGraphService(db: Db) {
-  async function getWorkspaceGraph(workspaceId: string): Promise<WorkspaceGraph> {
+  async function getWorkspaceGraph(workspaceId: string, currentUserId?: string): Promise<WorkspaceGraph> {
     // Fetch all non-deleted documents in the workspace
     const docs = await db
       .select({
@@ -42,6 +43,7 @@ export function createGraphService(db: Db) {
         and(
           eq(documents.workspaceId, Number(workspaceId)),
           eq(documents.isDeleted, false),
+          draftVisibilityClause(currentUserId),
         ),
       );
 
@@ -81,9 +83,10 @@ export function createGraphService(db: Db) {
     return { nodes, edges };
   }
 
-  async function getDocumentContext(docId: string, workspaceId: string) {
+  async function getDocumentContext(docId: string, workspaceId: string, currentUserId?: string) {
     const numDocId = Number(docId);
     const numWorkspaceId = Number(workspaceId);
+    const draftFilter = draftVisibilityClause(currentUserId);
 
     // Step 1: Verify document exists in the given workspace and is not deleted
     const [doc] = await db
@@ -94,6 +97,7 @@ export function createGraphService(db: Db) {
           eq(documents.id, numDocId),
           eq(documents.workspaceId, numWorkspaceId),
           eq(documents.isDeleted, false),
+          draftFilter,
         ),
       )
       .limit(1);
@@ -117,6 +121,7 @@ export function createGraphService(db: Db) {
         and(
           eq(documentRelations.targetId, documents.id),
           eq(documents.isDeleted, false),
+          draftFilter,
         ),
       )
       .leftJoin(categories, eq(documents.categoryId, categories.id))
@@ -137,6 +142,7 @@ export function createGraphService(db: Db) {
         and(
           eq(documentRelations.sourceId, documents.id),
           eq(documents.isDeleted, false),
+          draftFilter,
         ),
       )
       .leftJoin(categories, eq(documents.categoryId, categories.id))

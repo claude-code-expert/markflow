@@ -52,7 +52,7 @@ export function ConfirmModal({
         <h2
           style={{
             margin: '0 0 12px',
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: 600,
             color: 'var(--text)',
           }}
@@ -63,7 +63,7 @@ export function ConfirmModal({
         <p
           style={{
             margin: '0 0 24px',
-            fontSize: 14,
+            fontSize: 12,
             color: 'var(--text-2)',
             lineHeight: 1.5,
           }}
@@ -78,7 +78,7 @@ export function ConfirmModal({
             disabled={isLoading}
             style={{
               padding: '9px 18px',
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: 500,
               color: 'var(--text-2)',
               background: 'var(--surface)',
@@ -106,7 +106,7 @@ export function ConfirmModal({
             disabled={isLoading}
             style={{
               padding: '9px 18px',
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: 500,
               color: '#FFFFFF',
               background: isLoading

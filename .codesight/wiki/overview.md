@@ -8,7 +8,7 @@
 
 ## Scale
 
-67 API routes · 15 database models · 82 UI components · 42 library files · 16 middleware layers · 22 environment variables
+68 API routes · 15 database models · 82 UI components · 45 library files · 16 middleware layers · 22 environment variables
 
 ## Subsystems
 
@@ -21,6 +21,7 @@
 - **[Import-export](./import-export.md)** — 3 routes — touches: auth, upload
 - **[Invitations](./invitations.md)** — 3 routes — touches: auth
 - **[Join-requests](./join-requests.md)** — 4 routes — touches: auth
+- **[Markflow-pdf-export](./markflow-pdf-export.md)** — 1 routes — touches: db
 - **[Relations](./relations.md)** — 2 routes — touches: auth
 - **[Tags](./tags.md)** — 3 routes — touches: auth
 - **[Theme](./theme.md)** — 2 routes — touches: auth
@@ -34,17 +35,17 @@
 
 **UI:** 82 components (react) — see [ui.md](./ui.md)
 
-**Libraries:** 42 files — see [libraries.md](./libraries.md)
+**Libraries:** 45 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `apps/web/lib/api.ts` — imported by **40** files
+- `apps/web/lib/api.ts` — imported by **39** files
 - `apps/api/tests/helpers/setup.ts` — imported by **34** files
 - `apps/api/src/utils/errors.ts` — imported by **33** files
 - `apps/api/tests/helpers/factory.ts` — imported by **33** files
-- `apps/web/stores/toast-store.ts` — imported by **21** files
+- `apps/web/stores/toast-store.ts` — imported by **20** files
 - `apps/web/stores/workspace-store.ts` — imported by **19** files
 
 ## Required Environment Variables

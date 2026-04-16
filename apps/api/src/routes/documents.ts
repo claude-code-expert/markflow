@@ -23,11 +23,11 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
   // POST /api/v1/workspaces/:wsId/documents
   app.post<{
     Params: { wsId: string };
-    Body: { title: string; content?: string; categoryId?: string };
+    Body: { title: string; content?: string; categoryId?: string; status?: 'draft' | 'published' };
   }>('/workspaces/:wsId/documents', {
     preHandler: requireRole('editor'),
   }, async (request, reply) => {
-    const { title, content, categoryId } = request.body;
+    const { title, content, categoryId, status } = request.body;
 
     if (!title || title.trim().length === 0) {
       throw badRequest('MISSING_FIELDS', 'title is required');
@@ -37,6 +37,10 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       throw badRequest('INVALID_FIELDS', 'title must be 300 characters or less');
     }
 
+    if (status !== undefined && status !== 'draft' && status !== 'published') {
+      throw badRequest('INVALID_FIELDS', 'status must be "draft" or "published"');
+    }
+
     const userId = request.currentUser!.userId;
     const document = await documentService.create(
       request.params.wsId,
@@ -44,6 +48,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       title.trim(),
       content ?? '',
       categoryId,
+      status,
     );
 
     return reply.status(201).send({ document });
@@ -72,6 +77,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
       q,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      currentUserId: request.currentUser!.userId,
     });
 
     return reply.status(200).send(result);
@@ -86,6 +92,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
     const document = await documentService.getById(
       request.params.id,
       request.params.wsId,
+      request.currentUser!.userId,
     );
 
     return reply.status(200).send({ document });
@@ -94,18 +101,22 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
   // PATCH /api/v1/workspaces/:wsId/documents/:id
   app.patch<{
     Params: { wsId: string; id: string };
-    Body: { content?: string; title?: string; categoryId?: string | null };
+    Body: { content?: string; title?: string; categoryId?: string | null; status?: 'draft' | 'published' };
   }>('/workspaces/:wsId/documents/:id', {
     preHandler: requireRole('editor'),
   }, async (request, reply) => {
-    const { content, title, categoryId } = request.body;
+    const { content, title, categoryId, status } = request.body;
 
-    if (content === undefined && title === undefined && categoryId === undefined) {
-      throw badRequest('MISSING_FIELDS', 'At least one field (content, title, categoryId) is required');
+    if (content === undefined && title === undefined && categoryId === undefined && status === undefined) {
+      throw badRequest('MISSING_FIELDS', 'At least one field (content, title, categoryId, status) is required');
     }
 
     if (title !== undefined && title.length > 300) {
       throw badRequest('INVALID_FIELDS', 'title must be 300 characters or less');
+    }
+
+    if (status !== undefined && status !== 'draft' && status !== 'published') {
+      throw badRequest('INVALID_FIELDS', 'status must be "draft" or "published"');
     }
 
     const userId = request.currentUser!.userId;
@@ -115,7 +126,7 @@ export async function documentsRoutes(app: FastifyInstance, opts: DocumentsRoute
     const document = await documentService.update(
       request.params.id,
       request.params.wsId,
-      { content, title, categoryId },
+      { content, title, categoryId, status },
       userId,
       isAdminOrOwner,
     );

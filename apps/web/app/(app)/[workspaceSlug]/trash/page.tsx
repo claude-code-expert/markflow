@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, ApiError } from '../../../../lib/api';
 import type { Document, TrashResponse, RestoreResponse } from '../../../../lib/types';
 import { useWorkspaceStore } from '../../../../stores/workspace-store';
+import { formatKstDateTime } from '../../../../lib/date';
 
 interface ToastState {
   message: string;
@@ -79,17 +80,6 @@ export default function TrashPage({
       }
     },
   });
-
-  function formatDeletedDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
 
   const documents: Document[] = trashQuery.data?.documents ?? [];
 
@@ -263,7 +253,7 @@ export default function TrashPage({
                       paddingLeft: 24,
                     }}
                   >
-                    {formatDeletedDate(doc.deletedAt)} 삭제됨
+                    {formatKstDateTime(doc.deletedAt)} 삭제됨
                   </span>
                 )}
               </div>

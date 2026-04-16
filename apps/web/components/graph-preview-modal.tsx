@@ -4,6 +4,7 @@ import { useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { parseMarkdown } from '@markflow/editor';
 import '@markflow/editor/styles';
+import { formatKstDate } from '../lib/date';
 
 interface GraphPreviewModalProps {
   open: boolean;
@@ -155,11 +156,7 @@ export function GraphPreviewModal({
         >
           {doc.updatedAt && (
             <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-              {new Date(doc.updatedAt).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })}
+              {formatKstDate(doc.updatedAt)}
             </span>
           )}
           <button

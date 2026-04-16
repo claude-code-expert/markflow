@@ -19,6 +19,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 - [Import-export](./import-export.md)
 - [Invitations](./invitations.md)
 - [Join-requests](./join-requests.md)
+- [Markflow-pdf-export](./markflow-pdf-export.md)
 - [Relations](./relations.md)
 - [Tags](./tags.md)
 - [Theme](./theme.md)
@@ -32,7 +33,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 ## Quick Stats
 
-- Routes: **67**
+- Routes: **68**
 - Models: **15**
 - Components: **82**
 - Env vars: **13** required, **9** with defaults
@@ -62,4 +63,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-16 · 22 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-16 · 23 articles · [codesight](https://github.com/Houseofmvps/codesight)_

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, ApiError } from '../../../lib/api';
 import { useAuthStore } from '../../../stores/auth-store';
+import { formatKstDateWithOptions } from '../../../lib/date';
 
 interface InvitationDetail {
   workspaceName: string;
@@ -232,7 +233,7 @@ export default function InviteAcceptPage({
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">만료일</span>
             <span className="text-sm text-gray-700">
-              {new Date(invitation.expiresAt).toLocaleDateString('ko-KR', {
+              {formatKstDateWithOptions(invitation.expiresAt, {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',

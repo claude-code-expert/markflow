@@ -14,9 +14,12 @@ import {
 import type { Db } from '@markflow/db';
 import { notFound, forbidden } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { draftVisibilityClause } from './document-visibility.js';
 
 const MAX_VERSIONS = 20;
 const EXCERPT_RADIUS = 60;
+
+export type DocumentStatus = 'draft' | 'published';
 
 interface ListOptions {
   categoryId?: string | null;
@@ -25,6 +28,8 @@ interface ListOptions {
   q?: string;
   page?: number;
   limit?: number;
+  // draft 가시성: 자기 draft 는 보이고, 남의 draft 는 숨기기 위해 필요
+  currentUserId?: string;
 }
 
 /**
@@ -49,6 +54,7 @@ interface UpdateData {
   content?: string;
   title?: string;
   categoryId?: string | null;
+  status?: DocumentStatus;
 }
 
 export function createDocumentService(db: Db) {
@@ -58,6 +64,7 @@ export function createDocumentService(db: Db) {
     title: string,
     content: string,
     categoryId?: string | null,
+    status: DocumentStatus = 'published',
   ) {
     const numWorkspaceId = Number(workspaceId);
 
@@ -70,6 +77,7 @@ export function createDocumentService(db: Db) {
         categoryId: categoryId ? Number(categoryId) : null,
         content,
         currentVersion: 1,
+        status,
       })
       .returning();
 
@@ -89,7 +97,9 @@ export function createDocumentService(db: Db) {
     return document;
   }
 
-  async function getById(documentId: string, workspaceId: string) {
+  async function getById(documentId: string, workspaceId: string, currentUserId?: string) {
+    // draft 문서는 작성자 본인에게만 보임 — WHERE 절에서 직접 필터링하여
+    // 다른 사용자에게는 not found 로 내려감.
     const [document] = await db
       .select()
       .from(documents)
@@ -97,6 +107,7 @@ export function createDocumentService(db: Db) {
         eq(documents.id, Number(documentId)),
         eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
+        draftVisibilityClause(currentUserId),
       ))
       .limit(1);
 
@@ -115,11 +126,13 @@ export function createDocumentService(db: Db) {
       q,
       page = 1,
       limit = 20,
+      currentUserId,
     } = opts;
 
     const conditions = [
       eq(documents.workspaceId, Number(workspaceId)),
       eq(documents.isDeleted, false),
+      draftVisibilityClause(currentUserId),
     ];
 
     if (categoryId !== undefined) {
@@ -173,7 +186,7 @@ export function createDocumentService(db: Db) {
         ]
       : [orderFn(sortColumn)];
 
-    // Join categories to include category name for search results
+    // Join categories + users to include category name and author name in list
     const rows = await db
       .select({
         id: documents.id,
@@ -183,14 +196,17 @@ export function createDocumentService(db: Db) {
         title: documents.title,
         content: documents.content,
         currentVersion: documents.currentVersion,
+        status: documents.status,
         isDeleted: documents.isDeleted,
         deletedAt: documents.deletedAt,
         createdAt: documents.createdAt,
         updatedAt: documents.updatedAt,
         categoryName: categories.name,
+        authorName: users.name,
       })
       .from(documents)
       .leftJoin(categories, eq(documents.categoryId, categories.id))
+      .leftJoin(users, eq(documents.authorId, users.id))
       .where(whereClause)
       .orderBy(...orderClauses)
       .limit(limit)
@@ -198,15 +214,16 @@ export function createDocumentService(db: Db) {
 
     // Build response with excerpts for search queries
     const enrichedDocs = rows.map((row) => {
-      const { categoryName, ...doc } = row;
+      const { categoryName, authorName, ...doc } = row;
       if (isSearch && q) {
         return {
           ...doc,
           categoryName,
+          authorName,
           excerpt: extractExcerpt(doc.content, q),
         };
       }
-      return { ...doc, categoryName };
+      return { ...doc, categoryName, authorName };
     });
 
     return {
@@ -247,6 +264,10 @@ export function createDocumentService(db: Db) {
 
     if (data.categoryId !== undefined) {
       updates.categoryId = data.categoryId;
+    }
+
+    if (data.status !== undefined) {
+      updates.status = data.status;
     }
 
     const contentChanged = data.content !== undefined && data.content !== existing.content;

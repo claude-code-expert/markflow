@@ -58,6 +58,7 @@ pk: `id` (bigserial) · fk: workspaceId, categoryId, authorId
 - `title`: varchar _(required)_
 - `content`: text _(default, required)_
 - `currentVersion`: integer _(default, required)_
+- `status`: varchar _(default, required)_
 - `isDeleted`: boolean _(default, required)_
 - _relations_: workspaceId -> workspaces.id, categoryId -> categories.id, authorId -> users.id
 

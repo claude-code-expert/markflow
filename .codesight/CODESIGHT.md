@@ -3,9 +3,9 @@
 > **Stack:** fastify, next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
-> 67 routes | 15 models | 82 components | 42 lib files | 22 env vars | 16 middleware | 82% test coverage
-> **Token savings:** this file is ~8,900 tokens. Without it, AI exploration would cost ~94,400 tokens. **Saves ~85,500 tokens per conversation.**
-> **Last scanned:** 2026-04-16 06:37 — re-run after significant changes
+> 68 routes | 15 models | 82 components | 45 lib files | 22 env vars | 16 middleware | 81% test coverage
+> **Token savings:** this file is ~9,100 tokens. Without it, AI exploration would cost ~95,700 tokens. **Saves ~86,600 tokens per conversation.**
+> **Last scanned:** 2026-04-16 10:03 — re-run after significant changes
 
 ---
 
@@ -63,6 +63,7 @@
 - `POST` `/workspaces/:wsId/documents/:docId/restore-version` params(wsId, docId) [auth]
 - `GET` `/workspaces/public` params() [auth, db] ✓
 - `POST` `/workspaces/:id/transfer` params(id) [auth, db] ✓
+- `GET` `/workspaces/:workspaceId/export` params(workspaceId) [db]
 
 ---
 
@@ -107,6 +108,7 @@
 - title: varchar (required)
 - content: text (default, required)
 - currentVersion: integer (default, required)
+- status: varchar (default, required)
 - isDeleted: boolean (default, required)
 - _relations_: workspaceId -> workspaces.id, categoryId -> categories.id, authorId -> users.id
 
@@ -305,7 +307,8 @@
   - interface CategoryTreeDocument
   - interface CategoryTreeNode
 - `apps/api/src/services/comment-service.ts` — function createCommentService: (db) => void
-- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void
+- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
+- `apps/api/src/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
 - `apps/api/src/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
 - `apps/api/src/services/export-service.ts` — function createExportService: (db) => void
 - `apps/api/src/services/graph-service.ts` — function createGraphService: (db) => void
@@ -355,6 +358,12 @@
   - function collectAllDocs: (cats, uncategorized) => FlatDocument[]
   - interface FlatCategory
   - interface FlatDocument
+- `apps/web/lib/date.ts`
+  - function formatKstDate: (value) => string
+  - function formatKstDateTime: (value) => string
+  - function formatKstDateWithOptions: (value, options) => string
+  - function formatKstRelative: (value, fallbackAfterDays) => string
+  - function formatKstRelativeLong: (value) => string
 - `apps/web/lib/image-upload.ts`
   - function getWorkerUrl: () => string
   - function getUploadConfig: () => ImageUploadConfig
@@ -372,6 +381,7 @@
   - interface Env
   - const MAX_FILE_SIZE
   - _...1 more_
+- `docs/sample/markflow-pdf-export.ts` — function markdownToPdf: (opts) => Promise<Buffer>, function pdfExportRoute: (app) => void
 - `packages/db/src/index.ts` — function createDb: (databaseUrl) => void, type Db
 - `packages/editor/src/utils/cloudflareUploader.ts` — function createCloudflareUploader: (workerUrl) => void, function createTestImage: () => File
 - `packages/editor/src/utils/imageValidation.ts` — function validateImageFile: (file) => ValidationResult, interface ValidationResult
@@ -447,17 +457,18 @@
 
 ## Most Imported Files (change these carefully)
 
-- `apps/web/lib/api.ts` — imported by **40** files
+- `apps/web/lib/api.ts` — imported by **39** files
 - `apps/api/tests/helpers/setup.ts` — imported by **34** files
 - `apps/api/src/utils/errors.ts` — imported by **33** files
 - `apps/api/tests/helpers/factory.ts` — imported by **33** files
-- `apps/web/stores/toast-store.ts` — imported by **21** files
+- `apps/web/stores/toast-store.ts` — imported by **20** files
 - `apps/web/stores/workspace-store.ts` — imported by **19** files
 - `apps/api/src/middleware/auth.ts` — imported by **17** files
-- `apps/web/lib/types.ts` — imported by **17** files
+- `apps/web/lib/types.ts` — imported by **16** files
 - `apps/api/src/utils/logger.ts` — imported by **15** files
 - `apps/api/src/middleware/rbac.ts` — imported by **14** files
 - `apps/api/src/utils/email.ts` — imported by **12** files
+- `apps/web/lib/date.ts` — imported by **9** files
 - `packages/db/src/schema/users.ts` — imported by **9** files
 - `apps/web/stores/auth-store.ts` — imported by **8** files
 - `packages/db/src/schema/workspaces.ts` — imported by **8** files
@@ -466,18 +477,17 @@
 - `apps/web/hooks/use-permissions.ts` — imported by **6** files
 - `apps/web/stores/sidebar-store.ts` — imported by **5** files
 - `apps/web/components/tooltip.tsx` — imported by **5** files
-- `packages/editor/src/types/index.ts` — imported by **5** files
 
 ## Import Map (who imports what)
 
-- `apps/web/lib/api.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx` +35 more
+- `apps/web/lib/api.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx` +34 more
 - `apps/api/tests/helpers/setup.ts` ← `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-register.test.ts`, `apps/api/tests/integration/auth-resend-verification.test.ts` +29 more
 - `apps/api/src/utils/errors.ts` ← `apps/api/src/index.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/middleware/rbac.ts`, `apps/api/src/middleware/workspace-scope.ts` +28 more
 - `apps/api/tests/helpers/factory.ts` ← `apps/api/tests/helpers/setup.ts`, `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-reset-password.test.ts` +28 more
-- `apps/web/stores/toast-store.ts` ← `apps/web/__tests__/stores/toast-store.test.ts`, `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx` +16 more
+- `apps/web/stores/toast-store.ts` ← `apps/web/__tests__/stores/toast-store.test.ts`, `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx` +15 more
 - `apps/web/stores/workspace-store.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/layout.tsx` +14 more
 - `apps/api/src/middleware/auth.ts` ← `apps/api/src/routes/auth.ts`, `apps/api/src/routes/categories.ts`, `apps/api/src/routes/comments.ts`, `apps/api/src/routes/documents.ts`, `apps/api/src/routes/embed-tokens.ts` +12 more
-- `apps/web/lib/types.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx` +12 more
+- `apps/web/lib/types.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx` +11 more
 - `apps/api/src/utils/logger.ts` ← `apps/api/src/index.ts`, `apps/api/src/jobs/cleanup-trash.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/routes/upload-token.ts`, `apps/api/src/services/auth-service.ts` +10 more
 - `apps/api/src/middleware/rbac.ts` ← `apps/api/src/routes/categories.ts`, `apps/api/src/routes/comments.ts`, `apps/api/src/routes/documents.ts`, `apps/api/src/routes/embed-tokens.ts`, `apps/api/src/routes/graph.ts` +9 more
 
@@ -485,7 +495,7 @@
 
 # Test Coverage
 
-> **82%** of routes and models are covered by tests
+> **81%** of routes and models are covered by tests
 > 62 test files found
 
 ## Covered Routes

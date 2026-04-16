@@ -32,14 +32,19 @@ export interface Workspace {
   pendingJoinCount?: number;
 }
 
+export type DocumentStatus = 'draft' | 'published';
+
 export interface Document {
   id: number;
   workspaceId: number;
   authorId: number;
+  authorName?: string | null;
   title: string;
   content: string;
   categoryId: number | null;
+  categoryName?: string | null;
   currentVersion: number;
+  status: DocumentStatus;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;

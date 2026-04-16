@@ -8,34 +8,25 @@ import { Sidebar } from '../../components/sidebar';
 import { AppHeader } from '../../components/app-header';
 import { SearchModal } from '../../components/search-modal';
 import { useSidebarStore } from '../../stores/sidebar-store';
-import { apiFetch } from '../../lib/api';
-import { useToastStore } from '../../stores/toast-store';
-import type { DocumentResponse } from '../../lib/types';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isLoading, fetchUser } = useAuthStore();
   const isSidebarOpen = useSidebarStore((s) => s.isSidebarOpen);
   const { currentWorkspace } = useWorkspaceStore();
-  const addToast = useToastStore((s) => s.addToast);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSearchToggle = useCallback(() => {
     setIsSearchOpen((prev) => !prev);
   }, []);
 
-  const handleNewDoc = useCallback(async () => {
+  // 새 문서 버튼: DB 선생성 하지 않고 작성 페이지로만 이동.
+  // 실제 저장은 사용자가 직접 "저장" 을 누르거나,
+  // 5분 경과 후 뜨는 임시저장 모달에서 확인 시 이루어짐.
+  const handleNewDoc = useCallback(() => {
     if (!currentWorkspace) return;
-    try {
-      const { document } = await apiFetch<DocumentResponse>(
-        `/workspaces/${currentWorkspace.id}/documents`,
-        { method: 'POST', body: { title: '제목 없음' } },
-      );
-      router.push(`/${encodeURIComponent(currentWorkspace.name)}/doc/${document.id}`);
-    } catch {
-      addToast({ message: '문서 생성에 실패했습니다', type: 'error' });
-    }
-  }, [currentWorkspace, router, addToast]);
+    router.push(`/${encodeURIComponent(currentWorkspace.name)}/doc/new`);
+  }, [currentWorkspace, router]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -87,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         transition: 'grid-template-columns 0.2s ease',
       }}
     >
-      <AppHeader onSearchClick={handleSearchToggle} onNewDoc={() => void handleNewDoc()} />
+      <AppHeader onSearchClick={handleSearchToggle} onNewDoc={handleNewDoc} />
       <Sidebar onSearchClick={handleSearchToggle} />
       <main className="overflow-y-auto" style={{ background: 'var(--bg)' }}>
         {children}

@@ -14,6 +14,7 @@ import {
 import type { Db } from '@markflow/db';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
+import { draftVisibilityClause } from './document-visibility.js';
 
 export interface CategoryTreeDocument {
   id: number;
@@ -266,7 +267,7 @@ export function createCategoryService(db: Db) {
     logger.info('Category deleted', { categoryId, workspaceId });
   }
 
-  async function tree(workspaceId: string) {
+  async function tree(workspaceId: string, currentUserId?: string) {
     // 1. 카테고리 목록
     const categoryRows = await db
       .select({
@@ -278,7 +279,7 @@ export function createCategoryService(db: Db) {
       .where(eq(categories.workspaceId, Number(workspaceId)))
       .orderBy(asc(categories.orderIndex), asc(categories.name));
 
-    // 2. 해당 워크스페이스의 활성 문서 (삭제되지 않은)
+    // 2. 해당 워크스페이스의 활성 문서 (삭제되지 않은). 남의 draft 는 숨김.
     const docRows = await db
       .select({
         id: documents.id,
@@ -290,6 +291,7 @@ export function createCategoryService(db: Db) {
       .where(and(
         eq(documents.workspaceId, Number(workspaceId)),
         eq(documents.isDeleted, false),
+        draftVisibilityClause(currentUserId),
       ))
       .orderBy(asc(documents.title));
 
@@ -379,9 +381,10 @@ export function createCategoryService(db: Db) {
     return rows;
   }
 
-  async function descendants(categoryId: string, workspaceId: string) {
+  async function descendants(categoryId: string, workspaceId: string, currentUserId?: string) {
     const numCategoryId = Number(categoryId);
     const numWorkspaceId = Number(workspaceId);
+    const draftFilter = draftVisibilityClause(currentUserId);
 
     // Verify category exists in workspace
     const [category] = await db
@@ -426,7 +429,8 @@ export function createCategoryService(db: Db) {
       ))
       .orderBy(asc(categories.orderIndex), asc(categories.name));
 
-    // Step 3: Fetch active documents for descendant categories (workspace-scoped)
+    // Step 3: Fetch active documents for descendant categories (workspace-scoped).
+    // 남의 draft 는 숨김.
     const docRows = await db
       .select({
         id: documents.id,
@@ -439,6 +443,7 @@ export function createCategoryService(db: Db) {
         inArray(documents.categoryId, descendantIds),
         eq(documents.workspaceId, numWorkspaceId),
         eq(documents.isDeleted, false),
+        draftFilter,
       ))
       .orderBy(asc(documents.title));
 
@@ -474,7 +479,7 @@ export function createCategoryService(db: Db) {
       }
     }
 
-    // Collect documents directly under target category
+    // Collect documents directly under target category (남의 draft 제외)
     const directDocs = await db
       .select({
         id: documents.id,
@@ -486,6 +491,7 @@ export function createCategoryService(db: Db) {
         eq(documents.categoryId, numCategoryId),
         eq(documents.workspaceId, numWorkspaceId),
         eq(documents.isDeleted, false),
+        draftFilter,
       ))
       .orderBy(asc(documents.title));
 

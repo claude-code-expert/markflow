@@ -61,7 +61,10 @@ export async function categoriesRoutes(app: FastifyInstance, opts: CategoriesRou
   }>('/workspaces/:wsId/categories/tree', {
     preHandler: requireRole('viewer'),
   }, async (request, reply) => {
-    const result = await categoryService.tree(request.params.wsId);
+    const result = await categoryService.tree(
+      request.params.wsId,
+      request.currentUser!.userId,
+    );
     return reply.status(200).send(result);
   });
 
@@ -131,6 +134,7 @@ export async function categoriesRoutes(app: FastifyInstance, opts: CategoriesRou
     const result = await categoryService.descendants(
       request.params.id,
       request.params.wsId,
+      request.currentUser!.userId,
     );
     return reply.status(200).send(result);
   });
