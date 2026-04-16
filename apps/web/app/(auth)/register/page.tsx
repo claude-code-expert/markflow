@@ -90,27 +90,30 @@ function getPasswordChecks(password: string): PasswordCheck[] {
 
 const styles = {
   card: {
-    maxWidth: 440,
+    maxWidth: 360,
     width: '100%',
+    minHeight: 548,
     background: 'var(--surface)',
     borderRadius: 'var(--radius-xl)',
     boxShadow: 'var(--shadow-lg)',
-    padding: 32,
+    padding: 24,
     margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column',
   } satisfies CSSProperties,
 
   logoWrap: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     gap: 2,
   } satisfies CSSProperties,
 
   logoBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 5,
     background: 'var(--accent)',
     display: 'flex',
     alignItems: 'center',
@@ -121,42 +124,63 @@ const styles = {
   logoText: {
     fontFamily: 'var(--font-heading, sans-serif)',
     fontWeight: 700,
-    fontSize: 18,
+    fontSize: 16,
     color: 'var(--text)',
   } satisfies CSSProperties,
 
   logoTextAccent: {
     fontFamily: 'var(--font-heading, sans-serif)',
     fontWeight: 700,
-    fontSize: 18,
+    fontSize: 16,
     color: 'var(--accent)',
   } satisfies CSSProperties,
 
-  tabRow: {
+  tabWrap: {
     display: 'flex',
-    marginBottom: 24,
-    borderBottom: '2px solid var(--border)',
+    background: 'var(--surface-2)',
+    borderRadius: 'var(--radius-sm)',
+    padding: 2,
+    marginBottom: 14,
   } satisfies CSSProperties,
 
-  tab: (active: boolean): CSSProperties => ({
+  tabActive: {
     flex: 1,
+    padding: '4px 0',
+    fontSize: 11,
+    fontWeight: 500,
     textAlign: 'center',
-    padding: '10px 0',
-    fontSize: 14,
-    fontWeight: 600,
+    borderRadius: 4,
+    border: 'none',
     cursor: 'pointer',
-    color: active ? 'var(--accent)' : 'var(--text-muted)',
-    borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
-    marginBottom: -2,
-    background: 'none',
+    background: 'var(--surface)',
+    color: 'var(--text)',
+    boxShadow: '0 1px 2px rgba(0,0,0,.06)',
+    transition: 'all 0.15s ease',
+    display: 'block',
+    lineHeight: '1.5',
+  } satisfies CSSProperties,
+
+  tabInactive: {
+    flex: 1,
+    padding: '4px 0',
+    fontSize: 11,
+    fontWeight: 500,
+    textAlign: 'center',
+    borderRadius: 4,
+    border: 'none',
+    cursor: 'pointer',
+    background: 'transparent',
+    color: 'var(--text-3)',
+    transition: 'all 0.15s ease',
     textDecoration: 'none',
-    transition: 'color .15s, border-color .15s',
-  }),
+    display: 'block',
+    lineHeight: '1.5',
+  } satisfies CSSProperties,
 
   label: {
     display: 'block',
-    marginBottom: 6,
-    fontSize: 13,
+    marginBottom: 3,
+    fontSize: 11,
     fontWeight: 500,
     color: 'var(--text-secondary)',
   } satisfies CSSProperties,
@@ -164,12 +188,12 @@ const styles = {
   input: (hasError: boolean): CSSProperties => ({
     display: 'block',
     width: '100%',
-    borderWidth: '1.5px',
+    borderWidth: '1px',
     borderStyle: 'solid',
     borderColor: hasError ? 'var(--red)' : 'var(--border)',
     borderRadius: 'var(--radius-sm)',
-    padding: '10px 13px',
-    fontSize: 14,
+    padding: '5px 9px',
+    fontSize: 11,
     color: 'var(--text)',
     background: 'var(--surface)',
     outline: 'none',
@@ -178,43 +202,44 @@ const styles = {
   }),
 
   fieldError: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: 3,
+    fontSize: 11,
     color: 'var(--red)',
   } satisfies CSSProperties,
 
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   } satisfies CSSProperties,
 
   serverError: {
-    marginBottom: 16,
-    padding: '10px 14px',
+    marginBottom: 12,
+    padding: '8px 12px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--red)',
     background: 'rgba(239,68,68,.06)',
     color: 'var(--red)',
-    fontSize: 13,
+    fontSize: 12,
   } satisfies CSSProperties,
 
   button: (disabled: boolean): CSSProperties => ({
     width: '100%',
-    padding: '11px 0',
+    padding: '6px 0',
     border: 'none',
     borderRadius: 'var(--radius-sm)',
     background: 'var(--accent)',
     color: '#fff',
-    fontSize: 14,
-    fontWeight: 600,
+    fontSize: 11,
+    fontWeight: 500,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.55 : 1,
     transition: 'opacity .15s',
   }),
 
   bottomLink: {
-    marginTop: 20,
+    marginTop: 'auto',
+    paddingTop: 18,
     textAlign: 'center' as const,
-    fontSize: 13,
+    fontSize: 12,
     color: 'var(--text-muted)',
   } satisfies CSSProperties,
 
@@ -227,16 +252,16 @@ const styles = {
   hintRow: {
     display: 'flex',
     flexWrap: 'wrap' as const,
-    gap: 6,
-    marginTop: 8,
+    gap: 4,
+    marginTop: 6,
   } satisfies CSSProperties,
 
   hintPill: (passed: boolean): CSSProperties => ({
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 4,
-    fontSize: 11,
-    padding: '2px 8px',
+    gap: 3,
+    fontSize: 10,
+    padding: '2px 6px',
     borderRadius: 9999,
     background: passed ? 'rgba(34,197,94,.1)' : 'rgba(156,163,175,.1)',
     color: passed ? 'var(--green, #16a34a)' : 'var(--text-muted)',
@@ -249,27 +274,27 @@ const styles = {
   } satisfies CSSProperties,
 
   successIcon: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: '50%',
     background: 'rgba(34,197,94,.1)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: '0 auto 16px',
+    margin: '0 auto 12px',
   } satisfies CSSProperties,
 
   successHeading: {
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: 600,
     color: 'var(--text)',
-    marginBottom: 8,
+    marginBottom: 6,
   } satisfies CSSProperties,
 
   successBody: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'var(--text-muted)',
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 1.6,
   } satisfies CSSProperties,
 };
@@ -337,12 +362,12 @@ export default function RegisterPage() {
         {/* Logo */}
         <div style={styles.logoWrap}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
+          <img src="/markflow-logo.png" alt="MarkFlow" height={12} />
         </div>
 
         <div style={styles.successWrap}>
           <div style={styles.successIcon}>
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
               <path
                 d="M5 13l4 4L19 7"
                 stroke="var(--green, #16a34a)"
@@ -376,15 +401,15 @@ export default function RegisterPage() {
       {/* Logo */}
       <div style={styles.logoWrap}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
+        <img src="/markflow-logo.png" alt="MarkFlow" height={12} />
       </div>
 
       {/* Auth tabs */}
-      <div style={styles.tabRow}>
-        <Link href="/login" style={styles.tab(false)}>
+      <div style={styles.tabWrap}>
+        <Link href="/login" style={styles.tabInactive}>
           로그인
         </Link>
-        <span style={styles.tab(true)}>회원가입</span>
+        <span style={styles.tabActive}>회원가입</span>
       </div>
 
       {/* Server error */}
@@ -474,7 +499,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Password Confirm */}
-        <div style={{ ...styles.fieldGroup, marginBottom: 24 }}>
+        <div style={{ ...styles.fieldGroup, marginBottom: 16 }}>
           <label htmlFor="passwordConfirm" style={styles.label}>
             비밀번호 확인
           </label>
