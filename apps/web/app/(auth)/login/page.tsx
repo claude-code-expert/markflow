@@ -49,11 +49,14 @@ function formatCountdown(totalSeconds: number): string {
 const styles = {
   card: {
     width: '100%',
-    maxWidth: 440,
+    maxWidth: 360,
+    minHeight: 548,
     background: 'var(--surface)',
     borderRadius: 'var(--radius-xl)',
     boxShadow: 'var(--shadow-lg)',
-    padding: 32,
+    padding: 24,
+    display: 'flex',
+    flexDirection: 'column',
   } satisfies CSSProperties,
 
   logoWrap: {
@@ -61,14 +64,14 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    marginBottom: 28,
+    marginBottom: 20,
   } satisfies CSSProperties,
 
   logoSquare: {
-    width: 26,
-    height: 26,
+    width: 20,
+    height: 20,
     background: 'var(--accent)',
-    borderRadius: 6,
+    borderRadius: 5,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -78,7 +81,7 @@ const styles = {
   logoText: {
     fontFamily: 'var(--font-heading)',
     fontWeight: 700,
-    fontSize: 20,
+    fontSize: 16,
     color: 'var(--text)',
     letterSpacing: '-0.02em',
   } satisfies CSSProperties,
@@ -86,7 +89,7 @@ const styles = {
   logoTextAccent: {
     fontFamily: 'var(--font-heading)',
     fontWeight: 700,
-    fontSize: 20,
+    fontSize: 16,
     color: 'var(--accent)',
     letterSpacing: '-0.02em',
   } satisfies CSSProperties,
@@ -95,14 +98,14 @@ const styles = {
     display: 'flex',
     background: 'var(--surface-2)',
     borderRadius: 'var(--radius-sm)',
-    padding: 3,
-    marginBottom: 24,
+    padding: 2,
+    marginBottom: 14,
   } satisfies CSSProperties,
 
   tabActive: {
     flex: 1,
-    padding: '8px 0',
-    fontSize: 14,
+    padding: '4px 0',
+    fontSize: 11,
     fontWeight: 500,
     textAlign: 'center',
     borderRadius: 4,
@@ -116,8 +119,8 @@ const styles = {
 
   tabInactive: {
     flex: 1,
-    padding: '8px 0',
-    fontSize: 14,
+    padding: '4px 0',
+    fontSize: 11,
     fontWeight: 500,
     textAlign: 'center',
     borderRadius: 4,
@@ -132,10 +135,10 @@ const styles = {
   } satisfies CSSProperties,
 
   alertError: {
-    marginBottom: 16,
+    marginBottom: 12,
     borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    fontSize: 13,
+    padding: '8px 12px',
+    fontSize: 12,
     lineHeight: 1.5,
     background: 'var(--red-lt)',
     border: '1px solid var(--red)',
@@ -143,10 +146,10 @@ const styles = {
   } satisfies CSSProperties,
 
   alertWarning: {
-    marginBottom: 16,
+    marginBottom: 12,
     borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    fontSize: 13,
+    padding: '8px 12px',
+    fontSize: 12,
     lineHeight: 1.5,
     background: 'var(--amber-lt)',
     border: '1px solid var(--amber)',
@@ -154,33 +157,33 @@ const styles = {
   } satisfies CSSProperties,
 
   countdownBadge: {
-    marginTop: 6,
-    fontSize: 12,
+    marginTop: 4,
+    fontSize: 11,
     fontWeight: 600,
     fontFamily: 'var(--font-mono)',
   } satisfies CSSProperties,
 
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: 12,
   } satisfies CSSProperties,
 
   label: {
     display: 'block',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 500,
     color: 'var(--text-2)',
-    marginBottom: 6,
+    marginBottom: 3,
   } satisfies CSSProperties,
 
   input: {
     display: 'block',
     width: '100%',
-    borderWidth: '1.5px',
+    borderWidth: '1px',
     borderStyle: 'solid',
     borderColor: 'var(--border)',
     borderRadius: 'var(--radius-sm)',
-    padding: '10px 13px',
-    fontSize: 14,
+    padding: '5px 9px',
+    fontSize: 11,
     color: 'var(--text)',
     background: 'var(--surface)',
     outline: 'none',
@@ -191,19 +194,19 @@ const styles = {
   rememberRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 6,
   } satisfies CSSProperties,
 
   checkbox: {
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     accentColor: 'var(--accent)',
     cursor: 'pointer',
   } satisfies CSSProperties,
 
   checkboxLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'var(--text-2)',
     cursor: 'pointer',
     userSelect: 'none',
@@ -212,8 +215,8 @@ const styles = {
   primaryBtn: {
     display: 'block',
     width: '100%',
-    padding: 10,
-    fontSize: 14,
+    padding: 6,
+    fontSize: 11,
     fontWeight: 500,
     color: '#fff',
     background: 'var(--accent)',
@@ -231,8 +234,8 @@ const styles = {
   divider: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    margin: '20px 0',
+    gap: 10,
+    margin: '14px 0',
   } satisfies CSSProperties,
 
   dividerLine: {
@@ -242,7 +245,7 @@ const styles = {
   } satisfies CSSProperties,
 
   dividerText: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'var(--text-3)',
     fontWeight: 500,
   } satisfies CSSProperties,
@@ -251,14 +254,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     width: '100%',
-    padding: 10,
-    fontSize: 14,
+    padding: 5,
+    fontSize: 11,
     fontWeight: 500,
     color: 'var(--text)',
     background: 'var(--surface)',
-    border: '1.5px solid var(--border)',
+    border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
     cursor: 'pointer',
     transition: 'border-color 0.15s ease, background 0.15s ease',
@@ -267,13 +270,14 @@ const styles = {
   socialBtnGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
+    gap: 6,
   } satisfies CSSProperties,
 
   footerText: {
-    marginTop: 24,
+    marginTop: 'auto',
+    paddingTop: 18,
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 12,
     color: 'var(--text-3)',
   } satisfies CSSProperties,
 
@@ -380,7 +384,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div style={styles.logoWrap}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/markflow-logo.png" alt="MarkFlow" height={32} />
+          <img src="/markflow-logo.png" alt="MarkFlow" height={12} />
       </div>
 
       {/* Auth tabs */}
@@ -496,11 +500,11 @@ export default function LoginPage() {
           style={{
             ...styles.socialBtn,
             ...(hoveredBtn === 'google'
-              ? { border: '1.5px solid var(--border-2)', background: 'var(--surface-2)' }
+              ? { border: '1px solid var(--border-2)', background: 'var(--surface-2)' }
               : {}),
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
               fill="#4285F4"
@@ -528,11 +532,11 @@ export default function LoginPage() {
           style={{
             ...styles.socialBtn,
             ...(hoveredBtn === 'github'
-              ? { border: '1.5px solid var(--border-2)', background: 'var(--surface-2)' }
+              ? { border: '1px solid var(--border-2)', background: 'var(--surface-2)' }
               : {}),
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
           </svg>
           GitHub로 계속하기
