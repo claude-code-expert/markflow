@@ -1,5 +1,35 @@
 # MarkFlow KMS
 
+
+### 소개
+
+<table>
+<tr>
+<td width="35%" align="center" valign="top">
+
+<img src="https://raw.githubusercontent.com/claude-code-expert/.github/main/profile/assets/cc-master.png" alt="클로드 코드 마스터" width="100%" />
+
+<br/>
+
+<a href="https://product.kyobobook.co.kr/detail/S000219725328" target="_blank"><img src="https://img.shields.io/badge/클로드_코드_마스터-온라인_구매-2E75B6?style=for-the-badge&logo=bookstack&logoColor=white" alt="클로드 코드 마스터 온라인 구매" /></a>
+
+</td>
+<td width="65%" valign="top">
+
+**Claude Code Expert**는 『클로드 코드 마스터 — 기획 · 개발 · 운영이 한 번에 끝나는 AI 에이전틱 코딩 워크 플로』의 공식 GitHub 조직입니다.
+
+이 책은 단순한 도구 사용법 튜토리얼이 아닙니다. AI 코딩 에이전트와 체계적으로 협업하는 방법론을 제시합니다 — 명세 주도 개발(SDD), 테스트 주도 개발(TDD), 그리고 어떤 AI 도구를 사용하든 변하지 않는 체계적인 리뷰 프로세스까지 다룹니다.
+Markflow는 Markdown Knowledge Management System으로 손쉽게 마크다운 문서를 생성하여 폴더 단위로 문서들간의 연관 관계를 관리하는 지식 관리 SaaS 혹은 온프레미스로 사용할  수 있는 오픈소스입니다. 
+
+책 관련 문의 사항이나 프로젝트 관련 문의사항은 brewnet.dev@gmail.com으로 연락주시기 바랍니다.
+
+</td>
+</tr>
+</table>
+
+---
+
+
 **한국어** | [English](./README.en.md)
 
 마크다운 기반 팀 지식 관리 플랫폼 (Knowledge Management System).

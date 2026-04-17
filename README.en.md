@@ -1,5 +1,35 @@
 # MarkFlow KMS
 
+
+### About
+
+<table>
+<tr>
+<td width="35%" align="center" valign="top">
+
+<img src="https://raw.githubusercontent.com/claude-code-expert/.github/main/profile/assets/cc-master.png" alt="Claude Code Master" width="100%" />
+
+<br/>
+
+<a href="https://product.kyobobook.co.kr/detail/S000219725328" target="_blank"><img src="https://img.shields.io/badge/Claude_Code_Master-Buy_Online-2E75B6?style=for-the-badge&logo=bookstack&logoColor=white" alt="Buy Claude Code Master Online" /></a>
+
+</td>
+<td width="65%" valign="top">
+
+**Claude Code Expert** is the official GitHub organization for the book *Claude Code Master — An AI Agentic Coding Workflow That Covers Planning, Development, and Operations End-to-End*.
+
+This book is not just a how-to-use-the-tool tutorial. It lays out a methodology for collaborating systematically with AI coding agents — covering Spec-Driven Development (SDD), Test-Driven Development (TDD), and the kind of disciplined review process that holds up no matter which AI tool you use.
+MarkFlow is a Markdown Knowledge Management System — open-source software that lets you easily author markdown documents and manage relationships between them at the folder level, available as a SaaS or for on-premises deployment.
+
+For questions about the book or this project, please reach out at brewnet.dev@gmail.com.
+
+</td>
+</tr>
+</table>
+
+---
+
+
 [한국어](./README.md) | **English**
 
 A markdown-based team Knowledge Management System (KMS).
