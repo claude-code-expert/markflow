@@ -24,11 +24,12 @@
 ```
 markflow/
 ├── packages/
-│   ├── editor/          @markflow/editor — 독립 에디터 컴포넌트
-│   └── db/              @markflow/db — Drizzle ORM 스키마 + 마이그레이션
+│   ├── editor/          @markflow/editor — 독립 에디터 컴포넌트 (npm 배포 가능)
+│   └── db/              @markflow/db — Drizzle ORM 스키마 + 마이그레이션 + SCHEMA.sql
 ├── apps/
-│   ├── web/             @markflow/web — Next.js 프론트엔드
-│   ├── api/             @markflow/api — Fastify 백엔드 API
+│   ├── web/             @markflow/web — Next.js 16 프론트엔드 (App Router)
+│   ├── api/             @markflow/api — Fastify 5 백엔드 API
+│   ├── worker/          Cloudflare R2 이미지 업로드 Worker (선택)
 │   └── demo/            에디터 데모 앱
 └── docs/                설계 문서, 프로토타입, ERD
 ```
@@ -81,7 +82,11 @@ PORT=4000
 ```bash
 pnpm install
 pnpm --filter @markflow/editor build   # 에디터 빌드 (최초 1회)
-cd packages/db && pnpm drizzle-kit push && cd ../..  # DB 마이그레이션 (최초 1회)
+
+# DB 부트스트랩 — 둘 중 하나 선택
+psql "$DATABASE_URL" -f packages/db/SCHEMA.sql      # (a) 빈 DB에 한 번에 생성
+cd packages/db && pnpm drizzle-kit push && cd ../.. # (b) Drizzle로 점진 적용
+
 pnpm dev                                # API + Web 동시 실행
 ```
 
@@ -99,7 +104,7 @@ http://localhost:3002 에서 접속.
 
 ## 프로덕션 환경 변수
 
-서버 배포 시 호스팅 플랫폼의 환경 변수 설정에서 아래 값을 지정합니다:
+### API 서버 (`apps/api`)
 
 | 변수 | 설명 | 생성 방법 |
 |------|------|----------|
@@ -110,7 +115,26 @@ http://localhost:3002 에서 접속.
 | `HOST` | API 바인드 주소 | `0.0.0.0` |
 | `PORT` | API 포트 | 호스팅 플랫폼 기본값 또는 `4000` |
 
+### 웹앱 (`apps/web`)
+
+| 변수 | 설명 | 예시 |
+|------|------|------|
+| `NEXT_PUBLIC_API_URL` | API 서버 베이스 URL | `https://api.markflow.dev/api/v1` |
+| `NEXT_PUBLIC_SITE_URL` | 사이트 도메인 (sitemap/SEO) | `https://markflow.vercel.app` |
+| `NEXT_PUBLIC_R2_WORKER_URL` | (선택) 이미지 업로드 Worker | `https://r2-uploader.<id>.workers.dev` |
+
 > `pnpm start`(프로덕션)는 `.env.local`을 읽지 않고 시스템 환경 변수만 사용합니다.
+
+## 배포 아키텍처
+
+Fastify는 long-running 서버라서 Vercel Serverless에는 부적합합니다. 분리 배포를 권장합니다.
+
+| 컴포넌트 | 권장 호스팅 |
+|---|---|
+| `apps/web` (Next.js) | **Vercel** — Root Directory `apps/web`, build 시 `@markflow/editor` 먼저 빌드 |
+| `apps/api` (Fastify) | **Railway / Render / Fly.io** — Docker 또는 Node 런타임 |
+| PostgreSQL | **Supabase / Neon / Vercel Postgres** |
+| `apps/worker` | **Cloudflare Workers** + R2 버킷 |
 
 ## 명령어
 
@@ -137,7 +161,7 @@ pnpm --filter @markflow/web test:e2e # E2E 테스트
 
 ### @markflow/db
 
-Drizzle ORM 기반 DB 스키마. 13개 테이블. ERD: [docs/ERD.svg](./docs/ERD.svg)
+Drizzle ORM 기반 DB 스키마. 15개 테이블 (users, workspaces, workspace_members, categories, category_closure, documents, document_versions, document_relations, tags, document_tags, comments, invitations, join_requests, embed_tokens, refresh_tokens). 신규 환경 부트스트랩은 [SCHEMA.sql](./packages/db/SCHEMA.sql), 점진 마이그레이션은 `src/migrations/*.sql` 사용. ERD: [docs/ERD.svg](./docs/ERD.svg)
 
 ### @markflow/web
 
@@ -151,7 +175,7 @@ Fastify 5 백엔드 API. JWT 인증, RBAC (소유자/관리자/편집자/뷰어)
 
 | 문서 | 설명 |
 |------|------|
-| [GETTING-STARTED.md](./docs/GETTING-STARTED.md) | 상세 시작 가이드 |
-| [ERD.svg](./docs/ERD.svg) | 데이터베이스 ER 다이어그램 |
-| [PROJECT-STRUCTURE.md](./docs/PROJECT-STRUCTURE.md) | 프로젝트 구조 상세 |
-| [markflow-prototype.html](./docs/markflow-prototype.html) | UI 프로토타입 |
+| [packages/db/SCHEMA.sql](./packages/db/SCHEMA.sql) | 통합 DB 부트스트랩 SQL (15개 테이블 + FK + 인덱스) |
+| [docs/ERD.svg](./docs/ERD.svg) | 데이터베이스 ER 다이어그램 |
+| [docs/PROJECT-STRUCTURE.md](./docs/PROJECT-STRUCTURE.md) | 프로젝트 구조 상세 |
+| [docs/markflow-prototype.html](./docs/markflow-prototype.html) | UI 프로토타입 |
