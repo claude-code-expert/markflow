@@ -1,5 +1,7 @@
 # MarkFlow KMS
 
+**한국어** | [English](./README.en.md)
+
 마크다운 기반 팀 지식 관리 플랫폼 (Knowledge Management System).
 
 ## 화면 미리보기
