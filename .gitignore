@@ -13,6 +13,9 @@ node_modules
 # testing
 /coverage
 
+docs/phase
+docs/design
+docs/specs
 .env.local
 .env.example
 **/.mcp.json
