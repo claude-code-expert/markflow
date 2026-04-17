@@ -8,9 +8,9 @@ export function CTASection() {
           시작할 준비 되셨나요?
         </h2>
         <p className="text-[16px] text-white/70 mb-9 leading-relaxed">
-          신용카드 없이 지금 바로 시작하세요.
+          지금 바로 시작하세요.
           <br className="sm:hidden" />
-          언제든 부담 없이 해지할 수 있습니다.
+          온프레이미스 설치가 필요하다면 brewnet.dev@gmail.com으로 문의해주세요. 
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link

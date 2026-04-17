@@ -10,7 +10,6 @@ import { Differentiators } from '../../components/landing/differentiators';
 import { HowItWorks } from '../../components/landing/how-it-works';
 import { FeaturesGrid } from '../../components/landing/features-grid';
 import { FAQ } from '../../components/landing/faq';
-import { CTASection } from '../../components/landing/cta-section';
 // import { PricingSection } from '../../components/landing/pricing-section'; // Pro 완성 이후 노출
 import { Footer } from '../../components/landing/footer';
 
@@ -58,7 +57,6 @@ export default function RootPage() {
           <HowItWorks />
           <FeaturesGrid />
           <FAQ />
-          <CTASection />
           {/* <PricingSection /> */} {/* Pro 완성 이후 노출 */}
         </main>
         <Footer />

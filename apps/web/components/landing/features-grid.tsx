@@ -31,7 +31,7 @@ const features: Feature[] = [
     bg: 'bg-[#EEF3FF]',
     fg: 'text-[#1A56DB]',
     title: '보면서 편집하는 에디터',
-    desc: '왼쪽에서 마크다운을 입력하면 오른쪽에 결과가 바로 보입니다. 표·체크리스트·수식·코드 강조까지 그대로 표시되고, 양쪽 화면이 함께 스크롤되어 긴 문서도 편합니다.',
+    desc: '왼쪽에서 마크다운을 입력하면 오른쪽에 결과가 바로 보입니다. 표·체크리스트·수식(LaTaX)·코드 강조까지 그대로 표시되고, 양쪽 화면이 함께 스크롤되어 긴 문서도 편합니다.',
     icon: (
       <Icon>
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -42,6 +42,32 @@ const features: Feature[] = [
         <line x1="15" y1="9" x2="18" y2="9" />
         <line x1="15" y1="12" x2="18" y2="12" />
         <line x1="15" y1="15" x2="17" y2="15" />
+      </Icon>
+    ),
+  },
+  {
+    bg: 'bg-[#ECFEFF]',
+    fg: 'text-[#0E7490]',
+    title: '이미지 업로드',
+    desc: '스크린샷·다이어그램을 문서에 끌어다 놓거나 클립보드에서 바로 붙여 넣으세요. 외부 호스팅을 따로 찾지 않아도 안전한 스토리지에 자동 저장되고, 마크다운 문법으로 깔끔히 삽입됩니다.',
+    icon: (
+      <Icon>
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <circle cx="8.5" cy="9.5" r="1.5" />
+        <path d="M3 17l5-5 4 4 3-3 6 6" />
+      </Icon>
+    ),
+  },
+  {
+    bg: 'bg-[#FEF2F2]',
+    fg: 'text-[#B91C1C]',
+    title: '동영상 삽입',
+    desc: 'YouTube·Vimeo 같은 외부 영상은 링크 한 줄로 본문에서 바로 재생되고, 직접 올린 동영상도 문서 안에서 그대로 보여집니다. 첨부 파일을 따로 열 필요 없이 흐름이 끊기지 않습니다.',
+    icon: (
+      <Icon>
+        <rect x="2.5" y="5" width="14" height="14" rx="2" />
+        <path d="M16.5 9.5L21 7v10l-4.5-2.5z" />
+        <polygon points="7,9 12,12 7,15" fill="currentColor" stroke="none" />
       </Icon>
     ),
   },
@@ -145,6 +171,20 @@ const features: Feature[] = [
     ),
   },
   {
+    bg: 'bg-[#EEF2FF]',
+    fg: 'text-[#4338CA]',
+    title: 'AI 강화 학습',
+    desc: '외부 LLM을 워크스페이스에 연결해 우리 팀의 문서를 학습한 전용 AI 어시스턴트를 만드세요. 흩어진 지식을 자연어로 묻고, 답변에는 근거 문서까지 함께 따라옵니다.',
+    badge: 'PRO',
+    icon: (
+      <Icon>
+        <path d="M9 4.5a3.5 3.5 0 0 0-3 5.3 3 3 0 0 0 .5 5.7 3 3 0 0 0 3 3 3 3 0 0 0 2.5-1.4V5.9A3.5 3.5 0 0 0 9 4.5z" />
+        <path d="M15 4.5a3.5 3.5 0 0 1 3 5.3 3 3 0 0 1-.5 5.7 3 3 0 0 1-3 3 3 3 0 0 1-2.5-1.4V5.9A3.5 3.5 0 0 1 15 4.5z" />
+        <path d="M12 5.9v12.2" />
+      </Icon>
+    ),
+  },
+  {
     bg: 'bg-[#F1F5F9]',
     fg: 'text-[#334155]',
     title: '온프레미스 설치',
@@ -172,9 +212,12 @@ export function FeaturesGrid() {
         <div className="text-xs font-semibold tracking-[0.1em] uppercase text-[#1A56DB] mb-3">
           Core Features
         </div>
-        <h2 className="font-[var(--font-sora)] text-4xl font-bold tracking-tight text-[#1A1916] mb-12 max-w-[480px] leading-[1.2]">
+        <h2 className="font-[var(--font-sora)] text-4xl font-bold tracking-tight text-[#1A1916] mb-4 max-w-[480px] leading-[1.2]">
           마크다운을 팀의 언어로
         </h2>
+        <p className="text-[15px] text-[#57564F] mb-12 max-w-[640px] leading-relaxed">
+          기본 마크다운 에디터로는 다루기 어려운 이미지·동영상·실시간 협업·AI까지, 팀 작업에 필요한 기능을 한곳에서 풍부하게 지원합니다.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f) => (
             <div
