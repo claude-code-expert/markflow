@@ -2,6 +2,23 @@
 
 마크다운 기반 팀 지식 관리 플랫폼 (Knowledge Management System).
 
+## 화면 미리보기
+
+### 1. 로그인
+![로그인 화면](./apps/web/public/image/0.png)
+
+### 2. 워크스페이스
+![워크스페이스 화면](./apps/web/public/image/1.png)
+
+### 3. 문서 목록
+![문서 목록 화면](./apps/web/public/image/2.png)
+
+### 4. 상세 보기
+![문서 상세 보기 화면](./apps/web/public/image/3.png)
+
+### 5. 문서 작성하기
+![문서 작성 화면](./apps/web/public/image/4.png)
+
 ## 구조
 
 ```
