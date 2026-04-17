@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Knowledge Graph Simulation</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #network-graph {
+            width: 100%;
+            height: 100%;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        /* 노드 호버 시 스타일 */
+        .vis-network:hover { cursor: grab; }
+        .vis-network:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-gray-950 text-gray-200">
+
+    <header class="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-400">🧠 Interactive Knowledge Graph</h1>
+        <p class="text-sm text-gray-400">노드를 클릭하여 파일 내용을 확인하고 연결된 링크를 보세요.</p>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+        <main class="flex-1 relative border-r border-gray-800">
+            <div id="network-graph"></div>
+            <div class="absolute bottom-4 left-4 bg-gray-800/80 p-2 rounded text-xs text-gray-400 shadow-xl">
+                * 드래그: 이동 | 휠: 확대/축소 | 노드 클릭: 상세 보기
+            </div>
+        </main>
+
+        <aside id="detail-pane" class="w-96 p-6 flex flex-col gap-6 overflow-y-auto bg-gray-900 transition-all duration-300 transform translate-x-full absolute right-0 top-0 bottom-0 z-10 shadow-2xl lg:relative lg:translate-x-0">
+            
+            <button onclick="closePane()" class="lg:hidden absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+
+            <section>
+                <div id="file-meta" class="text-xs text-blue-400 mb-1"></div>
+                <h2 id="file-title" class="text-2xl font-bold text-white mb-4">파일을 선택하세요</h2>
+                <div id="file-content" class="prose prose-sm prose-invert text-gray-300 space-y-3">
+                    <p>왼쪽 그래프에서 동그라미(노드)를 클릭하면, 해당 Markdown 파일의 내용과 연결된 링크들이 이곳에 표시됩니다.</p>
+                </div>
+            </section>
+
+            <hr class="border-gray-800">
+
+            <section>
+                <h3 class="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+                    🔗 이 노드를 언급하는 파일 (Backlinks)
+                </h3>
+                <ul id="backlink-list" class="space-y-2">
+                    <li class="text-sm text-gray-600 italic">선택된 노드가 없습니다.</li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        // ============================================================
+        // [데이터 시뮬레이션] 실제 Markdown 파일들의 연결 구조 정의
+        // ============================================================
+        
+        // 1. 노드(파일) 정의: id, 이름, 유형(색상결정), 내용
+        const rawNodes = [
+            { id: 1, label: '00_Index', group: 'moc', content: '나의 지식 저장소 최상위 목차입니다. [[업무_대시보드]]와 [[개인_공부]]로 연결됩니다.' },
+            
+            { id: 2, label: '업무_대시보드', group: 'area', content: '현재 진행 중인 업무 프로젝트 모음입니다. [[프로젝트_A]]가 가장 중요합니다.' },
+            { id: 3, label: '프로젝트_A', group: 'project', content: '기획 단계입니다. [[React_스타일가이드]]와 [[API_명세서]]를 참고하세요.' },
+            { id: 4, label: 'API_명세서', group: 'resource', content: '백엔드 팀과 협의한 API 문서입니다.' },
+
+            { id: 5, label: '개인_공부', group: 'area', content: '올해 목표인 개발 역량 강화 탭입니다. [[React_공부]]와 [[독서_노트]]가 있습니다.' },
+            { id: 6, label: 'React_공부', group: 'resource', content: 'React 기초부터 마스터하기. [[React_스타일가이드]]를 작성 중입니다.' },
+            
+            // ✨ 7번 노드는 3번(업무)과 6번(공부) 양쪽에서 연결됨 (지식의 교차점)
+            { id: 7, label: 'React_스타일가이드', group: 'resource', content: '공부하면서 만든 내용을 [[프로젝트_A]]에 적용합니다.' },
+            
+            { id: 8, label: '독서_노트', group: 'resource', content: '개발 서적 읽고 정리.' },
+            { id: 9, label: '세컨드브레인_방법론', group: 'idea', content: '지식 관리 시스템 구축 아이디어. [[00_Index]] 구조 잡는 데 참고.' }
+        ];
+
+        // 2. 엣지(연결선) 정의: [[링크]]를 시뮬레이션
+        const rawEdges = [
+            { from: 1, to: 2 }, { from: 1, to: 5 }, // Index -> 대분류
+            { from: 2, to: 3 }, // 업무 -> 프로젝트A
+            { from: 3, to: 4 }, { from: 3, to: 7 }, // 프로젝트A -> 참고문서
+            { from: 5, to: 6 }, { from: 5, to: 8 }, // 개인공부 -> 주제
+            { from: 6, to: 7 }, // React공부 -> 스타일가이드
+            { from: 9, to: 1 }, // 아이디어 -> Index (역링크)
+        ];
+
+        // ============================================================
+        // [Vis.js 그래프 초기화]
+        // ============================================================
+        
+        // 스타일 정의 (테마)
+        const groups = {
+            moc: { color: { background: '#2563eb', border: '#60a5fa' }, font: { color: 'white', size: 16, bold: true } }, // 파랑
+            area: { color: { background: '#166534', border: '#4ade80' } }, // 초록
+            project: { color: { background: '#9f1239', border: '#fb7185' }, shape: 'diamond' }, // 빨강
+            resource: { color: { background: '#374151', border: '#9ca3af' } }, // 회색
+            idea: { color: { background: '#854d0e', border: '#facc15' }, shape: 'dot' } // 노랑
+        };
+
+        const nodes = new vis.DataSet(rawNodes);
+        const edges = new vis.DataSet(rawEdges);
+
+        const container = document.getElementById('network-graph');
+        const data = { nodes: nodes, edges: edges };
+        
+        // 그래프 옵션 (물리학 엔진 설정)
+        const options = {
+            groups: groups,
+            nodes: {
+                shape: 'dot',
+                size: 12,
+                font: { size: 12, color: '#e5e7eb' },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 1,
+                color: { color: '#4b5563', highlight: '#3b82f6' },
+                arrows: { to: { enabled: true, scaleFactor: 0.5 } }, // 방향 표시
+                smooth: { type: 'continuous' } // 곡선미
+            },
+            physics: {
+                enabled: true,
+                barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 95 },
+                stabilization: { iterations: 150 }
+            },
+            interaction: { hover: true, tooltipDelay: 200 }
+        };
+
+        // 그래프 생성
+        const network = new vis.Network(container, data, options);
+
+        // ============================================================
+        // [상세 보기 및 백링크 로직]
+        // ============================================================
+        
+        const pane = document.getElementById('detail-pane');
+
+        // 노드 클릭 이벤트 리스너
+        network.on("click", function (params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                showNodeDetail(nodeId);
+            } else {
+                // 빈 공간 클릭 시 패널 닫기 (모바일용)
+                // closePane(); 
+            }
+        });
+
+        function showNodeDetail(nodeId) {
+            const selectedNode = rawNodes.find(n => n.id === nodeId);
+            if (!selectedNode) return;
+
+            // 1. 패널 열기
+            pane.classList.remove('translate-x-full');
+
+            // 2. 기본 정보 표시
+            document.getElementById('file-meta').innerText = `Type: ${selectedNode.group.toUpperCase()} | ID: ${selectedNode.id}`;
+            document.getElementById('file-title').innerText = `${selectedNode.label}.md`;
+            
+            // [[링크]] 패턴을 하이라이트하여 내용 표시
+            const linkedContent = selectedNode.content.replace(/\[\[(.*?)\]\]/g, '<span class="text-blue-400 font-medium">[[$1]]</span>');
+            document.getElementById('file-content').innerHTML = `<p>${linkedContent}</p>`;
+
+            // 3. ✨ 핵심: 백링크 계산 및 표시
+            const backlinks = rawEdges
+                .filter(edge => edge.to === nodeId) // 나에게(to) 오는 선을 찾음
+                .map(edge => rawNodes.find(n => n.id === edge.from)); // 누가(from) 보냈는지 찾음
+
+            const backlinkListUl = document.getElementById('backlink-list');
+            backlinkListUl.innerHTML = ''; // 초기화
+
+            if (backlinks.length > 0) {
+                backlinks.forEach(linkNode => {
+                    const li = document.createElement('li');
+                    li.className = "p-3 bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500 cursor-pointer transition text-sm flex items-center gap-2";
+                    li.innerHTML = `📄 <span class="text-white font-medium">${linkNode.label}.md</span>`;
+                    // 백링크 클릭 시 해당 노드로 이동
+                    li.onclick = () => {
+                        network.selectNodes([linkNode.id]); // 그래프에서 선택
+                        showNodeDetail(linkNode.id); // 상세 표시
+                        network.focus(linkNode.id, {scale: 1, animation: true}); // Focus
+                    };
+                    backlinkListUl.appendChild(li);
+                });
+            } else {
+                backlinkListUl.innerHTML = '<li class="text-sm text-gray-600 italic px-2">이 파일을 언급하는 다른 파일이 없습니다.</li>';
+            }
+        }
+
+        function closePane() {
+            pane.classList.add('translate-x-full');
+            network.unselectAll();
+        }
+    </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ The Documents subsystem handles **5 routes** and touches: auth, db.
 
 ## Related Models
 
-- **documents** (8 fields) → [database.md](./database.md)
+- **documents** (9 fields) → [database.md](./database.md)
 
 ## Source Files
 

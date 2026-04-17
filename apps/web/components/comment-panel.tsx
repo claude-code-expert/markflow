@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api';
 import { useAuthStore } from '../stores/auth-store';
 import { MessageSquare, Send, Trash2, Reply, X, Pencil, Check, CheckCircle } from 'lucide-react';
+import { formatKstRelativeLong } from '../lib/date';
 
 interface Comment {
   id: number;
@@ -31,22 +32,6 @@ interface CommentPanelProps {
   workspaceId: number;
   documentId: string;
   onClose: () => void;
-}
-
-function relativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffSec < 60) return '방금 전';
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  if (diffDay < 30) return `${diffDay}일 전`;
-  return date.toLocaleDateString('ko-KR');
 }
 
 function CommentItem({
@@ -126,7 +111,7 @@ function CommentItem({
             </span>
           )}
           <span style={{ fontSize: '11px', color: 'var(--text-3)', marginLeft: 'auto' }}>
-            {relativeTime(comment.createdAt)}
+            {formatKstRelativeLong(comment.createdAt)}
           </span>
         </div>
 

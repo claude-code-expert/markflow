@@ -23,7 +23,10 @@ export async function graphRoutes(app: FastifyInstance, opts: GraphRoutesOptions
   }>('/workspaces/:wsId/graph', {
     preHandler: requireRole('viewer'),
   }, async (request, reply) => {
-    const graph = await graphService.getWorkspaceGraph(request.params.wsId);
+    const graph = await graphService.getWorkspaceGraph(
+      request.params.wsId,
+      request.currentUser!.userId,
+    );
     return reply.status(200).send(graph);
   });
 
@@ -36,6 +39,7 @@ export async function graphRoutes(app: FastifyInstance, opts: GraphRoutesOptions
     const context = await graphService.getDocumentContext(
       request.params.id,
       request.params.wsId,
+      request.currentUser!.userId,
     );
     return reply.status(200).send(context);
   });

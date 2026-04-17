@@ -14,7 +14,8 @@
   - interface CategoryTreeDocument
   - interface CategoryTreeNode
 - `apps/api/src/services/comment-service.ts` — function createCommentService: (db) => void
-- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void
+- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
+- `apps/api/src/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
 - `apps/api/src/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
 - `apps/api/src/services/export-service.ts` — function createExportService: (db) => void
 - `apps/api/src/services/graph-service.ts` — function createGraphService: (db) => void
@@ -64,6 +65,12 @@
   - function collectAllDocs: (cats, uncategorized) => FlatDocument[]
   - interface FlatCategory
   - interface FlatDocument
+- `apps/web/lib/date.ts`
+  - function formatKstDate: (value) => string
+  - function formatKstDateTime: (value) => string
+  - function formatKstDateWithOptions: (value, options) => string
+  - function formatKstRelative: (value, fallbackAfterDays) => string
+  - function formatKstRelativeLong: (value) => string
 - `apps/web/lib/image-upload.ts`
   - function getWorkerUrl: () => string
   - function getUploadConfig: () => ImageUploadConfig
@@ -81,6 +88,7 @@
   - interface Env
   - const MAX_FILE_SIZE
   - _...1 more_
+- `docs/sample/markflow-pdf-export.ts` — function markdownToPdf: (opts) => Promise<Buffer>, function pdfExportRoute: (app) => void
 - `packages/db/src/index.ts` — function createDb: (databaseUrl) => void, type Db
 - `packages/editor/src/utils/cloudflareUploader.ts` — function createCloudflareUploader: (workerUrl) => void, function createTestImage: () => File
 - `packages/editor/src/utils/imageValidation.ts` — function validateImageFile: (file) => ValidationResult, interface ValidationResult

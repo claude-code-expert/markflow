@@ -14,7 +14,11 @@ import { Moon, Sun, PenLine, Columns2, Eye, FolderOpen, ChevronDown, HardDrive, 
 import { useToastStore } from '../../../../../stores/toast-store';
 import { StorageGuidePanel } from '../../../../../components/storage-guide-panel';
 import { Tooltip } from '../../../../../components/tooltip';
+import { ConfirmModal } from '../../../../../components/confirm-modal';
 import { parseThemeCss } from '../../../../../lib/parse-theme-css';
+
+// 제목 최초 입력 후 임시저장 확인 모달이 뜨기까지 대기 시간
+const DRAFT_PROMPT_DELAY_MS = 5 * 60 * 1000;
 
 export default function NewDocPage() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
@@ -50,6 +54,11 @@ export default function NewDocPage() {
     if (!dismissedAt) return false;
     return Date.now() - Number(dismissedAt) < 24 * 60 * 60 * 1000;
   });
+
+  // 5분 경과 시 뜨는 임시저장 확인 모달 상태
+  const [draftPromptOpen, setDraftPromptOpen] = useState(false);
+  // 취소 시 세션 내 다시 묻지 않도록 잠금
+  const draftPromptDismissedRef = useRef(false);
 
   const isMountedRef = useRef(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -92,7 +101,8 @@ export default function NewDocPage() {
   }, [wsId]);
 
   // 첫 저장 = 문서 생성 (POST) → 생성 후 에디터 페이지로 replace
-  const handleSave = useCallback(async () => {
+  // status='draft' 이면 임시저장, 기본 'published' 는 일반 저장
+  const handleSave = useCallback(async (status: 'draft' | 'published' = 'published') => {
     const currentWsId = wsIdRef.current;
     if (!currentWsId) {
       setError('워크스페이스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
@@ -114,13 +124,18 @@ export default function NewDocPage() {
           body: {
             title: title.trim(),
             content,
+            status,
             ...(categoryId ? { categoryId } : {}),
           },
         },
       );
       if (isMountedRef.current) {
         void queryClient.invalidateQueries({ queryKey: ['documents', currentWsId] });
-        addToast({ message: '문서가 생성되었습니다', type: 'success' });
+        addToast({
+          message: status === 'draft' ? '임시저장되었습니다' : '문서가 생성되었습니다',
+          type: 'success',
+        });
+        // draft 도 문서 페이지로 이동하여 계속 작성 가능
         router.replace(`/${workspaceSlug}/doc/${document.id}`);
       }
     } catch (err) {
@@ -135,23 +150,64 @@ export default function NewDocPage() {
     }
   }, [title, content, categoryId, queryClient, addToast, router, workspaceSlug]);
 
-  // Ctrl+S / Cmd+S
+  // 임시저장 모달 확인 핸들러. 로딩 상태는 saveStatus === 'saving' 으로 이미 추적 중이므로
+  // 별도 state 는 두지 않는다.
+  const handleConfirmDraft = useCallback(async () => {
+    try {
+      await handleSave('draft');
+    } finally {
+      if (isMountedRef.current) {
+        setDraftPromptOpen(false);
+      }
+    }
+  }, [handleSave]);
+
+  // 임시저장 모달 취소 핸들러 (세션 내 재노출 안 함)
+  const handleCancelDraft = useCallback(() => {
+    draftPromptDismissedRef.current = true;
+    setDraftPromptOpen(false);
+  }, []);
+
+  // Ctrl+S / Cmd+S — 수동 저장은 published 로 바로 진행
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        void handleSave();
+        void handleSave('published');
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  // Beforeunload — 내용이 있으면 경고 (ref로 추적하여 리스너 재등록 방지)
+  // Beforeunload / 타이머 콜백에서 최신 값 참조용 (리스너 재등록 방지)
   const contentRef = useRef(content);
   const titleRef = useRef(title);
   contentRef.current = content;
   titleRef.current = title;
+
+  // 제목이 처음 입력된 순간부터 5분 타이머 시작 → 경과 시 임시저장 확인 모달 표시
+  // - 의존성에 title 자체가 아닌 hasTitle(boolean) 만 두어 키 입력마다 리셋되지 않음
+  // - 제목이 빈 문자열이 되면 타이머 취소
+  // - 사용자가 한 번 '계속 작성' 으로 닫았으면 세션 내 다시 뜨지 않음
+  // - 모달이 이미 열려있거나 이미 저장 중이면 타이머 재등록 없음
+  const hasTitle = title.trim().length > 0;
+  useEffect(() => {
+    if (!hasTitle) return;
+    if (draftPromptDismissedRef.current) return;
+    if (draftPromptOpen) return;
+    if (saveStatus === 'saving') return;
+
+    const timerId = window.setTimeout(() => {
+      // 타이머 발화 시점에도 조건 재확인 (경쟁 방지)
+      if (!isMountedRef.current) return;
+      if (draftPromptDismissedRef.current) return;
+      if (!titleRef.current.trim()) return;
+      setDraftPromptOpen(true);
+    }, DRAFT_PROMPT_DELAY_MS);
+
+    return () => window.clearTimeout(timerId);
+  }, [hasTitle, draftPromptOpen, saveStatus]);
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -227,7 +283,7 @@ export default function NewDocPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
             <button
               type="button"
-              onClick={() => void handleSave()}
+              onClick={() => void handleSave('published')}
               disabled={saveStatus === 'saving'}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '4px',
@@ -383,6 +439,18 @@ export default function NewDocPage() {
           />
         )}
       </div>
+
+      {/* 5분 경과 시 임시저장 확인 모달 */}
+      <ConfirmModal
+        open={draftPromptOpen}
+        onClose={handleCancelDraft}
+        onConfirm={() => void handleConfirmDraft()}
+        title="임시저장 하시겠습니까?"
+        message="작성을 시작한 지 5분이 지났습니다. 현재 내용을 임시저장할까요?"
+        confirmLabel="임시저장"
+        cancelLabel="계속 작성"
+        isLoading={saveStatus === 'saving'}
+      />
     </div>
   );
 }

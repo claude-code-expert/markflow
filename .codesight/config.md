@@ -10,19 +10,19 @@
 - `E2E_USER_PASSWORD` **required** — apps/web/tests/e2e/document-management.spec.ts
 - `E2E_WORKSPACE_NAME` **required** — apps/web/tests/e2e/team-management.spec.ts
 - `E2E_WORKSPACE_SLUG` **required** — apps/web/tests/e2e/document-management.spec.ts
-- `EMAIL_FROM` **required** — apps/api/src/utils/email.ts
-- `FRONTEND_URL` **required** — apps/api/src/utils/email.ts
+- `EMAIL_FROM` (has default) — .env.local
+- `FRONTEND_URL` (has default) — .env.local
 - `HOST` (has default) — .env.local
 - `JWT_REFRESH_SECRET` (has default) — .env.local
 - `JWT_SECRET` (has default) — .env.local
 - `NEXT_PUBLIC_API_URL` **required** — apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx
 - `NEXT_PUBLIC_R2_WORKER_URL` **required** — apps/web/lib/image-upload.ts
 - `NEXT_PUBLIC_SITE_URL` **required** — apps/web/app/layout.tsx
-- `NODE_ENV` **required** — apps/api/src/routes/auth.ts
+- `NODE_ENV` (has default) — .env.local
 - `PORT` (has default) — .env.local
 - `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
-- `RESEND_API_KEY` (has default) — .env.local
-- `TEST_DATABASE_URL` (has default) — .env.local
+- `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
+- `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
 - `VITEST` **required** — apps/api/src/index.ts
 
 ## Config Files

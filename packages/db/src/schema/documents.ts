@@ -12,6 +12,8 @@ export const documents = pgTable('documents', {
   title: varchar('title', { length: 300 }).notNull(),
   content: text('content').notNull().default(''),
   currentVersion: integer('current_version').notNull().default(1),
+  // 'draft' = 작성자만 볼 수 있는 임시저장 상태, 'published' = 일반 공개 상태
+  status: varchar('status', { length: 20 }).notNull().default('published'),
   isDeleted: boolean('is_deleted').notNull().default(false),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

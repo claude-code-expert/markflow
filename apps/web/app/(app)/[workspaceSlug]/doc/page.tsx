@@ -18,6 +18,7 @@ import { NewFolderModal } from '../../../../components/new-folder-modal';
 import { ImportExportModal } from '../../../../components/import-export-modal';
 import { Download, Plus } from 'lucide-react';
 import { Tooltip } from '../../../../components/tooltip';
+import { formatKstRelative } from '../../../../lib/date';
 
 // ---------------------------------------------------------------------------
 // Local types
@@ -34,30 +35,6 @@ type ViewMode = 'list' | 'grid';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffMin < 1) return '방금 전';
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  if (diffDay < 7) return `${diffDay}일 전`;
-  return formatDate(dateStr);
-}
 
 /** Flatten a Category tree to a lookup map for category names */
 function buildCategoryMap(cats: Category[]): Map<number, string> {
@@ -819,7 +796,7 @@ export default function DocsPage() {
                         color: 'var(--text-3)',
                       }}
                     >
-                      <span>{formatRelativeDate(doc.updatedAt)}</span>
+                      <span>{formatKstRelative(doc.updatedAt)}</span>
                     </div>
                   </button>
                 ))}
@@ -1015,7 +992,7 @@ export default function DocsPage() {
 
                     {/* Date */}
                     <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                      {formatRelativeDate(doc.updatedAt)}
+                      {formatKstRelative(doc.updatedAt)}
                     </span>
 
                     {/* Author */}
@@ -1028,7 +1005,7 @@ export default function DocsPage() {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {doc.authorId}
+                      {doc.authorName ?? '-'}
                     </span>
                   </button>
                 ))}

@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '../../../stores/workspace-store';
 import type { Workspace } from '../../../lib/types';
 import { CreateWorkspaceModal } from '../../../components/create-workspace-modal';
 import { JoinRequestPanel } from '../../../components/join-request-panel';
+import { formatKstRelativeLong } from '../../../lib/date';
 
 const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
   owner: { bg: 'var(--purple-lt)', text: 'var(--purple)' },
@@ -23,21 +24,6 @@ const ROLE_LABELS: Record<string, string> = {
   viewer: '뷰어',
 };
 
-function formatRelativeTime(dateString: string | undefined): string {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMinutes < 1) return '방금 전';
-  if (diffMinutes < 60) return `${diffMinutes}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 30) return `${diffDays}일 전`;
-  return date.toLocaleDateString('ko-KR');
-}
 
 function RoleBadge({ role }: { role: string }) {
   const colors = ROLE_COLORS[role] ?? ROLE_COLORS['viewer']!;
@@ -113,7 +99,7 @@ function WorkspaceRow({ workspace }: { workspace: Workspace }) {
             {workspace.documentCount ?? 0}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
-            {formatRelativeTime(workspace.lastActivityAt)}
+            {workspace.lastActivityAt ? formatKstRelativeLong(workspace.lastActivityAt) : '-'}
           </span>
           {(workspace.pendingJoinCount ?? 0) > 0 && (
             <span style={{

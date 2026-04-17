@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { diffLines } from 'diff';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatKstDateTime } from '../lib/date';
 
 interface Version {
   id: number;
@@ -232,14 +233,6 @@ export function VersionHistoryPanel({
     }
   }, [open, fetchVersions]);
 
-  function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
-  }
-
   if (!open) return null;
 
   return (
@@ -330,7 +323,7 @@ export function VersionHistoryPanel({
                   v{version.version}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>
-                  {formatDate(version.createdAt)}
+                  {formatKstDateTime(version.createdAt)}
                 </span>
               </div>
               {version.createdBy && (

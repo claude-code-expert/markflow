@@ -52,3 +52,4 @@
 - `POST` `/workspaces/:wsId/documents/:docId/restore-version` params(wsId, docId) [auth]
 - `GET` `/workspaces/public` params() [auth, db] ✓
 - `POST` `/workspaces/:id/transfer` params(id) [auth, db] ✓
+- `GET` `/workspaces/:workspaceId/export` params(workspaceId) [db]

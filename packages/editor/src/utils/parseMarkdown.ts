@@ -3,6 +3,7 @@
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import remarkMath from 'remark-math'
 import remarkRehype from 'remark-rehype'
 import rehypeHighlight from 'rehype-highlight'
@@ -59,6 +60,7 @@ const sanitizeSchema = deepmerge(defaultSchema, {
 const processor = unified()
   .use(remarkParse)                    // CommonMark parsing
   .use(remarkGfm)                      // GitHub Flavored Markdown (tables, task lists, strikethrough)
+  .use(remarkBreaks)                   // 단일 개행을 <br>로 변환 (GitHub 코멘트/Notion 스타일)
   .use(remarkMath)                     // $...$ and $$...$$ math blocks
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeHighlight, { detect: true, ignoreMissing: true })  // code syntax highlighting

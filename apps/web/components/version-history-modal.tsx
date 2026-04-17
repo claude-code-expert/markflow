@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { diffLines, type Change } from 'diff';
 import { apiFetch } from '../lib/api';
 import { useToastStore } from '../stores/toast-store';
+import { formatKstRelative } from '../lib/date';
 
 interface Version {
   id: number;
@@ -21,17 +22,6 @@ interface VersionHistoryModalProps {
   currentContent: string;
   hasUnsavedChanges?: boolean;
   onRestore?: (content: string) => void;
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}분 전`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}일 전`;
-  return new Date(dateStr).toLocaleDateString('ko-KR');
 }
 
 export function VersionHistoryModal({
@@ -119,7 +109,7 @@ export function VersionHistoryModal({
                         )}
                       </div>
                       <div className="text-[11px] text-[#9A9890] mt-0.5">
-                        {formatRelativeTime(v.createdAt)}{v.createdBy ? ` · ${v.createdBy.name}` : ''}
+                        {formatKstRelative(v.createdAt)}{v.createdBy ? ` · ${v.createdBy.name}` : ''}
                       </div>
                     </div>
                   );

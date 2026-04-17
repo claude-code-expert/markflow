@@ -12,9 +12,6 @@ export function NavBar() {
         <Link href="#features" className="px-3.5 py-2 rounded-md text-sm font-medium text-[#57564F] hover:bg-[#F1F0EC] hover:text-[#1A1916] transition-colors">
           Features
         </Link>
-        <Link href="#pricing" className="px-3.5 py-2 rounded-md text-sm font-medium text-[#57564F] hover:bg-[#F1F0EC] hover:text-[#1A1916] transition-colors">
-          Pricing
-        </Link>
       </div>
 
       <div className="flex items-center gap-2.5">

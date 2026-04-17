@@ -25,6 +25,7 @@ import { StorageGuidePanel } from '../../../../../components/storage-guide-panel
 import { Tooltip } from '../../../../../components/tooltip';
 import { parseThemeCss } from '../../../../../lib/parse-theme-css';
 import { ConfirmModal } from '../../../../../components/confirm-modal';
+import { formatKstDateTime } from '../../../../../lib/date';
 
 export default function DocEditorPage() {
   const { workspaceSlug, docId } = useParams<{ workspaceSlug: string; docId: string }>();
@@ -69,6 +70,7 @@ export default function DocEditorPage() {
   const [editorTheme, setEditorTheme] = useState<'light' | 'dark'>('light');
   const isMountedRef = useRef(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const layoutInitializedRef = useRef(false);
   const wsIdRef = useRef(wsId);
   wsIdRef.current = wsId;
 
@@ -159,6 +161,7 @@ export default function DocEditorPage() {
   }, [reset]);
 
   // 수동 저장만 — 버튼 클릭 또는 Cmd+S
+  // 저장 버튼 클릭은 "최종 저장" 으로 간주 → 현재 draft 라면 published 로 승격
   const handleSave = useCallback(async () => {
     const currentWsId = wsIdRef.current;
     if (!currentWsId) {
@@ -178,10 +181,19 @@ export default function DocEditorPage() {
     try {
       await apiFetch(
         `/workspaces/${currentWsId}/documents/${docId}`,
-        { method: 'PATCH', body: { title: currentTitle.trim(), content: currentContent } },
+        {
+          method: 'PATCH',
+          body: {
+            title: currentTitle.trim(),
+            content: currentContent,
+            // 저장 = 최종 저장 → 항상 published 로 전환 (이미 published 면 변화 없음)
+            status: 'published',
+          },
+        },
       );
       if (isMountedRef.current) {
         setSaveStatus('saved');
+        void queryClient.invalidateQueries({ queryKey: ['document', currentWsId, Number(docId)] });
         void queryClient.invalidateQueries({ queryKey: ['documents', currentWsId] });
         refreshSidebar();
         addToast({ message: '저장되었습니다', type: 'success' });
@@ -196,7 +208,7 @@ export default function DocEditorPage() {
         setError(err.message);
       }
     }
-  }, [docId, setSaveStatus, queryClient, addToast]);
+  }, [docId, setSaveStatus, queryClient, addToast, refreshSidebar]);
 
   // 문서 삭제
   const handleDelete = useCallback(async () => {
@@ -248,6 +260,19 @@ export default function DocEditorPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
+
+  // 문서 로드 후 수정 권한에 따라 기본 레이아웃 결정 (최초 1회만)
+  // - 글수정(canEdit): split 모드로 시작
+  // - 글보기(readOnly): preview 모드 유지
+  useEffect(() => {
+    const doc = documentQuery.data;
+    if (!doc || !currentUser || layoutInitializedRef.current) return;
+    const isAuthor = doc.authorId === currentUser.id;
+    const isAdmin = currentWorkspace?.role === 'admin' || currentWorkspace?.role === 'owner';
+    const canEdit = permissions.canEditDocument && (isAuthor || (isAdmin && adminEditUnlocked));
+    layoutInitializedRef.current = true;
+    if (canEdit) setEditorLayout('split');
+  }, [documentQuery.data, currentUser, currentWorkspace?.role, permissions.canEditDocument, adminEditUnlocked]);
 
   // Loading
   if (documentQuery.isLoading) {
@@ -302,6 +327,7 @@ export default function DocEditorPage() {
   const isAdmin = currentWorkspace?.role === 'admin' || currentWorkspace?.role === 'owner';
   const canEdit = permissions.canEditDocument && (isAuthor || (isAdmin && adminEditUnlocked));
   const isReadOnly = !canEdit;
+  const isDraft = doc.status === 'draft';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -315,6 +341,26 @@ export default function DocEditorPage() {
           <button type="button" onClick={() => setError('')} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '13px' }}>
             닫기
           </button>
+        </div>
+      )}
+
+      {/* Draft 배너 — 본인에게만 표시, '저장' 누르면 published 로 승격됨 */}
+      {isDraft && (
+        <div style={{
+          padding: '8px 16px',
+          background: 'var(--amber-lt, #fef3c7)',
+          color: 'var(--amber, #92400e)',
+          borderBottom: '1px solid var(--border)',
+          fontSize: '12.5px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2v20M2 12h20" opacity="0.3" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+          <span>임시저장된 문서입니다 — 본인에게만 보이며, 저장 버튼을 누르면 최종 저장됩니다.</span>
         </div>
       )}
 
@@ -464,10 +510,7 @@ export default function DocEditorPage() {
         </div>
         <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', fontSize: '12px', color: 'var(--text-3)' }}>
           <span>
-            마지막 수정: {new Date(doc.updatedAt).toLocaleDateString('ko-KR', {
-              year: 'numeric', month: 'short', day: 'numeric',
-              hour: '2-digit', minute: '2-digit',
-            })}
+            마지막 수정: {formatKstDateTime(doc.updatedAt)}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '2px' }}>
             <Tooltip label={editorTheme === 'light' ? '다크 모드' : '라이트 모드'}>
