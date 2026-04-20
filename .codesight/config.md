@@ -34,3 +34,4 @@
 - `apps/web/next.config.ts`
 - `packages/db/drizzle.config.ts`
 - `tsconfig.json`
+- `vercel.json`

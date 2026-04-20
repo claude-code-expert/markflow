@@ -4,8 +4,8 @@
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
 > 68 routes | 15 models | 87 components | 45 lib files | 25 env vars | 16 middleware | 81% test coverage
-> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,700 tokens. **Saves ~88,500 tokens per conversation.**
-> **Last scanned:** 2026-04-20 05:20 — re-run after significant changes
+> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,700 tokens. **Saves ~88,400 tokens per conversation.**
+> **Last scanned:** 2026-04-20 05:26 — re-run after significant changes
 
 ---
 
@@ -432,6 +432,7 @@
 - `apps/web/next.config.ts`
 - `packages/db/drizzle.config.ts`
 - `tsconfig.json`
+- `vercel.json`
 
 ---
 
