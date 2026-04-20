@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { InjectOptions } from 'light-my-request';
 import { buildApp } from '../src/index.js';
 
 type FastifyApp = Awaited<ReturnType<typeof buildApp>>;
@@ -15,18 +16,19 @@ async function getApp(): Promise<FastifyApp> {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fastify = await getApp();
 
-  const response = await fastify.inject({
-    method: req.method as string,
-    url: req.url as string,
+  const opts: InjectOptions = {
+    method: req.method as InjectOptions['method'],
+    url: req.url ?? '/',
     headers: req.headers as Record<string, string>,
     payload: req.body as string,
-  });
+  };
+
+  const response = await fastify.inject(opts);
 
   res.status(response.statusCode);
-  const headers = response.headers as Record<string, string | string[]>;
-  for (const [key, value] of Object.entries(headers)) {
+  for (const [key, value] of Object.entries(response.headers)) {
     if (value !== undefined) {
-      res.setHeader(key, value);
+      res.setHeader(key, value as string);
     }
   }
   res.send(response.body);
