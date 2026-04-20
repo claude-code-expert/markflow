@@ -3,9 +3,9 @@
 > **Stack:** fastify, next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
-> 68 routes | 15 models | 87 components | 45 lib files | 23 env vars | 16 middleware | 81% test coverage
-> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,400 tokens. **Saves ~88,200 tokens per conversation.**
-> **Last scanned:** 2026-04-20 04:46 — re-run after significant changes
+> 68 routes | 15 models | 87 components | 45 lib files | 25 env vars | 16 middleware | 81% test coverage
+> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,700 tokens. **Saves ~88,500 tokens per conversation.**
+> **Last scanned:** 2026-04-20 04:50 — re-run after significant changes
 
 ---
 
@@ -403,6 +403,7 @@
 - `CI` **required** — apps/web/playwright.config.ts
 - `CORS_ORIGIN` (has default) — .env.local
 - `DATABASE_URL` (has default) — .env.local
+- `DATABASE_URL_UNPOOLED` (has default) — .env.local
 - `E2E_BASE_URL` **required** — apps/web/playwright.config.ts
 - `E2E_USER_EMAIL` **required** — apps/web/tests/e2e/document-management.spec.ts
 - `E2E_USER_PASSWORD` **required** — apps/web/tests/e2e/document-management.spec.ts
@@ -417,6 +418,7 @@
 - `NEXT_PUBLIC_R2_WORKER_URL` **required** — apps/web/lib/image-upload.ts
 - `NEXT_PUBLIC_SITE_URL` **required** — apps/web/app/layout.tsx
 - `NODE_ENV` (has default) — .env.local
+- `PGHOST` (has default) — .env.local
 - `PORT` (has default) — .env.local
 - `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
 - `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts

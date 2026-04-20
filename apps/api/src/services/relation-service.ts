@@ -92,7 +92,7 @@ export function createRelationService(db: Db) {
     while (current !== null) {
       if (visited.has(current)) break;
       visited.add(current);
-      const next = nextMap.get(current) ?? null;
+      const next: number | null = nextMap.get(current) ?? null;
       if (next === searchFor) return true;
       current = next;
     }
@@ -103,7 +103,7 @@ export function createRelationService(db: Db) {
     while (current2 !== null) {
       if (visited2.has(current2)) break;
       visited2.add(current2);
-      const next = nextMap.get(current2) ?? null;
+      const next: number | null = nextMap.get(current2) ?? null;
       if (next === startNode) return true;
       current2 = next;
     }
