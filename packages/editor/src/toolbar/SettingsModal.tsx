@@ -13,7 +13,7 @@ interface SettingsModalProps {
   onSave: (workerUrl: string) => void
 }
 
-export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
+export const SettingsModal = React.memo(function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
   const [workerUrl, setWorkerUrl] = useState('')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testMessage, setTestMessage] = useState('')
@@ -151,7 +151,7 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
       </div>
     </div>
   )
-}
+})
 
 /** Load saved Cloudflare Worker URL from localStorage */
 export function getSavedWorkerUrl(): string {
