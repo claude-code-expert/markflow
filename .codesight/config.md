@@ -23,6 +23,7 @@
 - `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
 - `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
 - `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
+- `VERCEL` **required** — apps/api/src/index.ts
 - `VITEST` **required** — apps/api/src/index.ts
 
 ## Config Files

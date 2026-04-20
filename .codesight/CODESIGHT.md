@@ -3,9 +3,9 @@
 > **Stack:** fastify, next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
-> 68 routes | 15 models | 82 components | 45 lib files | 22 env vars | 16 middleware | 81% test coverage
-> **Token savings:** this file is ~9,100 tokens. Without it, AI exploration would cost ~95,700 tokens. **Saves ~86,600 tokens per conversation.**
-> **Last scanned:** 2026-04-16 10:03 — re-run after significant changes
+> 68 routes | 15 models | 87 components | 45 lib files | 23 env vars | 16 middleware | 81% test coverage
+> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,400 tokens. **Saves ~88,200 tokens per conversation.**
+> **Last scanned:** 2026-04-20 04:46 — re-run after significant changes
 
 ---
 
@@ -253,10 +253,15 @@
 - **GraphPreviewModal** [client] — props: open, onClose, workspaceSlug, doc — `apps/web/components/graph-preview-modal.tsx`
 - **ImportExportModal** [client] — props: open, onClose, workspaceId, workspaceSlug, currentDocId, currentCategoryId — `apps/web/components/import-export-modal.tsx`
 - **JoinRequestPanel** [client] — props: onRequestSent — `apps/web/components/join-request-panel.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **LinkPreview** [client] — props: containerRef, workspaceId — `apps/web/components/link-preview.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`
@@ -416,6 +421,7 @@
 - `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
 - `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
 - `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
+- `VERCEL` **required** — apps/api/src/index.ts
 - `VITEST` **required** — apps/api/src/index.ts
 
 ## Config Files

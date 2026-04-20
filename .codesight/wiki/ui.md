@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**82 components** (react)
+**87 components** (react)
 
 ## Client Components
 
@@ -74,10 +74,15 @@
 - **InviteLayout** — `apps/web/app/invite/layout.tsx`
 - **RootLayout** — `apps/web/app/layout.tsx`
 - **OGImage** — `apps/web/app/opengraph-image.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`
 - **Skeleton** — props: width, height, borderRadius — `apps/web/components/states/loading.tsx`

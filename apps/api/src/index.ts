@@ -119,14 +119,15 @@ export async function buildApp() {
   await app.register(commentsRoutes, { prefix: '/api/v1', db });
   await app.register(uploadTokenRoutes, { prefix: '/api/v1/upload-token' });
 
-  // --- Scheduled Jobs ---
-  const cleanupIntervalHandle = startCleanupInterval(db);
+  // --- Scheduled Jobs (서버리스 환경에서는 스킵) ---
+  if (!process.env['VERCEL']) {
+    const cleanupIntervalHandle = startCleanupInterval(db);
 
-  // --- Graceful shutdown ---
-  app.addHook('onClose', async () => {
-    clearInterval(cleanupIntervalHandle);
-    logger.info('Cleanup job interval cleared');
-  });
+    app.addHook('onClose', async () => {
+      clearInterval(cleanupIntervalHandle);
+      logger.info('Cleanup job interval cleared');
+    });
+  }
 
   return app;
 }

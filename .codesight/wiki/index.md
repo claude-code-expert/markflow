@@ -1,6 +1,6 @@
 # markflow — Wiki
 
-_Generated 2026-04-16 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-04-20 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -35,8 +35,8 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 - Routes: **68**
 - Models: **15**
-- Components: **82**
-- Env vars: **13** required, **9** with defaults
+- Components: **87**
+- Env vars: **14** required, **9** with defaults
 
 ## How to Use
 
@@ -63,4 +63,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-16 · 23 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-20 · 23 articles · [codesight](https://github.com/Houseofmvps/codesight)_

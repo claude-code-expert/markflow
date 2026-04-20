@@ -47,10 +47,15 @@
 - **GraphPreviewModal** [client] — props: open, onClose, workspaceSlug, doc — `apps/web/components/graph-preview-modal.tsx`
 - **ImportExportModal** [client] — props: open, onClose, workspaceId, workspaceSlug, currentDocId, currentCategoryId — `apps/web/components/import-export-modal.tsx`
 - **JoinRequestPanel** [client] — props: onRequestSent — `apps/web/components/join-request-panel.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **LinkPreview** [client] — props: containerRef, workspaceId — `apps/web/components/link-preview.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`

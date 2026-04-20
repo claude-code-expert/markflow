@@ -8,7 +8,7 @@
 
 ## Scale
 
-68 API routes · 15 database models · 82 UI components · 45 library files · 16 middleware layers · 22 environment variables
+68 API routes · 15 database models · 87 UI components · 45 library files · 16 middleware layers · 23 environment variables
 
 ## Subsystems
 
@@ -33,7 +33,7 @@
 
 **Database:** drizzle, 15 models — see [database.md](./database.md)
 
-**UI:** 82 components (react) — see [ui.md](./ui.md)
+**UI:** 87 components (react) — see [ui.md](./ui.md)
 
 **Libraries:** 45 files — see [libraries.md](./libraries.md)
 
@@ -62,7 +62,7 @@ Changes to these files have the widest blast radius across the codebase:
 - `R2_UPLOAD_SECRET` — `apps/api/src/routes/upload-token.ts`
 - `RESEND_API_KEY` — `apps/api/src/utils/email.ts`
 - `TEST_DATABASE_URL` — `apps/api/tests/helpers/setup.ts`
-- _...1 more_
+- _...2 more_
 
 ---
-_Back to [index.md](./index.md) · Generated 2026-04-16_
+_Back to [index.md](./index.md) · Generated 2026-04-20_
