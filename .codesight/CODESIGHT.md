@@ -3,9 +3,9 @@
 > **Stack:** fastify, next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
 
-> 68 routes | 15 models | 87 components | 45 lib files | 25 env vars | 16 middleware | 81% test coverage
-> **Token savings:** this file is ~9,200 tokens. Without it, AI exploration would cost ~97,700 tokens. **Saves ~88,400 tokens per conversation.**
-> **Last scanned:** 2026-04-20 05:39 — re-run after significant changes
+> 80 routes (8 inferred) + 8 ws | 15 models | 87 components | 45 lib files | 37 env vars | 16 middleware | 79 events | 23% test coverage
+> **Token savings:** this file is ~10,500 tokens. Without it, AI exploration would cost ~122,500 tokens. **Saves ~112,000 tokens per conversation.**
+> **Last scanned:** 2026-04-20 05:51 — re-run after significant changes
 
 ---
 
@@ -13,57 +13,80 @@
 
 ## CRUD Resources
 
-- **`/workspaces/:wsId/categories`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Categorie
-- **`/workspaces/:wsId/documents/:docId/comments`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Comment
-- **`/workspaces/:wsId/documents`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Document
-- **`/workspaces/:id/embed-tokens`** GET | POST | GET/:id | DELETE/:id → Embed-token
-- **`/workspaces/:id/join-requests`** GET | POST | GET/:id | PATCH/:id → Join-request
 - **`/workspaces`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Workspace
 - **`/workspaces/:id/members`** GET | GET/:id | PATCH/:id | DELETE/:id → Member
+- **`/workspaces/:id/join-requests`** GET | POST | GET/:id | PATCH/:id → Join-request
+- **`/workspaces/:wsId/categories`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Categorie
+- **`/workspaces/:wsId/documents`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Document
+- **`/workspaces/:id/embed-tokens`** GET | POST | GET/:id | DELETE/:id → Embed-token
+- **`/workspaces/:wsId/documents/:docId/comments`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Comment
 
 ## Other Routes
 
-- `GET` `/health` params() [auth, upload]
-- `POST` `/register` params() [auth, email] ✓
-- `GET` `/verify-email` params() [auth, email]
-- `POST` `/resend-verification` params() [auth, email]
-- `POST` `/login` params() [auth, email] ✓
-- `POST` `/refresh` params() [auth, email]
-- `POST` `/forgot-password` params() [auth, email]
-- `POST` `/reset-password` params() [auth, email]
-- `POST` `/logout` params() [auth, email]
-- `GET` `/workspaces/:wsId/categories/tree` params(wsId) [auth] ✓
-- `PUT` `/workspaces/:wsId/categories/reorder` params(wsId) [auth] ✓
-- `GET` `/workspaces/:wsId/categories/:id/ancestors` params(wsId, id) [auth] ✓
-- `GET` `/workspaces/:wsId/categories/:id/descendants` params(wsId, id) [auth] ✓
-- `GET` `/workspaces/:wsId/graph` params(wsId) [auth] ✓
-- `GET` `/workspaces/:wsId/graph/documents/:id/context` params(wsId, id) [auth] ✓
-- `POST` `/workspaces/:wsId/import` params(wsId) [auth, upload]
-- `GET` `/workspaces/:wsId/documents/:docId/export` params(wsId, docId) [auth, upload]
-- `GET` `/workspaces/:wsId/categories/:catId/export` params(wsId, catId) [auth, upload]
-- `POST` `/workspaces/:id/invitations` params(id) [auth] ✓
-- `GET` `/invitations/:token` params(token) [auth] ✓
-- `POST` `/invitations/:token/accept` params(token) [auth] ✓
-- `PATCH` `/workspaces/:id/join-requests/batch` params(id) [auth] ✓
-- `PUT` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth] ✓
-- `PUT` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/tags` params(wsId) [auth] ✓
-- `GET` `/workspaces/:id/theme` params(id) [auth] ✓
-- `PATCH` `/workspaces/:id/theme` params(id) [auth] ✓
-- `GET` `/workspaces/:wsId/trash` params(wsId) [auth] ✓
-- `POST` `/workspaces/:wsId/trash/:docId/restore` params(wsId, docId) [auth] ✓
-- `DELETE` `/workspaces/:wsId/trash/:docId` params(wsId, docId) [auth] ✓
-- `GET` `/` params() [auth, upload] ✓
-- `GET` `/me` params() [auth, db]
-- `PATCH` `/me` params() [auth, db]
-- `PUT` `/me/password` params() [auth, db]
-- `GET` `/workspaces/:wsId/documents/:docId/versions` params(wsId, docId) [auth]
-- `POST` `/workspaces/:wsId/documents/:docId/restore-version` params(wsId, docId) [auth]
-- `GET` `/workspaces/public` params() [auth, db] ✓
-- `POST` `/workspaces/:id/transfer` params(id) [auth, db] ✓
+- `POST` `/api-keys` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/emails/batch` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/broadcasts` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/contact-properties` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/contacts` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/domains` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/emails` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/segments` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/templates` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/topics` params() [auth, db, cache, queue, email, payment, upload]
+- `GET` `/topics` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/webhooks` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/register` params() [auth, db, cache, queue, email, payment, upload] ✓
+- `GET` `/verify-email` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/resend-verification` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/login` params() [auth, db, cache, queue, email, payment, upload] ✓
+- `POST` `/refresh` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/forgot-password` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/reset-password` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/logout` params() [auth, db, cache, queue, email, payment, upload]
+- `GET` `/me` params() [auth, db, cache, queue, email, payment, upload]
+- `PATCH` `/me` params() [auth, db, cache, queue, email, payment, upload]
+- `PUT` `/me/password` params() [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/public` params() [auth, db, cache, queue, email, payment, upload]
+- `POST` `/workspaces/:id/transfer` params(id) [auth, db, cache, queue, email, payment, upload]
+- `POST` `/workspaces/:id/invitations` params(id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/invitations/:token` params(token) [auth, db, cache, queue, email, payment, upload]
+- `POST` `/invitations/:token/accept` params(token) [auth, db, cache, queue, email, payment, upload]
+- `PATCH` `/workspaces/:id/join-requests/batch` params(id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/categories/tree` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `PUT` `/workspaces/:wsId/categories/reorder` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/categories/:id/ancestors` params(wsId, id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/categories/:id/descendants` params(wsId, id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/trash` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `POST` `/workspaces/:wsId/trash/:docId/restore` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `DELETE` `/workspaces/:wsId/trash/:docId` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/documents/:docId/versions` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `POST` `/workspaces/:wsId/documents/:docId/restore-version` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `PUT` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/graph` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/graph/documents/:id/context` params(wsId, id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `PUT` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/tags` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `POST` `/workspaces/:wsId/import` params(wsId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/documents/:docId/export` params(wsId, docId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:wsId/categories/:catId/export` params(wsId, catId) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/workspaces/:id/theme` params(id) [auth, db, cache, queue, email, payment, upload]
+- `PATCH` `/workspaces/:id/theme` params(id) [auth, db, cache, queue, email, payment, upload]
+- `GET` `/` params() [auth, db, cache, queue, email, payment, upload] ✓
+- `GET` `/health` params() [auth, db, cache, queue, email, payment, upload]
 - `GET` `/workspaces/:workspaceId/export` params(workspaceId) [db]
+
+## WebSocket Events
+
+- `WS` `close` — `api/index.mjs`
+- `WS` `timeout` — `api/index.mjs`
+- `WS` `start` — `api/index.mjs`
+- `WS` `secureConnect` — `api/index.mjs`
+- `WS` `error` — `api/index.mjs`
+- `WS` `drain` — `api/index.mjs`
+- `WS` `connect` — `api/index.mjs`
+- `WS` `data` — `api/index.mjs`
 
 ---
 
@@ -400,6 +423,7 @@
 
 ## Environment Variables
 
+- `__MINIMATCH_TESTING_PLATFORM__` **required** — api/index.mjs
 - `CI` **required** — apps/web/playwright.config.ts
 - `CORS_ORIGIN` (has default) — .env.local
 - `DATABASE_URL` (has default) — .env.local
@@ -411,20 +435,31 @@
 - `E2E_WORKSPACE_SLUG` **required** — apps/web/tests/e2e/document-management.spec.ts
 - `EMAIL_FROM` (has default) — .env.local
 - `FRONTEND_URL` (has default) — .env.local
+- `GRACEFUL_FS_PLATFORM` **required** — api/index.mjs
 - `HOST` (has default) — .env.local
 - `JWT_REFRESH_SECRET` (has default) — .env.local
 - `JWT_SECRET` (has default) — .env.local
+- `LOGNAME` **required** — api/index.mjs
 - `NEXT_PUBLIC_API_URL` **required** — apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx
 - `NEXT_PUBLIC_R2_WORKER_URL` **required** — apps/web/lib/image-upload.ts
 - `NEXT_PUBLIC_SITE_URL` **required** — apps/web/app/layout.tsx
+- `NODE_DEBUG` **required** — api/index.mjs
 - `NODE_ENV` (has default) — .env.local
+- `NODE_OPTIONS` **required** — api/index.mjs
+- `NODE_V8_COVERAGE` **required** — api/index.mjs
 - `PGHOST` (has default) — .env.local
 - `PORT` (has default) — .env.local
-- `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
-- `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
+- `R2_UPLOAD_SECRET` **required** — api/index.mjs
+- `READABLE_STREAM` **required** — api/index.mjs
+- `RESEND_API_KEY` **required** — api/index.mjs
+- `RESEND_BASE_URL` **required** — api/index.mjs
+- `RESEND_USER_AGENT` **required** — api/index.mjs
 - `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
-- `VERCEL` **required** — apps/api/src/index.ts
-- `VITEST` **required** — apps/api/src/index.ts
+- `TEST_GRACEFUL_FS_GLOBAL_PATCH` **required** — api/index.mjs
+- `USER` **required** — api/index.mjs
+- `USERNAME` **required** — api/index.mjs
+- `VERCEL` **required** — api/index.mjs
+- `VITEST` **required** — api/index.mjs
 
 ## Config Files
 
@@ -502,65 +537,104 @@
 
 ---
 
+# Events & Queues
+
+- `start` [event] — `api/index.mjs`
+- `enqueue` [event] — `api/index.mjs`
+- `loaded` [event] — `api/index.mjs`
+- `preReady` [event] — `api/index.mjs`
+- `upgrade` [event] — `api/index.mjs`
+- `unref` [event] — `api/index.mjs`
+- `listening` [event] — `api/index.mjs`
+- `session` [event] — `api/index.mjs`
+- `frameError` [event] — `api/index.mjs`
+- `goaway` [event] — `api/index.mjs`
+- `ready` [event] — `api/index.mjs`
+- `write` [event] — `api/index.mjs`
+- `newListener` [event] — `api/index.mjs`
+- `drop` [event] — `api/index.mjs`
+- `finish` [event] — `api/index.mjs`
+- `message` [event] — `api/index.mjs`
+- `exit` [event] — `api/index.mjs`
+- `level-change` [event] — `api/index.mjs`
+- `var` [event] — `api/index.mjs`
+- `${names_1.default.self}` [event] — `api/index.mjs`
+- `${names_1.default.scope}` [event] — `api/index.mjs`
+- `validator` [event] — `api/index.mjs`
+- `patternProperties` [event] — `api/index.mjs`
+- `additionalProperties` [event] — `api/index.mjs`
+- `properties` [event] — `api/index.mjs`
+- `items` [event] — `api/index.mjs`
+- `additionalItems` [event] — `api/index.mjs`
+- `oneOf` [event] — `api/index.mjs`
+- `anyOf` [event] — `api/index.mjs`
+- `allOf` [event] — `api/index.mjs`
+- `then` [event] — `api/index.mjs`
+- `else` [event] — `api/index.mjs`
+- `if` [event] — `api/index.mjs`
+- `NullObject` [event] — `api/index.mjs`
+- `derivedConstraints` [event] — `api/index.mjs`
+- `path` [event] — `api/index.mjs`
+- `req` [event] — `api/index.mjs`
+- `timeout` [event] — `api/index.mjs`
+- `readable` [event] — `api/index.mjs`
+- `preClose` [event] — `api/index.mjs`
+- `clientError` [event] — `api/index.mjs`
+- `onReady` [event] — `api/index.mjs`
+- `info` [event] — `api/index.mjs`
+- `header` [event] — `api/index.mjs`
+- `preamble` [event] — `api/index.mjs`
+- `trailer` [event] — `api/index.mjs`
+- `part` [event] — `api/index.mjs`
+- `partsLimit` [event] — `api/index.mjs`
+- `filesLimit` [event] — `api/index.mjs`
+- `file` [event] — `api/index.mjs`
+- `limit` [event] — `api/index.mjs`
+- `fieldsLimit` [event] — `api/index.mjs`
+- `field` [event] — `api/index.mjs`
+- `done` [event] — `api/index.mjs`
+- `match` [event] — `api/index.mjs`
+- `open` [event] — `api/index.mjs`
+- `prefinish` [event] — `api/index.mjs`
+- `unpipe` [event] — `api/index.mjs`
+- `pipe` [event] — `api/index.mjs`
+- `resume` [event] — `api/index.mjs`
+- `pause` [event] — `api/index.mjs`
+- `writable` [event] — `api/index.mjs`
+- `return this` [event] — `api/index.mjs`
+- `complete` [event] — `api/index.mjs`
+- `abort` [event] — `api/index.mjs`
+- `request` [event] — `api/index.mjs`
+- `aborted` [event] — `api/index.mjs`
+- `destroy` [event] — `api/index.mjs`
+- `entry` [event] — `api/index.mjs`
+- `progress` [event] — `api/index.mjs`
+- `warning` [event] — `api/index.mjs`
+- `piping` [event] — `api/index.mjs`
+- `CONNECTION_DESTROYED` [event] — `api/index.mjs`
+- `CONNECT_TIMEOUT` [event] — `api/index.mjs`
+- `secureConnect` [event] — `api/index.mjs`
+- `CONNECTION_CLOSED` [event] — `api/index.mjs`
+- `CONNECTION_ENDED` [event] — `api/index.mjs`
+- `details` [event] — `api/index.mjs`
+- `order_index` [event] — `api/index.mjs`
+
+---
+
 # Test Coverage
 
-> **81%** of routes and models are covered by tests
+> **23%** of routes and models are covered by tests
 > 62 test files found
 
 ## Covered Routes
 
 - POST:/register
 - POST:/login
-- POST:/workspaces/:wsId/categories
-- GET:/workspaces/:wsId/categories
-- GET:/workspaces/:wsId/categories/tree
-- PATCH:/workspaces/:wsId/categories/:id
-- PUT:/workspaces/:wsId/categories/reorder
-- GET:/workspaces/:wsId/categories/:id/ancestors
-- GET:/workspaces/:wsId/categories/:id/descendants
-- DELETE:/workspaces/:wsId/categories/:id
-- GET:/workspaces/:wsId/documents/:docId/comments
-- POST:/workspaces/:wsId/documents/:docId/comments
-- PATCH:/workspaces/:wsId/documents/:docId/comments/:commentId
-- DELETE:/workspaces/:wsId/documents/:docId/comments/:commentId
-- POST:/workspaces/:wsId/documents
-- GET:/workspaces/:wsId/documents
-- GET:/workspaces/:wsId/documents/:id
-- PATCH:/workspaces/:wsId/documents/:id
-- DELETE:/workspaces/:wsId/documents/:id
-- POST:/workspaces/:id/embed-tokens
-- GET:/workspaces/:id/embed-tokens
-- DELETE:/workspaces/:id/embed-tokens/:tokenId
-- GET:/workspaces/:wsId/graph
-- GET:/workspaces/:wsId/graph/documents/:id/context
-- POST:/workspaces/:id/invitations
-- GET:/invitations/:token
-- POST:/invitations/:token/accept
-- POST:/workspaces/:id/join-requests
-- GET:/workspaces/:id/join-requests
-- PATCH:/workspaces/:id/join-requests/batch
-- PATCH:/workspaces/:id/join-requests/:requestId
-- PUT:/workspaces/:wsId/documents/:docId/relations
-- GET:/workspaces/:wsId/documents/:docId/relations
-- GET:/workspaces/:wsId/documents/:docId/tags
-- PUT:/workspaces/:wsId/documents/:docId/tags
-- GET:/workspaces/:wsId/tags
-- GET:/workspaces/:id/theme
-- PATCH:/workspaces/:id/theme
-- GET:/workspaces/:wsId/trash
-- POST:/workspaces/:wsId/trash/:docId/restore
-- DELETE:/workspaces/:wsId/trash/:docId
-- GET:/
-- GET:/workspaces/public
 - POST:/workspaces
 - GET:/workspaces
-- GET:/workspaces/:id
-- PATCH:/workspaces/:id
-- DELETE:/workspaces/:id
-- POST:/workspaces/:id/transfer
-- GET:/workspaces/:id/members
-- PATCH:/workspaces/:id/members/:userId
-- DELETE:/workspaces/:id/members/:userId
+- GET:/
+- WS:error
+- WS:data
 
 ## Covered Models
 

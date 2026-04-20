@@ -1,14 +1,12 @@
-# Infra
+# SecureConnect
 
 > **Navigation aid.** Route list and file locations extracted via AST. Read the source files listed below before implementing or modifying this subsystem.
 
-The Infra subsystem handles **2 routes** and touches: auth, db, cache, queue, email, payment.
+The SecureConnect subsystem handles **1 routes**.
 
 ## Routes
 
-- `GET` `/` [auth, db, cache, queue, email, payment, upload]
-  `api/index.mjs`
-- `GET` `/health` [auth, db, cache, queue, email, payment, upload]
+- `WS` `secureConnect` `[inferred]`
   `api/index.mjs`
 
 ## Source Files

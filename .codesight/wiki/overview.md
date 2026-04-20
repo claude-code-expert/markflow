@@ -8,28 +8,38 @@
 
 ## Scale
 
-68 API routes · 15 database models · 87 UI components · 45 library files · 16 middleware layers · 25 environment variables
+88 API routes · 15 database models · 87 UI components · 45 library files · 16 middleware layers · 37 environment variables
 
 ## Subsystems
 
-- **[Auth](./auth.md)** — 9 routes — touches: auth, email, db
-- **[Categories](./categories.md)** — 8 routes — touches: auth
-- **[Comments](./comments.md)** — 4 routes — touches: auth, db
-- **[Documents](./documents.md)** — 5 routes — touches: auth, db
-- **[Embed-tokens](./embed-tokens.md)** — 3 routes — touches: auth
-- **[Graph](./graph.md)** — 2 routes — touches: auth
-- **[Import-export](./import-export.md)** — 3 routes — touches: auth, upload
-- **[Invitations](./invitations.md)** — 3 routes — touches: auth
-- **[Join-requests](./join-requests.md)** — 4 routes — touches: auth
+- **[Auth](./auth.md)** — 5 routes — touches: auth, db, cache, queue, email
+- **[Payments](./payments.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Api-keys](./api-keys.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Broadcasts](./broadcasts.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Close](./close.md)** — 1 routes
+- **[Connect](./connect.md)** — 1 routes
+- **[Contact-properties](./contact-properties.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Contacts](./contacts.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Data](./data.md)** — 1 routes
+- **[Domains](./domains.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Drain](./drain.md)** — 1 routes
+- **[Emails](./emails.md)** — 2 routes — touches: auth, db, cache, queue, email
+- **[Error](./error.md)** — 1 routes
+- **[Forgot-password](./forgot-password.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Invitations](./invitations.md)** — 2 routes — touches: auth, db, cache, queue, email
 - **[Markflow-pdf-export](./markflow-pdf-export.md)** — 1 routes — touches: db
-- **[Relations](./relations.md)** — 2 routes — touches: auth
-- **[Tags](./tags.md)** — 3 routes — touches: auth
-- **[Theme](./theme.md)** — 2 routes — touches: auth
-- **[Trash](./trash.md)** — 3 routes — touches: auth
-- **[Users](./users.md)** — 2 routes — touches: auth, db
-- **[Versions](./versions.md)** — 2 routes — touches: auth
-- **[Workspaces](./workspaces.md)** — 10 routes — touches: auth, db
-- **[Infra](./infra.md)** — 2 routes — touches: auth, upload
+- **[Me](./me.md)** — 2 routes — touches: auth, db, cache, queue, email
+- **[Resend-verification](./resend-verification.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Reset-password](./reset-password.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[SecureConnect](./secureconnect.md)** — 1 routes
+- **[Segments](./segments.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Start](./start.md)** — 1 routes
+- **[Templates](./templates.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Timeout](./timeout.md)** — 1 routes
+- **[Topics](./topics.md)** — 2 routes — touches: auth, db, cache, queue, email
+- **[Verify-email](./verify-email.md)** — 1 routes — touches: auth, db, cache, queue, email
+- **[Workspaces](./workspaces.md)** — 52 routes — touches: auth, db, cache, queue, email
+- **[Infra](./infra.md)** — 2 routes — touches: auth, db, cache, queue, email
 
 **Database:** drizzle, 15 models — see [database.md](./database.md)
 
@@ -50,19 +60,19 @@ Changes to these files have the widest blast radius across the codebase:
 
 ## Required Environment Variables
 
+- `__MINIMATCH_TESTING_PLATFORM__` — `api/index.mjs`
 - `CI` — `apps/web/playwright.config.ts`
 - `E2E_BASE_URL` — `apps/web/playwright.config.ts`
 - `E2E_USER_EMAIL` — `apps/web/tests/e2e/document-management.spec.ts`
 - `E2E_USER_PASSWORD` — `apps/web/tests/e2e/document-management.spec.ts`
 - `E2E_WORKSPACE_NAME` — `apps/web/tests/e2e/team-management.spec.ts`
 - `E2E_WORKSPACE_SLUG` — `apps/web/tests/e2e/document-management.spec.ts`
+- `GRACEFUL_FS_PLATFORM` — `api/index.mjs`
+- `LOGNAME` — `api/index.mjs`
 - `NEXT_PUBLIC_API_URL` — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
 - `NEXT_PUBLIC_R2_WORKER_URL` — `apps/web/lib/image-upload.ts`
 - `NEXT_PUBLIC_SITE_URL` — `apps/web/app/layout.tsx`
-- `R2_UPLOAD_SECRET` — `apps/api/src/routes/upload-token.ts`
-- `RESEND_API_KEY` — `apps/api/src/utils/email.ts`
-- `TEST_DATABASE_URL` — `apps/api/tests/helpers/setup.ts`
-- _...2 more_
+- _...14 more_
 
 ---
 _Back to [index.md](./index.md) · Generated 2026-04-20_

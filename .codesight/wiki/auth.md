@@ -2,28 +2,20 @@
 
 > **Navigation aid.** Route list and file locations extracted via AST. Read the source files listed below before implementing or modifying this subsystem.
 
-The Auth subsystem handles **9 routes** and touches: auth, email, db.
+The Auth subsystem handles **5 routes** and touches: auth, db, cache, queue, email, payment.
 
 ## Routes
 
-- `POST` `/register` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `GET` `/verify-email` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/resend-verification` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/login` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/refresh` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/forgot-password` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/reset-password` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/logout` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `PUT` `/me/password` [auth, db]
-  `apps/api/src/routes/users.ts`
+- `POST` `/register` [auth, db, cache, queue, email, payment, upload]
+  `api/index.mjs`
+- `POST` `/login` [auth, db, cache, queue, email, payment, upload]
+  `api/index.mjs`
+- `POST` `/refresh` [auth, db, cache, queue, email, payment, upload]
+  `api/index.mjs`
+- `POST` `/logout` [auth, db, cache, queue, email, payment, upload]
+  `api/index.mjs`
+- `PUT` `/me/password` [auth, db, cache, queue, email, payment, upload]
+  `api/index.mjs`
 
 ## Middleware
 
@@ -44,8 +36,7 @@ The Auth subsystem handles **9 routes** and touches: auth, email, db.
 ## Source Files
 
 Read these before implementing or modifying this subsystem:
-- `apps/api/src/routes/auth.ts`
-- `apps/api/src/routes/users.ts`
+- `api/index.mjs`
 
 ---
 _Back to [overview.md](./overview.md)_

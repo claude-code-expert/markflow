@@ -13,6 +13,9 @@ node_modules
 # testing
 /coverage
 
+# Vercel serverless (built from apps/api/api/index.ts)
+/api/
+
 docs/phase
 docs/design
 docs/specs

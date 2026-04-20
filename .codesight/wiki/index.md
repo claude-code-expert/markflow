@@ -11,21 +11,31 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 - [Overview](./overview.md)
 - [Database](./database.md)
 - [Auth](./auth.md)
-- [Categories](./categories.md)
-- [Comments](./comments.md)
-- [Documents](./documents.md)
-- [Embed-tokens](./embed-tokens.md)
-- [Graph](./graph.md)
-- [Import-export](./import-export.md)
+- [Payments](./payments.md)
+- [Api-keys](./api-keys.md)
+- [Broadcasts](./broadcasts.md)
+- [Close](./close.md)
+- [Connect](./connect.md)
+- [Contact-properties](./contact-properties.md)
+- [Contacts](./contacts.md)
+- [Data](./data.md)
+- [Domains](./domains.md)
+- [Drain](./drain.md)
+- [Emails](./emails.md)
+- [Error](./error.md)
+- [Forgot-password](./forgot-password.md)
 - [Invitations](./invitations.md)
-- [Join-requests](./join-requests.md)
 - [Markflow-pdf-export](./markflow-pdf-export.md)
-- [Relations](./relations.md)
-- [Tags](./tags.md)
-- [Theme](./theme.md)
-- [Trash](./trash.md)
-- [Users](./users.md)
-- [Versions](./versions.md)
+- [Me](./me.md)
+- [Resend-verification](./resend-verification.md)
+- [Reset-password](./reset-password.md)
+- [Secureconnect](./secureconnect.md)
+- [Segments](./segments.md)
+- [Start](./start.md)
+- [Templates](./templates.md)
+- [Timeout](./timeout.md)
+- [Topics](./topics.md)
+- [Verify-email](./verify-email.md)
 - [Workspaces](./workspaces.md)
 - [Infra](./infra.md)
 - [Ui](./ui.md)
@@ -33,10 +43,10 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 ## Quick Stats
 
-- Routes: **68**
+- Routes: **88**
 - Models: **15**
 - Components: **87**
-- Env vars: **14** required, **11** with defaults
+- Env vars: **26** required, **11** with defaults
 
 ## How to Use
 
@@ -63,4 +73,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-20 · 23 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-20 · 33 articles · [codesight](https://github.com/Houseofmvps/codesight)_
