@@ -63,7 +63,7 @@ const processor = unified()
   .use(remarkBreaks)                   // 단일 개행을 <br>로 변환 (GitHub 코멘트/Notion 스타일)
   .use(remarkMath)                     // $...$ and $$...$$ math blocks
   .use(remarkRehype, { allowDangerousHtml: true })
-  .use(rehypeHighlight, { detect: true, ignoreMissing: true })  // code syntax highlighting
+  .use(rehypeHighlight, { detect: false, ignoreMissing: true })  // syntax highlight only when language is specified
   .use(rehypeKatex)                    // render math with KaTeX
   .use(rehypeRaw)                      // raw HTML → proper HAST nodes
   .use(rehypeExternalLinks)            // all links open in new tab

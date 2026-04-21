@@ -11,7 +11,7 @@ interface ImageUploadGuideProps {
   onGoToSettings: () => void
 }
 
-export function ImageUploadGuide({ isOpen, onClose, onGoToSettings }: ImageUploadGuideProps) {
+export const ImageUploadGuide = React.memo(function ImageUploadGuide({ isOpen, onClose, onGoToSettings }: ImageUploadGuideProps) {
   if (!isOpen) return null
 
   return (
@@ -94,4 +94,4 @@ export function ImageUploadGuide({ isOpen, onClose, onGoToSettings }: ImageUploa
       </div>
     </div>
   )
-}
+})

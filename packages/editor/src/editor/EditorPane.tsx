@@ -143,6 +143,9 @@ export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
     const containerRef = useRef<HTMLDivElement>(null)
     const viewRef = useRef<EditorView | null>(null)
     const isExternalUpdate = useRef(false)
+    // Track values we emitted ourselves so the [value] sync effect can skip
+    // the doc.toString()/compare/replace roundtrip on every keystroke.
+    const lastEmittedRef = useRef<string | undefined>(value)
 
     const setRef = useCallback(
       (view: EditorView | null) => {
@@ -178,7 +181,9 @@ export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
               : []),
             EditorView.updateListener.of((update) => {
               if (update.docChanged && !isExternalUpdate.current) {
-                onChange(update.state.doc.toString())
+                const next = update.state.doc.toString()
+                lastEmittedRef.current = next
+                onChange(next)
               }
             }),
             EditorView.domEventHandlers({
@@ -236,15 +241,23 @@ export const EditorPane = React.forwardRef<EditorView | null, EditorPaneProps>(
     }, [])
 
     useEffect(() => {
+      // Skip the full-doc roundtrip on self-originated updates (every keystroke
+      // echoes the value back through React state). Only apply when `value`
+      // diverges from what we last emitted — i.e. an external programmatic set.
+      if (value === lastEmittedRef.current) return
       const view = viewRef.current
       if (!view) return
       const current = view.state.doc.toString()
-      if (current === value) return
+      if (current === value) {
+        lastEmittedRef.current = value
+        return
+      }
       isExternalUpdate.current = true
       view.dispatch({
         changes: { from: 0, to: current.length, insert: value ?? '' },
       })
       isExternalUpdate.current = false
+      lastEmittedRef.current = value
     }, [value])
 
     useEffect(() => {

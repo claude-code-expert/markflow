@@ -1,6 +1,6 @@
 // ─── MarkdownEditor — Root Component ─────────────────────────────────────────
 
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { PenLine, Eye, Loader2, X, RotateCcw, Copy, Check } from 'lucide-react'
@@ -332,12 +332,19 @@ export function MarkdownEditor({
   const handleSettingsSave = useCallback((url: string) => {
     setWorkerUrl(url)
   }, [])
+  const openSettings = useCallback(() => setSettingsOpen(true), [])
+  const closeSettings = useCallback(() => setSettingsOpen(false), [])
+  const closeGuide = useCallback(() => setGuideOpen(false), [])
 
   // ── Layout visibility ─────────────────────────────────────────────────────
   const showEditor = layout === 'split' || layout === 'editor'
   const showPreview = layout === 'split' || layout === 'preview'
 
   const hasImageUpload = !!onImageUploadProp || !!workerUrl
+
+  // Derived values — memoised so unrelated re-renders (drag, modal, theme…) don't rescan the document.
+  const wordCount = useMemo(() => countWords(markdown), [markdown])
+  const lineCount = useMemo(() => markdown.split('\n').length, [markdown])
 
   // ── Root style (height only — themeVars applied to preview pane only) ─────
   const rootStyle: React.CSSProperties = {
@@ -376,7 +383,7 @@ export function MarkdownEditor({
         onLayoutChange={setLayout}
         theme={theme}
         onThemeChange={setTheme}
-        onSettingsClick={() => setSettingsOpen(true)}
+        onSettingsClick={openSettings}
         onImageUploadClick={handleImageUploadClick}
         hasImageUpload={hasImageUpload}
       />
@@ -384,14 +391,14 @@ export function MarkdownEditor({
       {/* ── Image Upload Guide Modal ── */}
       <ImageUploadGuide
         isOpen={guideOpen}
-        onClose={() => setGuideOpen(false)}
+        onClose={closeGuide}
         onGoToSettings={handleGuideGoToSettings}
       />
 
       {/* ── Settings Modal ── */}
       <SettingsModal
         isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        onClose={closeSettings}
         onSave={handleSettingsSave}
       />
 
@@ -458,7 +465,7 @@ export function MarkdownEditor({
                 Preview
               </span>
               <span style={{ fontWeight: 400, color: 'var(--mf-text-3, #9A9890)', fontSize: '11px' }}>
-                {countWords(markdown)} words
+                {wordCount} words
               </span>
             </div>
             <div className="mf-pane-content" style={previewThemeStyle}>
@@ -510,7 +517,7 @@ export function MarkdownEditor({
       {/* ── Status bar ── */}
       <div className="mf-statusbar">
         <span>
-          {markdown.split('\n').length} lines · {markdown.length} chars
+          {lineCount} lines · {markdown.length} chars
         </span>
         <span className="mf-statusbar-right">
           {readOnly && <span className="mf-readonly-badge">READ ONLY</span>}

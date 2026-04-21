@@ -47,7 +47,7 @@ const headingIcons = [Heading1, Heading2, Heading3, Heading4, Heading5, Heading6
 
 // ─── Main Toolbar ─────────────────────────────────────────────────────────────
 
-export function Toolbar({ onAction, layout, onLayoutChange, theme, onThemeChange, onSettingsClick, onImageUploadClick, hasImageUpload }: ToolbarProps) {
+export const Toolbar = React.memo(function Toolbar({ onAction, layout, onLayoutChange, theme, onThemeChange, onSettingsClick, onImageUploadClick, hasImageUpload }: ToolbarProps) {
   const act = useCallback(
     (action: ToolbarAction) => onAction(action),
     [onAction]
@@ -171,4 +171,4 @@ export function Toolbar({ onAction, layout, onLayoutChange, theme, onThemeChange
       </div>
     </div>
   )
-}
+})
