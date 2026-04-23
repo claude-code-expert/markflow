@@ -93,7 +93,7 @@ export function ImportExportModal({
     if (processing) return;
     setProcessing(true);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+      const API_BASE = '/api/v1';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
       let url = '';

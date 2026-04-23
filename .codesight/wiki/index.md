@@ -1,6 +1,6 @@
 # markflow — Wiki
 
-_Generated 2026-04-16 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-04-23 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -11,32 +11,16 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 - [Overview](./overview.md)
 - [Database](./database.md)
 - [Auth](./auth.md)
-- [Categories](./categories.md)
-- [Comments](./comments.md)
-- [Documents](./documents.md)
-- [Embed-tokens](./embed-tokens.md)
-- [Graph](./graph.md)
-- [Import-export](./import-export.md)
-- [Invitations](./invitations.md)
-- [Join-requests](./join-requests.md)
-- [Markflow-pdf-export](./markflow-pdf-export.md)
-- [Relations](./relations.md)
-- [Tags](./tags.md)
-- [Theme](./theme.md)
-- [Trash](./trash.md)
-- [Users](./users.md)
-- [Versions](./versions.md)
-- [Workspaces](./workspaces.md)
-- [Infra](./infra.md)
+- [Route](./route.md)
 - [Ui](./ui.md)
 - [Libraries](./libraries.md)
 
 ## Quick Stats
 
-- Routes: **68**
+- Routes: **64**
 - Models: **15**
-- Components: **82**
-- Env vars: **13** required, **9** with defaults
+- Components: **85**
+- Env vars: **11** required, **10** with defaults
 
 ## How to Use
 
@@ -63,4 +47,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-16 · 23 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-23 · 7 articles · [codesight](https://github.com/Houseofmvps/codesight)_

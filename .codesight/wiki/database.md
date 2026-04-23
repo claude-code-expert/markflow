@@ -186,6 +186,7 @@ pk: `id` (bigserial) · fk: ownerId
 
 Read and edit these files when adding columns, creating migrations, or changing relations:
 
+- `apps/web/lib/server/db.ts` — imported by **48** files
 - `packages/db/src/schema/users.ts` — imported by **9** files
 - `packages/db/src/schema/workspaces.ts` — imported by **8** files
 

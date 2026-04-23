@@ -1,11 +1,11 @@
 # markflow — AI Context Map
 
-> **Stack:** fastify, next-app | drizzle | react | typescript
-> **Monorepo:** @markflow/db, @markflow/editor, @markflow/api, @markflow/demo, @markflow/web, markflow-r2-uploader
+> **Stack:** next-app | drizzle | react | typescript
+> **Monorepo:** @markflow/db, @markflow/editor, @markflow/web, markflow-r2-uploader
 
-> 68 routes | 15 models | 82 components | 45 lib files | 22 env vars | 16 middleware | 81% test coverage
-> **Token savings:** this file is ~9,100 tokens. Without it, AI exploration would cost ~95,700 tokens. **Saves ~86,600 tokens per conversation.**
-> **Last scanned:** 2026-04-16 10:03 — re-run after significant changes
+> 64 routes | 15 models | 85 components | 39 lib files | 21 env vars | 4 middleware | 6% test coverage
+> **Token savings:** this file is ~8,500 tokens. Without it, AI exploration would cost ~89,800 tokens. **Saves ~81,200 tokens per conversation.**
+> **Last scanned:** 2026-04-23 10:35 — re-run after significant changes
 
 ---
 
@@ -13,57 +13,69 @@
 
 ## CRUD Resources
 
-- **`/workspaces/:wsId/categories`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Categorie
-- **`/workspaces/:wsId/documents/:docId/comments`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Comment
-- **`/workspaces/:wsId/documents`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Document
-- **`/workspaces/:id/embed-tokens`** GET | POST | GET/:id | DELETE/:id → Embed-token
-- **`/workspaces/:id/join-requests`** GET | POST | GET/:id | PATCH/:id → Join-request
-- **`/workspaces`** GET | POST | GET/:id | PATCH/:id | DELETE/:id → Workspace
-- **`/workspaces/:id/members`** GET | GET/:id | PATCH/:id | DELETE/:id → Member
+- **`/api/v1/workspaces/[id]/documents/[docId]`** GET | PATCH/:id | DELETE/:id → [docId]
+- **`/api/v1/workspaces/[id]`** GET | PATCH/:id | DELETE/:id → [id]
 
 ## Other Routes
 
-- `GET` `/health` params() [auth, upload]
-- `POST` `/register` params() [auth, email] ✓
-- `GET` `/verify-email` params() [auth, email]
-- `POST` `/resend-verification` params() [auth, email]
-- `POST` `/login` params() [auth, email] ✓
-- `POST` `/refresh` params() [auth, email]
-- `POST` `/forgot-password` params() [auth, email]
-- `POST` `/reset-password` params() [auth, email]
-- `POST` `/logout` params() [auth, email]
-- `GET` `/workspaces/:wsId/categories/tree` params(wsId) [auth] ✓
-- `PUT` `/workspaces/:wsId/categories/reorder` params(wsId) [auth] ✓
-- `GET` `/workspaces/:wsId/categories/:id/ancestors` params(wsId, id) [auth] ✓
-- `GET` `/workspaces/:wsId/categories/:id/descendants` params(wsId, id) [auth] ✓
-- `GET` `/workspaces/:wsId/graph` params(wsId) [auth] ✓
-- `GET` `/workspaces/:wsId/graph/documents/:id/context` params(wsId, id) [auth] ✓
-- `POST` `/workspaces/:wsId/import` params(wsId) [auth, upload]
-- `GET` `/workspaces/:wsId/documents/:docId/export` params(wsId, docId) [auth, upload]
-- `GET` `/workspaces/:wsId/categories/:catId/export` params(wsId, catId) [auth, upload]
-- `POST` `/workspaces/:id/invitations` params(id) [auth] ✓
-- `GET` `/invitations/:token` params(token) [auth] ✓
-- `POST` `/invitations/:token/accept` params(token) [auth] ✓
-- `PATCH` `/workspaces/:id/join-requests/batch` params(id) [auth] ✓
-- `PUT` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/documents/:docId/relations` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth] ✓
-- `PUT` `/workspaces/:wsId/documents/:docId/tags` params(wsId, docId) [auth] ✓
-- `GET` `/workspaces/:wsId/tags` params(wsId) [auth] ✓
-- `GET` `/workspaces/:id/theme` params(id) [auth] ✓
-- `PATCH` `/workspaces/:id/theme` params(id) [auth] ✓
-- `GET` `/workspaces/:wsId/trash` params(wsId) [auth] ✓
-- `POST` `/workspaces/:wsId/trash/:docId/restore` params(wsId, docId) [auth] ✓
-- `DELETE` `/workspaces/:wsId/trash/:docId` params(wsId, docId) [auth] ✓
-- `GET` `/` params() [auth, upload] ✓
-- `GET` `/me` params() [auth, db]
-- `PATCH` `/me` params() [auth, db]
-- `PUT` `/me/password` params() [auth, db]
-- `GET` `/workspaces/:wsId/documents/:docId/versions` params(wsId, docId) [auth]
-- `POST` `/workspaces/:wsId/documents/:docId/restore-version` params(wsId, docId) [auth]
-- `GET` `/workspaces/public` params() [auth, db] ✓
-- `POST` `/workspaces/:id/transfer` params(id) [auth, db] ✓
-- `GET` `/workspaces/:workspaceId/export` params(workspaceId) [db]
+- `GET` `/api/cron/cleanup-trash` → out: { error } [auth, db]
+- `POST` `/api/v1/auth/forgot-password` [auth]
+- `POST` `/api/v1/auth/login` → out: { accessToken, user } [auth]
+- `POST` `/api/v1/auth/logout` [auth, db]
+- `POST` `/api/v1/auth/refresh` [auth]
+- `POST` `/api/v1/auth/register` [auth]
+- `POST` `/api/v1/auth/resend-verification` [auth, email]
+- `POST` `/api/v1/auth/reset-password` [auth]
+- `GET` `/api/v1/auth/verify-email` [auth]
+- `POST` `/api/v1/invitations/[token]/accept` params(token) [auth]
+- `GET` `/api/v1/invitations/[token]` params(token) → out: { invitation } [auth]
+- `GET` `/api/v1/upload-token` → out: { token } [auth, upload]
+- `PUT` `/api/v1/users/me/password` → out: { accessToken, refreshToken } [auth]
+- `GET` `/api/v1/users/me` → out: { user } [db]
+- `PATCH` `/api/v1/users/me` → out: { user } [db]
+- `GET` `/api/v1/workspaces/[id]/categories/[catId]/ancestors` params(id, catId) → out: { ancestors }
+- `GET` `/api/v1/workspaces/[id]/categories/[catId]/descendants` params(id, catId)
+- `GET` `/api/v1/workspaces/[id]/categories/[catId]/export` params(id, catId)
+- `PATCH` `/api/v1/workspaces/[id]/categories/[catId]` params(id, catId) → out: { category }
+- `DELETE` `/api/v1/workspaces/[id]/categories/[catId]` params(id, catId) → out: { category }
+- `PUT` `/api/v1/workspaces/[id]/categories/reorder` params(id) → out: { ok }
+- `GET` `/api/v1/workspaces/[id]/categories` params(id) → out: { categories }
+- `POST` `/api/v1/workspaces/[id]/categories` params(id) → out: { categories }
+- `GET` `/api/v1/workspaces/[id]/categories/tree` params(id)
+- `GET` `/api/v1/workspaces/[id]/documents/[docId]/comments` params(id, docId) → out: { comments }
+- `POST` `/api/v1/workspaces/[id]/documents/[docId]/comments` params(id, docId) → out: { comments }
+- `GET` `/api/v1/workspaces/[id]/documents/[docId]/export` params(id, docId)
+- `GET` `/api/v1/workspaces/[id]/documents/[docId]/relations` params(id, docId)
+- `PUT` `/api/v1/workspaces/[id]/documents/[docId]/relations` params(id, docId)
+- `POST` `/api/v1/workspaces/[id]/documents/[docId]/restore-version` params(id, docId)
+- `GET` `/api/v1/workspaces/[id]/documents/[docId]/tags` params(id, docId) → out: { tags }
+- `PUT` `/api/v1/workspaces/[id]/documents/[docId]/tags` params(id, docId) → out: { tags }
+- `GET` `/api/v1/workspaces/[id]/documents/[docId]/versions` params(id, docId) → out: { versions }
+- `GET` `/api/v1/workspaces/[id]/documents` params(id) → out: { document }
+- `POST` `/api/v1/workspaces/[id]/documents` params(id) → out: { document }
+- `DELETE` `/api/v1/workspaces/[id]/embed-tokens/[tokenId]` params(id, tokenId) [auth]
+- `GET` `/api/v1/workspaces/[id]/embed-tokens` params(id) [auth]
+- `POST` `/api/v1/workspaces/[id]/embed-tokens` params(id) [auth]
+- `GET` `/api/v1/workspaces/[id]/graph` params(id)
+- `POST` `/api/v1/workspaces/[id]/import` params(id) → out: { imported, documents, title, categoryId } [upload]
+- `POST` `/api/v1/workspaces/[id]/invitations` params(id) → out: { invitation }
+- `PATCH` `/api/v1/workspaces/[id]/join-requests/[requestId]` params(id, requestId) → out: { success }
+- `PATCH` `/api/v1/workspaces/[id]/join-requests/batch` params(id)
+- `GET` `/api/v1/workspaces/[id]/join-requests` params(id) → out: { joinRequest }
+- `POST` `/api/v1/workspaces/[id]/join-requests` params(id) → out: { joinRequest }
+- `PATCH` `/api/v1/workspaces/[id]/members/[userId]` params(id, userId) → out: { member }
+- `DELETE` `/api/v1/workspaces/[id]/members/[userId]` params(id, userId) → out: { member }
+- `GET` `/api/v1/workspaces/[id]/members` params(id) → out: { members }
+- `GET` `/api/v1/workspaces/[id]/tags` params(id) → out: { tags }
+- `GET` `/api/v1/workspaces/[id]/theme` params(id)
+- `PATCH` `/api/v1/workspaces/[id]/theme` params(id)
+- `POST` `/api/v1/workspaces/[id]/transfer` params(id) → out: { transferred }
+- `POST` `/api/v1/workspaces/[id]/trash/[docId]/restore` params(id, docId) → out: { document }
+- `DELETE` `/api/v1/workspaces/[id]/trash/[docId]` params(id, docId)
+- `GET` `/api/v1/workspaces/[id]/trash` params(id) → out: { documents }
+- `GET` `/api/v1/workspaces/public`
+- `GET` `/api/v1/workspaces` → out: { workspaces }
+- `POST` `/api/v1/workspaces` → out: { workspaces }
 
 ---
 
@@ -206,8 +218,6 @@
 
 # Components
 
-- **RootLayout** — `apps/demo/app/layout.tsx`
-- **Home** [client] — `apps/demo/app/page.tsx`
 - **DocLayout** — props: params — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
 - **DocEditorPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
 - **NewDocPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`
@@ -253,10 +263,15 @@
 - **GraphPreviewModal** [client] — props: open, onClose, workspaceSlug, doc — `apps/web/components/graph-preview-modal.tsx`
 - **ImportExportModal** [client] — props: open, onClose, workspaceId, workspaceSlug, currentDocId, currentCategoryId — `apps/web/components/import-export-modal.tsx`
 - **JoinRequestPanel** [client] — props: onRequestSent — `apps/web/components/join-request-panel.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **LinkPreview** [client] — props: containerRef, workspaceId — `apps/web/components/link-preview.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`
@@ -293,61 +308,6 @@
 
 # Libraries
 
-- `apps/api/src/db.ts` — function getDb: () => Db, const db: Db
-- `apps/api/src/index.ts` — function buildApp: () => void
-- `apps/api/src/jobs/cleanup-trash.ts` — function cleanupTrash: (db) => Promise<number>, function startCleanupInterval: (db) => ReturnType<typeof setInterval>
-- `apps/api/src/middleware/auth.ts` — function authMiddleware: (request, reply) => void
-- `apps/api/src/middleware/csrf.ts` — function csrfMiddleware: (request, reply) => void
-- `apps/api/src/middleware/rbac.ts` — function requireRole: (...allowedRoles) => void
-- `apps/api/src/middleware/workspace-scope.ts` — function workspaceScopeMiddleware: (request, reply) => void
-- `apps/api/src/plugins/cors.ts` — function registerCors: (app) => Promise<void>
-- `apps/api/src/services/auth-service.ts` — function createAuthService: (db) => void
-- `apps/api/src/services/category-service.ts`
-  - function createCategoryService: (db) => void
-  - interface CategoryTreeDocument
-  - interface CategoryTreeNode
-- `apps/api/src/services/comment-service.ts` — function createCommentService: (db) => void
-- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
-- `apps/api/src/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
-- `apps/api/src/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
-- `apps/api/src/services/export-service.ts` — function createExportService: (db) => void
-- `apps/api/src/services/graph-service.ts` — function createGraphService: (db) => void
-- `apps/api/src/services/import-service.ts` — function createImportService: (db) => void
-- `apps/api/src/services/invitation-service.ts` — function createInvitationService: (db) => void
-- `apps/api/src/services/join-request-service.ts` — function createJoinRequestService: (db) => void
-- `apps/api/src/services/member-service.ts` — function createMemberService: (db) => void
-- `apps/api/src/services/relation-service.ts` — function createRelationService: (db) => void
-- `apps/api/src/services/tag-service.ts` — function createTagService: (db) => void
-- `apps/api/src/services/theme-service.ts` — function createThemeService: (db) => void
-- `apps/api/src/services/trash-service.ts` — function createTrashService: (db) => void
-- `apps/api/src/services/workspace-service.ts` — function createWorkspaceService: (db) => void
-- `apps/api/src/utils/css-validator.ts` — function validateThemeCss: (css) => ValidationResult
-- `apps/api/src/utils/email.ts`
-  - function sendEmail: (params) => Promise<void>
-  - function verificationEmailHtml: (verifyUrl) => string
-  - function passwordResetEmailHtml: (resetUrl) => string
-  - function invitationEmailHtml: (inviteUrl, workspaceName, inviterName) => string
-  - const FRONTEND_URL
-- `apps/api/src/utils/errors.ts`
-  - function notFound: (message) => AppError
-  - function forbidden: (message) => AppError
-  - function unauthorized: (message) => AppError
-  - function badRequest: (code, message, details?, unknown>) => AppError
-  - function conflict: (code, message) => AppError
-  - function gone: (code, message) => AppError
-  - _...2 more_
-- `apps/api/src/utils/html.ts` — function escapeHtml: (str) => string
-- `apps/api/src/utils/jwt.ts`
-  - function signAccessToken: (payload) => string
-  - function signRefreshToken: (payload, rememberMe) => string
-  - function signTokenPair: (payload, rememberMe) => TokenPair
-  - function verifyAccessToken: (token) => TokenPayload
-  - function verifyRefreshToken: (token) => TokenPayload
-  - function getRefreshTokenExpiry: (rememberMe) => Date
-- `apps/api/src/utils/password.ts`
-  - function hashPassword: (password) => Promise<string>
-  - function comparePassword: (password, hash) => Promise<boolean>
-  - function validatePassword: (password) => void
 - `apps/web/hooks/use-permissions.ts` — function usePermissions: (role) => Permissions, function hasMinRole: (userRole, requiredRole) => boolean
 - `apps/web/lib/api.ts`
   - function setAccessToken: (token) => void
@@ -373,6 +333,61 @@
   - function setImageUploadEnabled: (enabled) => void
   - _...8 more_
 - `apps/web/lib/parse-theme-css.ts` — function parseThemeCss: (css) => Record<string, string>
+- `apps/web/lib/server/db.ts` — function getDb: () => Db
+- `apps/web/lib/server/middleware.ts`
+  - function extractCurrentUser: (request) => CurrentUser
+  - function checkRole: (currentUser, workspaceId, ...allowedRoles) => Promise<WorkspaceMember>
+  - function handleApiError: (error) => NextResponse
+  - interface CurrentUser
+  - interface WorkspaceMember
+  - interface ApiContext
+- `apps/web/lib/server/services/auth-service.ts` — function createAuthService: (db) => void
+- `apps/web/lib/server/services/category-service.ts`
+  - function createCategoryService: (db) => void
+  - interface CategoryTreeDocument
+  - interface CategoryTreeNode
+- `apps/web/lib/server/services/comment-service.ts` — function createCommentService: (db) => void
+- `apps/web/lib/server/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
+- `apps/web/lib/server/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
+- `apps/web/lib/server/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
+- `apps/web/lib/server/services/export-service.ts` — function createExportService: (db) => void
+- `apps/web/lib/server/services/graph-service.ts` — function createGraphService: (db) => void
+- `apps/web/lib/server/services/import-service.ts` — function createImportService: (db) => void
+- `apps/web/lib/server/services/invitation-service.ts` — function createInvitationService: (db) => void
+- `apps/web/lib/server/services/join-request-service.ts` — function createJoinRequestService: (db) => void
+- `apps/web/lib/server/services/member-service.ts` — function createMemberService: (db) => void
+- `apps/web/lib/server/services/relation-service.ts` — function createRelationService: (db) => void
+- `apps/web/lib/server/services/tag-service.ts` — function createTagService: (db) => void
+- `apps/web/lib/server/services/theme-service.ts` — function createThemeService: (db) => void
+- `apps/web/lib/server/services/trash-service.ts` — function createTrashService: (db) => void
+- `apps/web/lib/server/services/workspace-service.ts` — function createWorkspaceService: (db) => void
+- `apps/web/lib/server/utils/css-validator.ts` — function validateThemeCss: (css) => ValidationResult
+- `apps/web/lib/server/utils/email.ts`
+  - function sendEmail: (params) => Promise<void>
+  - function verificationEmailHtml: (verifyUrl) => string
+  - function passwordResetEmailHtml: (resetUrl) => string
+  - function invitationEmailHtml: (inviteUrl, workspaceName, inviterName) => string
+  - const FRONTEND_URL
+- `apps/web/lib/server/utils/errors.ts`
+  - function notFound: (message) => AppError
+  - function forbidden: (message) => AppError
+  - function unauthorized: (message) => AppError
+  - function badRequest: (code, message, details?, unknown>) => AppError
+  - function conflict: (code, message) => AppError
+  - function gone: (code, message) => AppError
+  - _...2 more_
+- `apps/web/lib/server/utils/html.ts` — function escapeHtml: (str) => string
+- `apps/web/lib/server/utils/jwt.ts`
+  - function signAccessToken: (payload) => string
+  - function signRefreshToken: (payload, rememberMe) => string
+  - function signTokenPair: (payload, rememberMe) => TokenPair
+  - function verifyAccessToken: (token) => TokenPayload
+  - function verifyRefreshToken: (token) => TokenPayload
+  - function getRefreshTokenExpiry: (rememberMe) => Date
+- `apps/web/lib/server/utils/password.ts`
+  - function hashPassword: (password) => Promise<string>
+  - function comparePassword: (password, hash) => Promise<boolean>
+  - function validatePassword: (password) => void
 - `apps/worker/src/helpers.ts`
   - function corsHeaders: (request, env) => Record<string, string>
   - function jsonResponse: (body, status, cors, string>) => Response
@@ -382,7 +397,7 @@
   - const MAX_FILE_SIZE
   - _...1 more_
 - `docs/sample/markflow-pdf-export.ts` — function markdownToPdf: (opts) => Promise<Buffer>, function pdfExportRoute: (app) => void
-- `packages/db/src/index.ts` — function createDb: (databaseUrl) => void, type Db
+- `packages/db/src/index.ts` — function createDb: (databaseUrl, options?) => void, type Db
 - `packages/editor/src/utils/cloudflareUploader.ts` — function createCloudflareUploader: (workerUrl) => void, function createTestImage: () => File
 - `packages/editor/src/utils/imageValidation.ts` — function validateImageFile: (file) => ValidationResult, interface ValidationResult
 - `packages/editor/src/utils/markdownActions.ts` — function applyToolbarAction: (view, action) => void
@@ -397,6 +412,7 @@
 
 - `CI` **required** — apps/web/playwright.config.ts
 - `CORS_ORIGIN` (has default) — .env.local
+- `CRON_SECRET` **required** — apps/web/app/api/cron/cleanup-trash/route.ts
 - `DATABASE_URL` (has default) — .env.local
 - `E2E_BASE_URL` **required** — apps/web/playwright.config.ts
 - `E2E_USER_EMAIL` **required** — apps/web/tests/e2e/document-management.spec.ts
@@ -408,19 +424,16 @@
 - `HOST` (has default) — .env.local
 - `JWT_REFRESH_SECRET` (has default) — .env.local
 - `JWT_SECRET` (has default) — .env.local
-- `NEXT_PUBLIC_API_URL` **required** — apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx
 - `NEXT_PUBLIC_R2_WORKER_URL` **required** — apps/web/lib/image-upload.ts
 - `NEXT_PUBLIC_SITE_URL` **required** — apps/web/app/layout.tsx
 - `NODE_ENV` (has default) — .env.local
+- `PGHOST` (has default) — .env.local
 - `PORT` (has default) — .env.local
-- `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
-- `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
-- `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
-- `VITEST` **required** — apps/api/src/index.ts
+- `R2_UPLOAD_SECRET` **required** — apps/web/app/api/v1/upload-token/route.ts
+- `RESEND_API_KEY` **required** — apps/web/lib/server/utils/email.ts
 
 ## Config Files
 
-- `apps/demo/next.config.ts`
 - `apps/web/next.config.ts`
 - `packages/db/drizzle.config.ts`
 - `tsconfig.json`
@@ -430,26 +443,10 @@
 # Middleware
 
 ## auth
-- auth — `apps/api/src/middleware/auth.ts`
-- workspace-scope — `apps/api/src/middleware/workspace-scope.ts`
-- auth — `apps/api/src/routes/auth.ts`
-- auth-service — `apps/api/src/services/auth-service.ts`
-- auth-forgot-password.test — `apps/api/tests/integration/auth-forgot-password.test.ts`
-- auth-login.test — `apps/api/tests/integration/auth-login.test.ts`
-- auth-refresh.test — `apps/api/tests/integration/auth-refresh.test.ts`
-- auth-register.test — `apps/api/tests/integration/auth-register.test.ts`
-- auth-resend-verification.test — `apps/api/tests/integration/auth-resend-verification.test.ts`
-- auth-reset-password.test — `apps/api/tests/integration/auth-reset-password.test.ts`
-- auth-verify.test — `apps/api/tests/integration/auth-verify.test.ts`
+- middleware — `apps/web/lib/server/middleware.ts`
+- auth-service — `apps/web/lib/server/services/auth-service.ts`
 - auth-store — `apps/web/stores/auth-store.ts`
 - auth-workspace-flow.spec — `apps/web/tests/e2e/auth-workspace-flow.spec.ts`
-
-## cors
-- csrf — `apps/api/src/middleware/csrf.ts`
-- cors — `apps/api/src/plugins/cors.ts`
-
-## custom
-- rbac — `apps/api/src/middleware/rbac.ts`
 
 ---
 
@@ -457,118 +454,53 @@
 
 ## Most Imported Files (change these carefully)
 
+- `apps/web/lib/server/db.ts` — imported by **48** files
+- `apps/web/lib/server/middleware.ts` — imported by **47** files
+- `apps/web/lib/server/utils/errors.ts` — imported by **42** files
 - `apps/web/lib/api.ts` — imported by **39** files
-- `apps/api/tests/helpers/setup.ts` — imported by **34** files
-- `apps/api/src/utils/errors.ts` — imported by **33** files
-- `apps/api/tests/helpers/factory.ts` — imported by **33** files
 - `apps/web/stores/toast-store.ts` — imported by **20** files
 - `apps/web/stores/workspace-store.ts` — imported by **19** files
-- `apps/api/src/middleware/auth.ts` — imported by **17** files
 - `apps/web/lib/types.ts` — imported by **16** files
-- `apps/api/src/utils/logger.ts` — imported by **15** files
-- `apps/api/src/middleware/rbac.ts` — imported by **14** files
-- `apps/api/src/utils/email.ts` — imported by **12** files
+- `apps/web/lib/server/utils/logger.ts` — imported by **14** files
 - `apps/web/lib/date.ts` — imported by **9** files
+- `apps/web/lib/server/services/auth-service.ts` — imported by **9** files
 - `packages/db/src/schema/users.ts` — imported by **9** files
 - `apps/web/stores/auth-store.ts` — imported by **8** files
 - `packages/db/src/schema/workspaces.ts` — imported by **8** files
 - `apps/web/components/category-tree.tsx` — imported by **7** files
 - `apps/web/components/mark-flow-logo.tsx` — imported by **7** files
 - `apps/web/hooks/use-permissions.ts` — imported by **6** files
+- `apps/web/lib/server/services/category-service.ts` — imported by **6** files
 - `apps/web/stores/sidebar-store.ts` — imported by **5** files
 - `apps/web/components/tooltip.tsx` — imported by **5** files
+- `packages/editor/src/types/index.ts` — imported by **5** files
 
 ## Import Map (who imports what)
 
+- `apps/web/lib/server/db.ts` ← `apps/web/app/api/cron/cleanup-trash/route.ts`, `apps/web/app/api/v1/auth/forgot-password/route.ts`, `apps/web/app/api/v1/auth/login/route.ts`, `apps/web/app/api/v1/auth/logout/route.ts`, `apps/web/app/api/v1/auth/refresh/route.ts` +43 more
+- `apps/web/lib/server/middleware.ts` ← `apps/web/app/api/v1/auth/forgot-password/route.ts`, `apps/web/app/api/v1/auth/login/route.ts`, `apps/web/app/api/v1/auth/logout/route.ts`, `apps/web/app/api/v1/auth/refresh/route.ts`, `apps/web/app/api/v1/auth/register/route.ts` +42 more
+- `apps/web/lib/server/utils/errors.ts` ← `apps/web/app/api/v1/auth/forgot-password/route.ts`, `apps/web/app/api/v1/auth/login/route.ts`, `apps/web/app/api/v1/auth/refresh/route.ts`, `apps/web/app/api/v1/auth/register/route.ts`, `apps/web/app/api/v1/auth/resend-verification/route.ts` +37 more
 - `apps/web/lib/api.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx` +34 more
-- `apps/api/tests/helpers/setup.ts` ← `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-register.test.ts`, `apps/api/tests/integration/auth-resend-verification.test.ts` +29 more
-- `apps/api/src/utils/errors.ts` ← `apps/api/src/index.ts`, `apps/api/src/middleware/auth.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/middleware/rbac.ts`, `apps/api/src/middleware/workspace-scope.ts` +28 more
-- `apps/api/tests/helpers/factory.ts` ← `apps/api/tests/helpers/setup.ts`, `apps/api/tests/integration/auth-forgot-password.test.ts`, `apps/api/tests/integration/auth-login.test.ts`, `apps/api/tests/integration/auth-refresh.test.ts`, `apps/api/tests/integration/auth-reset-password.test.ts` +28 more
 - `apps/web/stores/toast-store.ts` ← `apps/web/__tests__/stores/toast-store.test.ts`, `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/embed/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/storage/page.tsx` +15 more
 - `apps/web/stores/workspace-store.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/layout.tsx` +14 more
-- `apps/api/src/middleware/auth.ts` ← `apps/api/src/routes/auth.ts`, `apps/api/src/routes/categories.ts`, `apps/api/src/routes/comments.ts`, `apps/api/src/routes/documents.ts`, `apps/api/src/routes/embed-tokens.ts` +12 more
 - `apps/web/lib/types.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/graph/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/settings/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx` +11 more
-- `apps/api/src/utils/logger.ts` ← `apps/api/src/index.ts`, `apps/api/src/jobs/cleanup-trash.ts`, `apps/api/src/middleware/csrf.ts`, `apps/api/src/routes/upload-token.ts`, `apps/api/src/services/auth-service.ts` +10 more
-- `apps/api/src/middleware/rbac.ts` ← `apps/api/src/routes/categories.ts`, `apps/api/src/routes/comments.ts`, `apps/api/src/routes/documents.ts`, `apps/api/src/routes/embed-tokens.ts`, `apps/api/src/routes/graph.ts` +9 more
+- `apps/web/lib/server/utils/logger.ts` ← `apps/web/app/api/cron/cleanup-trash/route.ts`, `apps/web/app/api/v1/upload-token/route.ts`, `apps/web/lib/server/middleware.ts`, `apps/web/lib/server/services/auth-service.ts`, `apps/web/lib/server/services/category-service.ts` +9 more
+- `apps/web/lib/date.ts` ← `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`, `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx`, `apps/web/app/(app)/workspaces/page.tsx`, `apps/web/app/invite/[token]/page.tsx` +4 more
+- `apps/web/lib/server/services/auth-service.ts` ← `apps/web/app/api/v1/auth/forgot-password/route.ts`, `apps/web/app/api/v1/auth/login/route.ts`, `apps/web/app/api/v1/auth/logout/route.ts`, `apps/web/app/api/v1/auth/refresh/route.ts`, `apps/web/app/api/v1/auth/register/route.ts` +4 more
 
 ---
 
 # Test Coverage
 
-> **81%** of routes and models are covered by tests
-> 62 test files found
-
-## Covered Routes
-
-- POST:/register
-- POST:/login
-- POST:/workspaces/:wsId/categories
-- GET:/workspaces/:wsId/categories
-- GET:/workspaces/:wsId/categories/tree
-- PATCH:/workspaces/:wsId/categories/:id
-- PUT:/workspaces/:wsId/categories/reorder
-- GET:/workspaces/:wsId/categories/:id/ancestors
-- GET:/workspaces/:wsId/categories/:id/descendants
-- DELETE:/workspaces/:wsId/categories/:id
-- GET:/workspaces/:wsId/documents/:docId/comments
-- POST:/workspaces/:wsId/documents/:docId/comments
-- PATCH:/workspaces/:wsId/documents/:docId/comments/:commentId
-- DELETE:/workspaces/:wsId/documents/:docId/comments/:commentId
-- POST:/workspaces/:wsId/documents
-- GET:/workspaces/:wsId/documents
-- GET:/workspaces/:wsId/documents/:id
-- PATCH:/workspaces/:wsId/documents/:id
-- DELETE:/workspaces/:wsId/documents/:id
-- POST:/workspaces/:id/embed-tokens
-- GET:/workspaces/:id/embed-tokens
-- DELETE:/workspaces/:id/embed-tokens/:tokenId
-- GET:/workspaces/:wsId/graph
-- GET:/workspaces/:wsId/graph/documents/:id/context
-- POST:/workspaces/:id/invitations
-- GET:/invitations/:token
-- POST:/invitations/:token/accept
-- POST:/workspaces/:id/join-requests
-- GET:/workspaces/:id/join-requests
-- PATCH:/workspaces/:id/join-requests/batch
-- PATCH:/workspaces/:id/join-requests/:requestId
-- PUT:/workspaces/:wsId/documents/:docId/relations
-- GET:/workspaces/:wsId/documents/:docId/relations
-- GET:/workspaces/:wsId/documents/:docId/tags
-- PUT:/workspaces/:wsId/documents/:docId/tags
-- GET:/workspaces/:wsId/tags
-- GET:/workspaces/:id/theme
-- PATCH:/workspaces/:id/theme
-- GET:/workspaces/:wsId/trash
-- POST:/workspaces/:wsId/trash/:docId/restore
-- DELETE:/workspaces/:wsId/trash/:docId
-- GET:/
-- GET:/workspaces/public
-- POST:/workspaces
-- GET:/workspaces
-- GET:/workspaces/:id
-- PATCH:/workspaces/:id
-- DELETE:/workspaces/:id
-- POST:/workspaces/:id/transfer
-- GET:/workspaces/:id/members
-- PATCH:/workspaces/:id/members/:userId
-- DELETE:/workspaces/:id/members/:userId
+> **6%** of routes and models are covered by tests
+> 25 test files found
 
 ## Covered Models
 
-- categories
-- category_closure
 - comments
-- document_relations
 - documents
-- document_versions
-- embed_tokens
 - invitations
-- join_requests
-- refresh_tokens
-- tags
-- document_tags
 - users
-- workspace_members
 - workspaces
 
 ---

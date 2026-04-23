@@ -2,11 +2,10 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**82 components** (react)
+**85 components** (react)
 
 ## Client Components
 
-- **Home** — `apps/demo/app/page.tsx`
 - **DocEditorPage** — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
 - **NewDocPage** — `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`
 - **DocsPage** — `apps/web/app/(app)/[workspaceSlug]/doc/page.tsx`
@@ -64,7 +63,6 @@
 
 ## Components
 
-- **RootLayout** — `apps/demo/app/layout.tsx`
 - **DocLayout** — props: params — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
 - **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
 - **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
@@ -74,10 +72,15 @@
 - **InviteLayout** — `apps/web/app/invite/layout.tsx`
 - **RootLayout** — `apps/web/app/layout.tsx`
 - **OGImage** — `apps/web/app/opengraph-image.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`
 - **Skeleton** — props: width, height, borderRadius — `apps/web/components/states/loading.tsx`

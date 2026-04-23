@@ -63,7 +63,7 @@ export const Toolbar = React.memo(function Toolbar({ onAction, layout, onLayoutC
       {([1, 2, 3, 4, 5, 6] as const).map((n) => {
         const Icon = headingIcons[n - 1]
         return (
-          <Btn key={n} title={`Heading ${n} (Ctrl+Alt+${n})`} onClick={() => act({ type: 'heading', level: n })}>
+          <Btn key={n} title={`Heading ${n}`} onClick={() => act({ type: 'heading', level: n })}>
             <Icon size={ICON_SIZE} />
           </Btn>
         )
@@ -72,16 +72,16 @@ export const Toolbar = React.memo(function Toolbar({ onAction, layout, onLayoutC
       <Sep />
 
       {/* ── Inline format ── */}
-      <Btn title="Bold (Ctrl+B)" onClick={() => act({ type: 'bold' })}>
+      <Btn title="Bold" onClick={() => act({ type: 'bold' })}>
         <Bold size={ICON_SIZE} />
       </Btn>
-      <Btn title="Italic (Ctrl+I)" onClick={() => act({ type: 'italic' })}>
+      <Btn title="Italic" onClick={() => act({ type: 'italic' })}>
         <Italic size={ICON_SIZE} />
       </Btn>
       <Btn title="Strikethrough" onClick={() => act({ type: 'strikethrough' })}>
         <Strikethrough size={ICON_SIZE} />
       </Btn>
-      <Btn title="Inline code (Ctrl+`)" onClick={() => act({ type: 'code' })}>
+      <Btn title="Inline code" onClick={() => act({ type: 'code' })}>
         <Code size={ICON_SIZE} />
       </Btn>
 
@@ -104,7 +104,7 @@ export const Toolbar = React.memo(function Toolbar({ onAction, layout, onLayoutC
       <Btn title="Blockquote" onClick={() => act({ type: 'blockquote' })}>
         <Quote size={ICON_SIZE} />
       </Btn>
-      <Btn title="Code block (Ctrl+Shift+K)" onClick={() => act({ type: 'codeblock' })}>
+      <Btn title="Code block" onClick={() => act({ type: 'codeblock' })}>
         <SquareCode size={ICON_SIZE} />
       </Btn>
       <Btn title="Horizontal rule" onClick={() => act({ type: 'hr' })}>
@@ -114,7 +114,7 @@ export const Toolbar = React.memo(function Toolbar({ onAction, layout, onLayoutC
       <Sep />
 
       {/* ── Insert ── */}
-      <Btn title="Link (Ctrl+K)" onClick={() => act({ type: 'link' })}>
+      <Btn title="Link" onClick={() => act({ type: 'link' })}>
         <Link size={ICON_SIZE} />
       </Btn>
       <Btn title="Image (URL)" onClick={() => act({ type: 'image' })}>

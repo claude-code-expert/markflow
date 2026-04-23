@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'html',
   timeout: 30_000,
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3002',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -23,7 +23,7 @@ export default defineConfig({
     ? undefined
     : {
         command: 'pnpm dev',
-        port: 3000,
+        port: 3002,
         reuseExistingServer: true,
       },
 });

@@ -1,13 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-// Will be implemented at packages/editor/src/utils/wordCount.ts
-// import { countWords } from '../wordCount';
-
-// Inline stub for TDD — replace with actual import when implemented
-function countWords(text: string): number {
-  // This placeholder should FAIL some tests
-  return 0;
-}
+import { countWords } from '../wordCount';
 
 describe('wordCount', () => {
   it('returns 0 for empty string', () => {

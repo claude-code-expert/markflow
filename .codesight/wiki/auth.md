@@ -2,50 +2,48 @@
 
 > **Navigation aid.** Route list and file locations extracted via AST. Read the source files listed below before implementing or modifying this subsystem.
 
-The Auth subsystem handles **9 routes** and touches: auth, email, db.
+The Auth subsystem handles **9 routes** and touches: auth, db, email.
 
 ## Routes
 
-- `POST` `/register` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `GET` `/verify-email` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/resend-verification` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/login` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/refresh` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/forgot-password` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/reset-password` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `POST` `/logout` [auth, email]
-  `apps/api/src/routes/auth.ts`
-- `PUT` `/me/password` [auth, db]
-  `apps/api/src/routes/users.ts`
+- `POST` `/api/v1/auth/forgot-password` [auth]
+  `apps/web/app/api/v1/auth/forgot-password/route.ts`
+- `POST` `/api/v1/auth/login` → out: { accessToken, user } [auth]
+  `apps/web/app/api/v1/auth/login/route.ts`
+- `POST` `/api/v1/auth/logout` [auth, db]
+  `apps/web/app/api/v1/auth/logout/route.ts`
+- `POST` `/api/v1/auth/refresh` [auth]
+  `apps/web/app/api/v1/auth/refresh/route.ts`
+- `POST` `/api/v1/auth/register` [auth]
+  `apps/web/app/api/v1/auth/register/route.ts`
+- `POST` `/api/v1/auth/resend-verification` [auth, email]
+  `apps/web/app/api/v1/auth/resend-verification/route.ts`
+- `POST` `/api/v1/auth/reset-password` [auth]
+  `apps/web/app/api/v1/auth/reset-password/route.ts`
+- `GET` `/api/v1/auth/verify-email` [auth]
+  `apps/web/app/api/v1/auth/verify-email/route.ts`
+- `PUT` `/api/v1/users/me/password` → out: { accessToken, refreshToken } [auth]
+  `apps/web/app/api/v1/users/me/password/route.ts`
 
 ## Middleware
 
-- **auth** (auth) — `apps/api/src/middleware/auth.ts`
-- **workspace-scope** (auth) — `apps/api/src/middleware/workspace-scope.ts`
-- **auth** (auth) — `apps/api/src/routes/auth.ts`
-- **auth-service** (auth) — `apps/api/src/services/auth-service.ts`
-- **auth-forgot-password.test** (auth) — `apps/api/tests/integration/auth-forgot-password.test.ts`
-- **auth-login.test** (auth) — `apps/api/tests/integration/auth-login.test.ts`
-- **auth-refresh.test** (auth) — `apps/api/tests/integration/auth-refresh.test.ts`
-- **auth-register.test** (auth) — `apps/api/tests/integration/auth-register.test.ts`
-- **auth-resend-verification.test** (auth) — `apps/api/tests/integration/auth-resend-verification.test.ts`
-- **auth-reset-password.test** (auth) — `apps/api/tests/integration/auth-reset-password.test.ts`
-- **auth-verify.test** (auth) — `apps/api/tests/integration/auth-verify.test.ts`
+- **middleware** (auth) — `apps/web/lib/server/middleware.ts`
+- **auth-service** (auth) — `apps/web/lib/server/services/auth-service.ts`
 - **auth-store** (auth) — `apps/web/stores/auth-store.ts`
 - **auth-workspace-flow.spec** (auth) — `apps/web/tests/e2e/auth-workspace-flow.spec.ts`
 
 ## Source Files
 
 Read these before implementing or modifying this subsystem:
-- `apps/api/src/routes/auth.ts`
-- `apps/api/src/routes/users.ts`
+- `apps/web/app/api/v1/auth/forgot-password/route.ts`
+- `apps/web/app/api/v1/auth/login/route.ts`
+- `apps/web/app/api/v1/auth/logout/route.ts`
+- `apps/web/app/api/v1/auth/refresh/route.ts`
+- `apps/web/app/api/v1/auth/register/route.ts`
+- `apps/web/app/api/v1/auth/resend-verification/route.ts`
+- `apps/web/app/api/v1/auth/reset-password/route.ts`
+- `apps/web/app/api/v1/auth/verify-email/route.ts`
+- `apps/web/app/api/v1/users/me/password/route.ts`
 
 ---
 _Back to [overview.md](./overview.md)_

@@ -120,7 +120,8 @@ export default function DocEditorPage() {
 
   // Image upload callback — 업로드 활성화 + Worker URL 설정 시에만 활성화
   // 비활성화 또는 미설정 시 onImageUpload를 전달하지 않아 에디터 내장 가이드 모달이 표시됨
-  const imageUploadEnabled = useMemo(() => isImageUploadEnabled(), []);
+  const [uploadConfigVersion, setUploadConfigVersion] = useState(0);
+  const imageUploadEnabled = useMemo(() => isImageUploadEnabled(), [uploadConfigVersion]);
   const handleImageUpload = useMemo(() => {
     if (!imageUploadEnabled) return undefined;
     const url = getWorkerUrl();
@@ -128,7 +129,7 @@ export default function DocEditorPage() {
     return async (file: File): Promise<string> => {
       return uploadImage(file);
     };
-  }, [imageUploadEnabled]);
+  }, [imageUploadEnabled, uploadConfigVersion]);
 
   // Wiki link search callback
   const handleWikiLinkSearch = useCallback(async (query: string): Promise<WikiLinkItem[]> => {
@@ -690,7 +691,24 @@ export default function DocEditorPage() {
         {showStorageGuide && (
           <StorageGuidePanel
             onClose={() => setShowStorageGuide(false)}
-            onConfigured={() => setShowStorageGuide(false)}
+            onConfigured={async () => {
+              // 미저장 변경이 있으면 먼저 문서 저장
+              const { title: currentTitle, content: currentContent } = useEditorStore.getState();
+              const currentWsId = wsIdRef.current;
+              if (currentWsId && saveStatusRef.current === 'unsaved' && currentTitle.trim()) {
+                try {
+                  await apiFetch(`/workspaces/${currentWsId}/documents/${docId}`, {
+                    method: 'PATCH',
+                    body: { title: currentTitle.trim(), content: currentContent },
+                  });
+                  setSaveStatus('saved');
+                } catch {
+                  // 저장 실패해도 설정은 계속 진행
+                }
+              }
+              setShowStorageGuide(false);
+              setUploadConfigVersion((v) => v + 1);
+            }}
           />
         )}
       </div>
