@@ -248,7 +248,7 @@
 
     <p class="lede">
       MarkFlow 에디터에서 이미지 업로드 기능을 사용하려면 Cloudflare R2 저장소와 Worker를 연결해야 합니다.
-      아래 6단계를 차례대로 따라 하시면 됩니다.
+      아래 7단계를 차례대로 따라 하시면 됩니다.
     </p>
 
     <section class="card">
@@ -311,6 +311,55 @@
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-body">
+          <h2 class="step-title">R2 CORS 정책 설정</h2>
+          <p class="step-desc">
+            R2 버킷에서 이미지를 불러올 수 있도록 CORS 규칙을 설정합니다.<br />
+            <b>Cloudflare 대시보드</b> → <b>R2</b> → <b>markflow-images</b> → <b>Settings</b> → <b>CORS Policy</b>에서 아래 JSON을 입력하세요.
+          </p>
+          <pre class="code"><button class="copy-btn" data-copy='[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3002",
+      "https://your-app.vercel.app"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "POST"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ]
+  }
+]' aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3002",
+      "https://your-app.vercel.app"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "POST"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ]
+  }
+]</pre>
+          <div class="tip">
+            <strong>CORS 에러가 발생하면?</strong> <code class="inline">AllowedOrigins</code>에 본인의 도메인이 정확히 포함되어 있는지 확인하세요.
+            각 origin은 별도 문자열이어야 하며, 쉼표로 합치면 안 됩니다.<br />
+            <code class="inline">"http://localhost:3002, https://example.com"</code> (X)<br />
+            <code class="inline">"http://localhost:3002"</code>, <code class="inline">"https://example.com"</code> (O)
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
           <h2 class="step-title">Worker 배포</h2>
           <pre class="code"><button class="copy-btn" data-copy="cd apps/worker&#10;npx wrangler deploy" aria-label="복사"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>cd apps/worker
 npx wrangler deploy</pre>
@@ -321,9 +370,9 @@ npx wrangler deploy</pre>
         </div>
       </div>
 
-      <!-- Step 6 -->
+      <!-- Step 7 -->
       <div class="step">
-        <div class="step-num">6</div>
+        <div class="step-num">7</div>
         <div class="step-body">
           <h2 class="step-title">Worker URL을 MarkFlow에 입력</h2>
           <p class="step-desc">
