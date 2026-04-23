@@ -2,45 +2,36 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**45 library files** across 6 modules
+**39 library files** across 5 modules
 
-## Api (31 files)
-
-- `apps/api/src/utils/errors.ts` — notFound, forbidden, unauthorized, badRequest, conflict, gone, …
-- `apps/api/src/utils/jwt.ts` — signAccessToken, signRefreshToken, signTokenPair, verifyAccessToken, verifyRefreshToken, getRefreshTokenExpiry
-- `apps/api/src/utils/email.ts` — sendEmail, verificationEmailHtml, passwordResetEmailHtml, invitationEmailHtml, FRONTEND_URL
-- `apps/api/src/services/category-service.ts` — createCategoryService, CategoryTreeDocument, CategoryTreeNode
-- `apps/api/src/utils/password.ts` — hashPassword, comparePassword, validatePassword
-- `apps/api/src/db.ts` — getDb, db
-- `apps/api/src/jobs/cleanup-trash.ts` — cleanupTrash, startCleanupInterval
-- `apps/api/src/services/document-service.ts` — createDocumentService, DocumentStatus
-- `apps/api/src/index.ts` — buildApp
-- `apps/api/src/middleware/auth.ts` — authMiddleware
-- `apps/api/src/middleware/csrf.ts` — csrfMiddleware
-- `apps/api/src/middleware/rbac.ts` — requireRole
-- `apps/api/src/middleware/workspace-scope.ts` — workspaceScopeMiddleware
-- `apps/api/src/plugins/cors.ts` — registerCors
-- `apps/api/src/services/auth-service.ts` — createAuthService
-- `apps/api/src/services/comment-service.ts` — createCommentService
-- `apps/api/src/services/document-visibility.ts` — draftVisibilityClause
-- `apps/api/src/services/embed-token-service.ts` — createEmbedTokenService
-- `apps/api/src/services/export-service.ts` — createExportService
-- `apps/api/src/services/graph-service.ts` — createGraphService
-- `apps/api/src/services/import-service.ts` — createImportService
-- `apps/api/src/services/invitation-service.ts` — createInvitationService
-- `apps/api/src/services/join-request-service.ts` — createJoinRequestService
-- `apps/api/src/services/member-service.ts` — createMemberService
-- `apps/api/src/services/relation-service.ts` — createRelationService
-- _…and 6 more files_
-
-## Web (6 files)
+## Web (31 files)
 
 - `apps/web/lib/image-upload.ts` — getWorkerUrl, getUploadConfig, saveWorkerUrl, clearWorkerUrl, isImageUploadEnabled, setImageUploadEnabled, …
+- `apps/web/lib/server/utils/errors.ts` — notFound, forbidden, unauthorized, badRequest, conflict, gone, …
+- `apps/web/lib/server/middleware.ts` — extractCurrentUser, checkRole, handleApiError, CurrentUser, WorkspaceMember, ApiContext
+- `apps/web/lib/server/utils/jwt.ts` — signAccessToken, signRefreshToken, signTokenPair, verifyAccessToken, verifyRefreshToken, getRefreshTokenExpiry
 - `apps/web/lib/date.ts` — formatKstDate, formatKstDateTime, formatKstDateWithOptions, formatKstRelative, formatKstRelativeLong
+- `apps/web/lib/server/utils/email.ts` — sendEmail, verificationEmailHtml, passwordResetEmailHtml, invitationEmailHtml, FRONTEND_URL
 - `apps/web/lib/category-utils.ts` — flattenCategories, collectAllDocs, FlatCategory, FlatDocument
 - `apps/web/lib/api.ts` — setAccessToken, clearAccessToken, apiFetch
+- `apps/web/lib/server/services/category-service.ts` — createCategoryService, CategoryTreeDocument, CategoryTreeNode
+- `apps/web/lib/server/utils/password.ts` — hashPassword, comparePassword, validatePassword
 - `apps/web/hooks/use-permissions.ts` — usePermissions, hasMinRole
+- `apps/web/lib/server/services/document-service.ts` — createDocumentService, DocumentStatus
 - `apps/web/lib/parse-theme-css.ts` — parseThemeCss
+- `apps/web/lib/server/db.ts` — getDb
+- `apps/web/lib/server/services/auth-service.ts` — createAuthService
+- `apps/web/lib/server/services/comment-service.ts` — createCommentService
+- `apps/web/lib/server/services/document-visibility.ts` — draftVisibilityClause
+- `apps/web/lib/server/services/embed-token-service.ts` — createEmbedTokenService
+- `apps/web/lib/server/services/export-service.ts` — createExportService
+- `apps/web/lib/server/services/graph-service.ts` — createGraphService
+- `apps/web/lib/server/services/import-service.ts` — createImportService
+- `apps/web/lib/server/services/invitation-service.ts` — createInvitationService
+- `apps/web/lib/server/services/join-request-service.ts` — createJoinRequestService
+- `apps/web/lib/server/services/member-service.ts` — createMemberService
+- `apps/web/lib/server/services/relation-service.ts` — createRelationService
+- _…and 6 more files_
 
 ## Editor (5 files)
 

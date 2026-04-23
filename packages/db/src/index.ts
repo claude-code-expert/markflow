@@ -19,8 +19,11 @@ export { comments } from './schema/comments';
 export { eq, and, or, desc, asc, sql, isNull, gt, lt, gte, lte, ne, like, ilike, inArray, notInArray, count } from 'drizzle-orm';
 
 // DB connection factory
-export function createDb(databaseUrl: string) {
-  const client = postgres(databaseUrl);
+export function createDb(databaseUrl: string, options?: { max?: number; idle_timeout?: number }) {
+  const client = postgres(databaseUrl, {
+    max: options?.max ?? 10,
+    idle_timeout: options?.idle_timeout ?? 20,
+  });
   return drizzle(client);
 }
 
