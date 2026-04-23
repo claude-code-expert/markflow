@@ -4,6 +4,7 @@
 
 - `CI` **required** — apps/web/playwright.config.ts
 - `CORS_ORIGIN` (has default) — .env.local
+- `CRON_SECRET` **required** — apps/web/app/api/cron/cleanup-trash/route.ts
 - `DATABASE_URL` (has default) — .env.local
 - `E2E_BASE_URL` **required** — apps/web/playwright.config.ts
 - `E2E_USER_EMAIL` **required** — apps/web/tests/e2e/document-management.spec.ts
@@ -15,19 +16,16 @@
 - `HOST` (has default) — .env.local
 - `JWT_REFRESH_SECRET` (has default) — .env.local
 - `JWT_SECRET` (has default) — .env.local
-- `NEXT_PUBLIC_API_URL` **required** — apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx
 - `NEXT_PUBLIC_R2_WORKER_URL` **required** — apps/web/lib/image-upload.ts
 - `NEXT_PUBLIC_SITE_URL` **required** — apps/web/app/layout.tsx
 - `NODE_ENV` (has default) — .env.local
+- `PGHOST` (has default) — .env.local
 - `PORT` (has default) — .env.local
-- `R2_UPLOAD_SECRET` **required** — apps/api/src/routes/upload-token.ts
-- `RESEND_API_KEY` **required** — apps/api/src/utils/email.ts
-- `TEST_DATABASE_URL` **required** — apps/api/tests/helpers/setup.ts
-- `VITEST` **required** — apps/api/src/index.ts
+- `R2_UPLOAD_SECRET` **required** — apps/web/app/api/v1/upload-token/route.ts
+- `RESEND_API_KEY` **required** — apps/web/lib/server/utils/email.ts
 
 ## Config Files
 
-- `apps/demo/next.config.ts`
 - `apps/web/next.config.ts`
 - `packages/db/drizzle.config.ts`
 - `tsconfig.json`

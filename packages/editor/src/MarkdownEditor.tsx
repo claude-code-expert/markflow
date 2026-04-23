@@ -42,7 +42,7 @@ function greet(name: string): string {
 | Toolbar | ✅ |
 | Scroll sync | ✅ |
 
-> **Tip:** Use the toolbar above or keyboard shortcuts to format text.
+> **Tip:** Use the toolbar above to format text.
 
 ---
 

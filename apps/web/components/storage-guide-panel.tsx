@@ -118,17 +118,40 @@ export function StorageGuidePanel({ onClose, onConfigured }: StorageGuidePanelPr
               </StepItem>
 
               {/* Step 5 */}
-              <StepItem num={5} title="Worker 배포">
+              <StepItem num={5} title="R2 CORS 정책 설정">
+                <p style={descStyle}>
+                  R2 대시보드 → <b>markflow-images</b> → <b>Settings</b> → <b>CORS Policy</b>에 아래 JSON을 입력하세요.
+                </p>
+                <CodeBlock code={`[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3002",
+      "https://your-app.vercel.app"
+    ],
+    "AllowedMethods": ["GET", "PUT", "POST"],
+    "AllowedHeaders": ["*"]
+  }
+]`} copied={copiedCmd} onCopy={setCopiedCmd} />
+                <div style={tipStyle}>
+                  각 origin은 별도 문자열이어야 합니다. 쉼표로 합치면 안 됩니다.
+                </div>
+              </StepItem>
+
+              {/* Step 6 */}
+              <StepItem num={6} title="Worker 배포">
                 <CodeBlock code={`cd apps/worker\nnpx wrangler deploy`} copied={copiedCmd} onCopy={setCopiedCmd} />
                 <p style={{ ...descStyle, marginTop: '6px' }}>
                   배포 후 출력되는 URL을 아래에 입력하세요.
                   <br />
                   <span style={{ opacity: 0.7 }}>ex) </span><code style={inlineCodeStyle}>https://markflow-r2-uploader.account-id.workers.dev</code>
                 </p>
+                <div style={tipStyle}>
+                  <code style={inlineCodeStyle}>wrangler.toml</code>이나 CORS 설정을 변경한 후에는 반드시 <b>재배포</b>해야 적용됩니다.
+                </div>
               </StepItem>
 
-              {/* Step 6 — URL 입력 */}
-              <StepItem num={6} title="Worker URL 입력">
+              {/* Step 7 — URL 입력 */}
+              <StepItem num={7} title="Worker URL 입력">
                 <input
                   type="url"
                   value={inputUrl}

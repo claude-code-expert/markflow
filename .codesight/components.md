@@ -1,7 +1,5 @@
 # Components
 
-- **RootLayout** — `apps/demo/app/layout.tsx`
-- **Home** [client] — `apps/demo/app/page.tsx`
 - **DocLayout** — props: params — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
 - **DocEditorPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/page.tsx`
 - **NewDocPage** [client] — `apps/web/app/(app)/[workspaceSlug]/doc/new/page.tsx`
@@ -17,12 +15,14 @@
 - **TrashPage** [client] — props: params — `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx`
 - **AppLayout** [client] — `apps/web/app/(app)/layout.tsx`
 - **WorkspaceListPage** [client] — `apps/web/app/(app)/workspaces/page.tsx`
+- **ForgotPasswordLayout** — `apps/web/app/(auth)/forgot-password/layout.tsx`
 - **ForgotPasswordPage** [client] — `apps/web/app/(auth)/forgot-password/page.tsx`
 - **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
 - **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
 - **LoginPage** [client] — `apps/web/app/(auth)/login/page.tsx`
 - **RegisterLayout** — `apps/web/app/(auth)/register/layout.tsx`
 - **RegisterPage** [client] — `apps/web/app/(auth)/register/page.tsx`
+- **ResetPasswordLayout** — `apps/web/app/(auth)/reset-password/layout.tsx`
 - **ResetPasswordPage** [client] — props: searchParams — `apps/web/app/(auth)/reset-password/page.tsx`
 - **VerifyEmailLayout** — `apps/web/app/(auth)/verify-email/layout.tsx`
 - **VerifyEmailPage** [client] — props: searchParams — `apps/web/app/(auth)/verify-email/page.tsx`
@@ -47,10 +47,15 @@
 - **GraphPreviewModal** [client] — props: open, onClose, workspaceSlug, doc — `apps/web/components/graph-preview-modal.tsx`
 - **ImportExportModal** [client] — props: open, onClose, workspaceId, workspaceSlug, currentDocId, currentCategoryId — `apps/web/components/import-export-modal.tsx`
 - **JoinRequestPanel** [client] — props: onRequestSent — `apps/web/components/join-request-panel.tsx`
+- **CTASection** — `apps/web/components/landing/cta-section.tsx`
+- **Differentiators** — `apps/web/components/landing/differentiators.tsx`
+- **FAQ** — `apps/web/components/landing/faq.tsx`
 - **FeaturesGrid** — `apps/web/components/landing/features-grid.tsx`
 - **Footer** — `apps/web/components/landing/footer.tsx`
 - **Hero** — `apps/web/components/landing/hero.tsx`
+- **HowItWorks** — `apps/web/components/landing/how-it-works.tsx`
 - **NavBar** — `apps/web/components/landing/nav-bar.tsx`
+- **PainPoints** — `apps/web/components/landing/pain-points.tsx`
 - **PricingSection** — `apps/web/components/landing/pricing-section.tsx`
 - **LinkPreview** [client] — props: containerRef, workspaceId — `apps/web/components/link-preview.tsx`
 - **MarkFlowLogo** — props: height, showTagline, dark — `apps/web/components/mark-flow-logo.tsx`

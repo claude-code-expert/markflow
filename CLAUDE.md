@@ -10,8 +10,6 @@
 - Conventional Commits
 - `.claude/rules/` 에 영역별 세부 규칙 정의
 
-
-
 ---
 
 # 작업 규칙

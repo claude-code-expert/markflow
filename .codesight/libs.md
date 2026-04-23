@@ -1,60 +1,5 @@
 # Libraries
 
-- `apps/api/src/db.ts` — function getDb: () => Db, const db: Db
-- `apps/api/src/index.ts` — function buildApp: () => void
-- `apps/api/src/jobs/cleanup-trash.ts` — function cleanupTrash: (db) => Promise<number>, function startCleanupInterval: (db) => ReturnType<typeof setInterval>
-- `apps/api/src/middleware/auth.ts` — function authMiddleware: (request, reply) => void
-- `apps/api/src/middleware/csrf.ts` — function csrfMiddleware: (request, reply) => void
-- `apps/api/src/middleware/rbac.ts` — function requireRole: (...allowedRoles) => void
-- `apps/api/src/middleware/workspace-scope.ts` — function workspaceScopeMiddleware: (request, reply) => void
-- `apps/api/src/plugins/cors.ts` — function registerCors: (app) => Promise<void>
-- `apps/api/src/services/auth-service.ts` — function createAuthService: (db) => void
-- `apps/api/src/services/category-service.ts`
-  - function createCategoryService: (db) => void
-  - interface CategoryTreeDocument
-  - interface CategoryTreeNode
-- `apps/api/src/services/comment-service.ts` — function createCommentService: (db) => void
-- `apps/api/src/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
-- `apps/api/src/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
-- `apps/api/src/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
-- `apps/api/src/services/export-service.ts` — function createExportService: (db) => void
-- `apps/api/src/services/graph-service.ts` — function createGraphService: (db) => void
-- `apps/api/src/services/import-service.ts` — function createImportService: (db) => void
-- `apps/api/src/services/invitation-service.ts` — function createInvitationService: (db) => void
-- `apps/api/src/services/join-request-service.ts` — function createJoinRequestService: (db) => void
-- `apps/api/src/services/member-service.ts` — function createMemberService: (db) => void
-- `apps/api/src/services/relation-service.ts` — function createRelationService: (db) => void
-- `apps/api/src/services/tag-service.ts` — function createTagService: (db) => void
-- `apps/api/src/services/theme-service.ts` — function createThemeService: (db) => void
-- `apps/api/src/services/trash-service.ts` — function createTrashService: (db) => void
-- `apps/api/src/services/workspace-service.ts` — function createWorkspaceService: (db) => void
-- `apps/api/src/utils/css-validator.ts` — function validateThemeCss: (css) => ValidationResult
-- `apps/api/src/utils/email.ts`
-  - function sendEmail: (params) => Promise<void>
-  - function verificationEmailHtml: (verifyUrl) => string
-  - function passwordResetEmailHtml: (resetUrl) => string
-  - function invitationEmailHtml: (inviteUrl, workspaceName, inviterName) => string
-  - const FRONTEND_URL
-- `apps/api/src/utils/errors.ts`
-  - function notFound: (message) => AppError
-  - function forbidden: (message) => AppError
-  - function unauthorized: (message) => AppError
-  - function badRequest: (code, message, details?, unknown>) => AppError
-  - function conflict: (code, message) => AppError
-  - function gone: (code, message) => AppError
-  - _...2 more_
-- `apps/api/src/utils/html.ts` — function escapeHtml: (str) => string
-- `apps/api/src/utils/jwt.ts`
-  - function signAccessToken: (payload) => string
-  - function signRefreshToken: (payload, rememberMe) => string
-  - function signTokenPair: (payload, rememberMe) => TokenPair
-  - function verifyAccessToken: (token) => TokenPayload
-  - function verifyRefreshToken: (token) => TokenPayload
-  - function getRefreshTokenExpiry: (rememberMe) => Date
-- `apps/api/src/utils/password.ts`
-  - function hashPassword: (password) => Promise<string>
-  - function comparePassword: (password, hash) => Promise<boolean>
-  - function validatePassword: (password) => void
 - `apps/web/hooks/use-permissions.ts` — function usePermissions: (role) => Permissions, function hasMinRole: (userRole, requiredRole) => boolean
 - `apps/web/lib/api.ts`
   - function setAccessToken: (token) => void
@@ -80,6 +25,61 @@
   - function setImageUploadEnabled: (enabled) => void
   - _...8 more_
 - `apps/web/lib/parse-theme-css.ts` — function parseThemeCss: (css) => Record<string, string>
+- `apps/web/lib/server/db.ts` — function getDb: () => Db
+- `apps/web/lib/server/middleware.ts`
+  - function extractCurrentUser: (request) => CurrentUser
+  - function checkRole: (currentUser, workspaceId, ...allowedRoles) => Promise<WorkspaceMember>
+  - function handleApiError: (error) => NextResponse
+  - interface CurrentUser
+  - interface WorkspaceMember
+  - interface ApiContext
+- `apps/web/lib/server/services/auth-service.ts` — function createAuthService: (db) => void
+- `apps/web/lib/server/services/category-service.ts`
+  - function createCategoryService: (db) => void
+  - interface CategoryTreeDocument
+  - interface CategoryTreeNode
+- `apps/web/lib/server/services/comment-service.ts` — function createCommentService: (db) => void
+- `apps/web/lib/server/services/document-service.ts` — function createDocumentService: (db) => void, type DocumentStatus
+- `apps/web/lib/server/services/document-visibility.ts` — function draftVisibilityClause: (currentUserId?) => SQL
+- `apps/web/lib/server/services/embed-token-service.ts` — function createEmbedTokenService: (db) => void
+- `apps/web/lib/server/services/export-service.ts` — function createExportService: (db) => void
+- `apps/web/lib/server/services/graph-service.ts` — function createGraphService: (db) => void
+- `apps/web/lib/server/services/import-service.ts` — function createImportService: (db) => void
+- `apps/web/lib/server/services/invitation-service.ts` — function createInvitationService: (db) => void
+- `apps/web/lib/server/services/join-request-service.ts` — function createJoinRequestService: (db) => void
+- `apps/web/lib/server/services/member-service.ts` — function createMemberService: (db) => void
+- `apps/web/lib/server/services/relation-service.ts` — function createRelationService: (db) => void
+- `apps/web/lib/server/services/tag-service.ts` — function createTagService: (db) => void
+- `apps/web/lib/server/services/theme-service.ts` — function createThemeService: (db) => void
+- `apps/web/lib/server/services/trash-service.ts` — function createTrashService: (db) => void
+- `apps/web/lib/server/services/workspace-service.ts` — function createWorkspaceService: (db) => void
+- `apps/web/lib/server/utils/css-validator.ts` — function validateThemeCss: (css) => ValidationResult
+- `apps/web/lib/server/utils/email.ts`
+  - function sendEmail: (params) => Promise<void>
+  - function verificationEmailHtml: (verifyUrl) => string
+  - function passwordResetEmailHtml: (resetUrl) => string
+  - function invitationEmailHtml: (inviteUrl, workspaceName, inviterName) => string
+  - const FRONTEND_URL
+- `apps/web/lib/server/utils/errors.ts`
+  - function notFound: (message) => AppError
+  - function forbidden: (message) => AppError
+  - function unauthorized: (message) => AppError
+  - function badRequest: (code, message, details?, unknown>) => AppError
+  - function conflict: (code, message) => AppError
+  - function gone: (code, message) => AppError
+  - _...2 more_
+- `apps/web/lib/server/utils/html.ts` — function escapeHtml: (str) => string
+- `apps/web/lib/server/utils/jwt.ts`
+  - function signAccessToken: (payload) => string
+  - function signRefreshToken: (payload, rememberMe) => string
+  - function signTokenPair: (payload, rememberMe) => TokenPair
+  - function verifyAccessToken: (token) => TokenPayload
+  - function verifyRefreshToken: (token) => TokenPayload
+  - function getRefreshTokenExpiry: (rememberMe) => Date
+- `apps/web/lib/server/utils/password.ts`
+  - function hashPassword: (password) => Promise<string>
+  - function comparePassword: (password, hash) => Promise<boolean>
+  - function validatePassword: (password) => void
 - `apps/worker/src/helpers.ts`
   - function corsHeaders: (request, env) => Record<string, string>
   - function jsonResponse: (body, status, cors, string>) => Response
@@ -89,7 +89,7 @@
   - const MAX_FILE_SIZE
   - _...1 more_
 - `docs/sample/markflow-pdf-export.ts` — function markdownToPdf: (opts) => Promise<Buffer>, function pdfExportRoute: (app) => void
-- `packages/db/src/index.ts` — function createDb: (databaseUrl) => void, type Db
+- `packages/db/src/index.ts` — function createDb: (databaseUrl, options?) => void, type Db
 - `packages/editor/src/utils/cloudflareUploader.ts` — function createCloudflareUploader: (workerUrl) => void, function createTestImage: () => File
 - `packages/editor/src/utils/imageValidation.ts` — function validateImageFile: (file) => ValidationResult, interface ValidationResult
 - `packages/editor/src/utils/markdownActions.ts` — function applyToolbarAction: (view, action) => void
