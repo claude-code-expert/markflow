@@ -3,9 +3,9 @@
 > **Stack:** next-app | drizzle | react | typescript
 > **Monorepo:** @markflow/db, @markflow/editor, @markflow/web, markflow-r2-uploader
 
-> 64 routes | 15 models | 85 components | 39 lib files | 21 env vars | 4 middleware | 6% test coverage
-> **Token savings:** this file is ~8,500 tokens. Without it, AI exploration would cost ~89,800 tokens. **Saves ~81,200 tokens per conversation.**
-> **Last scanned:** 2026-04-23 10:35 — re-run after significant changes
+> 64 routes | 15 models | 87 components | 39 lib files | 21 env vars | 4 middleware | 6% test coverage
+> **Token savings:** this file is ~8,600 tokens. Without it, AI exploration would cost ~90,400 tokens. **Saves ~81,800 tokens per conversation.**
+> **Last scanned:** 2026-04-23 11:14 — re-run after significant changes
 
 ---
 
@@ -233,12 +233,14 @@
 - **TrashPage** [client] — props: params — `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx`
 - **AppLayout** [client] — `apps/web/app/(app)/layout.tsx`
 - **WorkspaceListPage** [client] — `apps/web/app/(app)/workspaces/page.tsx`
+- **ForgotPasswordLayout** — `apps/web/app/(auth)/forgot-password/layout.tsx`
 - **ForgotPasswordPage** [client] — `apps/web/app/(auth)/forgot-password/page.tsx`
 - **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
 - **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
 - **LoginPage** [client] — `apps/web/app/(auth)/login/page.tsx`
 - **RegisterLayout** — `apps/web/app/(auth)/register/layout.tsx`
 - **RegisterPage** [client] — `apps/web/app/(auth)/register/page.tsx`
+- **ResetPasswordLayout** — `apps/web/app/(auth)/reset-password/layout.tsx`
 - **ResetPasswordPage** [client] — props: searchParams — `apps/web/app/(auth)/reset-password/page.tsx`
 - **VerifyEmailLayout** — `apps/web/app/(auth)/verify-email/layout.tsx`
 - **VerifyEmailPage** [client] — props: searchParams — `apps/web/app/(auth)/verify-email/page.tsx`

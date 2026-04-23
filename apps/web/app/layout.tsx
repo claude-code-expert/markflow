@@ -56,13 +56,11 @@ export const metadata: Metadata = {
     title: 'MarkFlow — 팀 지식 관리 플랫폼',
     description: '마크다운 기반 팀 지식 관리 플랫폼. 문서 작성, 카테고리 구조화, 실시간 미리보기, 그래프 시각화를 한곳에서.',
     url: BASE_URL,
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'MarkFlow — 마크다운 기반 팀 지식 관리 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MarkFlow — 팀 지식 관리 플랫폼',
     description: '마크다운 기반 팀 지식 관리 플랫폼',
-    images: ['/og-image.png'],
   },
   alternates: {
     canonical: BASE_URL,

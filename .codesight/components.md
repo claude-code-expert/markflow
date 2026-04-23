@@ -15,12 +15,14 @@
 - **TrashPage** [client] — props: params — `apps/web/app/(app)/[workspaceSlug]/trash/page.tsx`
 - **AppLayout** [client] — `apps/web/app/(app)/layout.tsx`
 - **WorkspaceListPage** [client] — `apps/web/app/(app)/workspaces/page.tsx`
+- **ForgotPasswordLayout** — `apps/web/app/(auth)/forgot-password/layout.tsx`
 - **ForgotPasswordPage** [client] — `apps/web/app/(auth)/forgot-password/page.tsx`
 - **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
 - **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
 - **LoginPage** [client] — `apps/web/app/(auth)/login/page.tsx`
 - **RegisterLayout** — `apps/web/app/(auth)/register/layout.tsx`
 - **RegisterPage** [client] — `apps/web/app/(auth)/register/page.tsx`
+- **ResetPasswordLayout** — `apps/web/app/(auth)/reset-password/layout.tsx`
 - **ResetPasswordPage** [client] — props: searchParams — `apps/web/app/(auth)/reset-password/page.tsx`
 - **VerifyEmailLayout** — `apps/web/app/(auth)/verify-email/layout.tsx`
 - **VerifyEmailPage** [client] — props: searchParams — `apps/web/app/(auth)/verify-email/page.tsx`

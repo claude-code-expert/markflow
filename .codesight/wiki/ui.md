@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**85 components** (react)
+**87 components** (react)
 
 ## Client Components
 
@@ -64,9 +64,11 @@
 ## Components
 
 - **DocLayout** — props: params — `apps/web/app/(app)/[workspaceSlug]/doc/[docId]/layout.tsx`
+- **ForgotPasswordLayout** — `apps/web/app/(auth)/forgot-password/layout.tsx`
 - **AuthLayout** — `apps/web/app/(auth)/layout.tsx`
 - **LoginLayout** — `apps/web/app/(auth)/login/layout.tsx`
 - **RegisterLayout** — `apps/web/app/(auth)/register/layout.tsx`
+- **ResetPasswordLayout** — `apps/web/app/(auth)/reset-password/layout.tsx`
 - **VerifyEmailLayout** — `apps/web/app/(auth)/verify-email/layout.tsx`
 - **PublicLayout** — `apps/web/app/(public)/layout.tsx`
 - **InviteLayout** — `apps/web/app/invite/layout.tsx`
