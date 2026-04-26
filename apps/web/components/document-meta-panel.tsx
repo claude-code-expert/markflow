@@ -290,7 +290,13 @@ export function DocumentMetaPanel({
             categoryName={doc.categoryPath}
             prev={relations.prev}
             next={relations.next}
-            related={relations.related}
+            siblings={
+              doc.categoryId == null
+                ? []
+                : (graphQuery.data?.nodes ?? [])
+                    .filter((n) => n.categoryId === doc.categoryId && n.id !== doc.id)
+                    .map((n) => ({ id: n.id, title: n.title }))
+            }
             onClickFullView={() => setShowDagModal(true)}
           />
         )}

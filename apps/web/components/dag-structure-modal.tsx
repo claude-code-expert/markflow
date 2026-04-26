@@ -29,12 +29,16 @@ interface DagStructureModalProps {
 }
 
 const LEGEND = [
-  { label: '현재 문서', color: '#1A56DB', border: '#1343B0' },
-  { label: '상위 카테고리', color: '#EEF3FF', border: '#93C5FD' },
-  { label: '이전 / 다음', color: '#F0FDF4', border: '#86EFAC' },
-  { label: '연관 문서', color: '#F5F3FF', border: '#C4B5FD' },
-  { label: 'Root / 일반', color: '#F1F0EC', border: '#CBD5E1' },
+  { label: '현재 문서', color: '#1a3a2e', border: '#0f2a20' },
+  { label: '상위 카테고리', color: '#fff', border: '#d6ddd7' },
+  { label: '상위의 연관 문서', color: '#eef6f0', border: '#4a8a6e' },
+  { label: '이전 / 다음', color: '#fff', border: '#4a8a6e' },
+  { label: 'Root', color: '#fff', border: '#d6ddd7' },
 ];
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max - 1) + '…' : text;
+}
 
 /* ── Related docs dropdown ── */
 
@@ -132,6 +136,19 @@ export function DagStructureModal({
       .filter(Boolean) as GraphNode[];
   }, [currentEdges, nodes, currentDocId]);
 
+  const currentNode = useMemo(
+    () => nodes.find((n) => n.id === currentDocId) ?? null,
+    [nodes, currentDocId],
+  );
+
+  // 상위 문서의 연관문서 = 같은 카테고리에 속한 sibling 문서들 (카테고리가 곧 "상위")
+  const siblings = useMemo(() => {
+    if (currentNode?.categoryId == null) return [];
+    return nodes.filter(
+      (n) => n.categoryId === currentNode.categoryId && n.id !== currentDocId,
+    );
+  }, [nodes, currentNode, currentDocId]);
+
   const navigateToDoc = (docId: number) => {
     onClose();
     router.push(`/${workspaceSlug}/doc/${docId}`);
@@ -144,35 +161,23 @@ export function DagStructureModal({
 
   if (!open) return null;
 
-  // Layout — collect all right-side nodes, distribute vertically
-  const N = { w: 120, h: 44, rx: 8 };
-  const GAP = 12;
-  const PAD = 24;
+  // Layout from docs/sample/DocumentMap.tsx — 4 columns, fixed viewBox
+  const SVG_W = 900;
+  const SVG_H = 380;
 
-  const rightNodes: { doc: GraphNode; label: string; type: 'prev' | 'next' | 'related' }[] = [];
-  if (prevDoc) rightNodes.push({ doc: prevDoc, label: '← prev', type: 'prev' });
-  if (nextDoc) rightNodes.push({ doc: nextDoc, label: 'next →', type: 'next' });
-  for (const rd of relatedDocs) {
-    rightNodes.push({ doc: rd, label: 'related', type: 'related' });
-  }
+  const N = {
+    root:     { x: 40,  y: 85,  w: 130, h: 50 },
+    category: { x: 40,  y: 245, w: 130, h: 50 },
+    sibling:  { x: 170, y: 165, w: 130, h: 50 },
+    current:  { x: 330, y: 160, w: 170, h: 60 },
+    prev:     { x: 590, y: 75,  w: 260, h: 50 },
+    next:     { x: 590, y: 255, w: 260, h: 50 },
+  } as const;
 
-  const rightTotalH = rightNodes.length * N.h + Math.max(0, rightNodes.length - 1) * GAP;
-  const leftMinH = categoryName ? N.h + 70 + 40 : 70 + 40; // root + category + current
-  const contentH = Math.max(rightTotalH, leftMinH, 150);
-  const SVG_H = contentH + PAD * 2;
-  const SVG_W = 760;
-  const cy = SVG_H / 2;
-
-  // Right column: vertically centered
-  const rightStartY = cy - rightTotalH / 2;
-
-  // Left column positions
-  const rootX = PAD;
-  const rootCy = cy;
-  const curX = 340;
-  const curH = 60;
-  const curY = cy - curH / 2;
-  const rightX = 580;
+  const firstSibling = siblings[0] ?? null;
+  const extraSiblings = Math.max(0, siblings.length - 1);
+  const showCategory = !!categoryName;
+  const showSibling = !!firstSibling;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5" onClick={onClose}>
@@ -221,56 +226,89 @@ export function DagStructureModal({
             onMouseLeave={onPanEnd}
           >
             <svg ref={svgRef} viewBox={`${panX} ${panY} ${SVG_W / scale} ${SVG_H / scale}`} style={{ width: '100%', height: `${Math.max(280, SVG_H * scale * 0.6)}px` }}>
+              {/* Edges — root/category/sibling → current → prev/next */}
+              <g fill="none" strokeWidth="1.5">
+                {showSibling ? (
+                  <>
+                    <path d="M 170 110 C 220 130 220 160 170 180" stroke="#d6ddd7" />
+                    {showCategory && <path d="M 170 270 C 220 250 220 220 170 200" stroke="#d6ddd7" />}
+                    <path d="M 300 190 Q 315 190 330 190" stroke="#4a8a6e" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M 170 110 Q 250 150 330 180" stroke="#d6ddd7" />
+                    {showCategory && <path d="M 170 270 Q 250 230 330 200" stroke="#d6ddd7" />}
+                  </>
+                )}
+                <path d="M 500 190 Q 545 100 590 100" stroke={prevDoc ? '#4a8a6e' : '#d6ddd7'} strokeDasharray={prevDoc ? '0' : '4 3'} />
+                <path d="M 500 190 Q 545 280 590 280" stroke={nextDoc ? '#4a8a6e' : '#d6ddd7'} strokeDasharray={nextDoc ? '0' : '4 3'} />
+              </g>
+
               {/* Root */}
               <g>
-                <rect x={rootX} y={rootCy - N.h / 2} width={80} height={N.h} rx={N.rx} fill="#F1F0EC" stroke="#CBD5E1" strokeWidth="2" />
-                <text x={rootX + 40} y={rootCy - 2} textAnchor="middle" fontSize="11" fontWeight="700" fill="#57564F">root</text>
-                <text x={rootX + 40} y={rootCy + 12} textAnchor="middle" fontSize="8" fill="#9A9890">{decodeURIComponent(workspaceSlug).slice(0, 12)}</text>
+                <rect x={N.root.x} y={N.root.y} width={N.root.w} height={N.root.h} rx="8" fill="#fff" stroke="#d6ddd7" strokeWidth="1.5" />
+                <text x={N.root.x + N.root.w / 2} y={N.root.y + 22} textAnchor="middle" fontSize="11" fontWeight="700" fill="#57564F">root</text>
+                <text x={N.root.x + N.root.w / 2} y={N.root.y + 38} textAnchor="middle" fontSize="9" fill="#9A9890">{truncate(decodeURIComponent(workspaceSlug), 18)}</text>
               </g>
 
-              {/* Lines root → category/current */}
-              {categoryName ? (
-                <>
-                  <line x1={rootX + 80} y1={rootCy} x2={190} y2={cy - 50} stroke="#CBD5E1" strokeWidth="2" />
-                  <g>
-                    <rect x={190} y={cy - 50 - N.h / 2} width={N.w} height={N.h} rx={N.rx} fill="#EEF3FF" stroke="#93C5FD" strokeWidth="2" />
-                    <text x={190 + N.w / 2} y={cy - 50 + 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="#1343B0">{categoryName.slice(0, 14)}</text>
-                  </g>
-                  <line x1={190 + N.w} y1={cy - 50} x2={curX} y2={cy} stroke="#93C5FD" strokeWidth="2" />
-                </>
-              ) : (
-                <line x1={rootX + 80} y1={rootCy} x2={curX} y2={cy} stroke="#CBD5E1" strokeWidth="2" />
+              {/* 상위 카테고리 */}
+              {showCategory && (
+                <g>
+                  <rect x={N.category.x} y={N.category.y} width={N.category.w} height={N.category.h} rx="8" fill="#fff" stroke="#d6ddd7" strokeWidth="1.5" />
+                  <text x={N.category.x + N.category.w / 2} y={N.category.y + 20} textAnchor="middle" fontSize="9" fontWeight="600" fill="#9A9890">상위</text>
+                  <text x={N.category.x + N.category.w / 2} y={N.category.y + 36} textAnchor="middle" fontSize="11" fontWeight="700" fill="#57564F">{truncate(categoryName!, 14)}</text>
+                </g>
               )}
 
-              {/* Current doc */}
+              {/* 상위의 연관 문서 (sibling) */}
+              {showSibling && firstSibling && (
+                <g className="cursor-pointer" onClick={() => navigateToDoc(firstSibling.id)}>
+                  <rect x={N.sibling.x} y={N.sibling.y} width={N.sibling.w} height={N.sibling.h} rx="8" fill="#eef6f0" stroke="#4a8a6e" strokeWidth="1.5" />
+                  <text x={N.sibling.x + N.sibling.w / 2} y={N.sibling.y + 20} textAnchor="middle" fontSize="9" fontWeight="600" fill="#4a8a6e">상위의 연관</text>
+                  <text x={N.sibling.x + N.sibling.w / 2} y={N.sibling.y + 36} textAnchor="middle" fontSize="11" fontWeight="700" fill="#1a3a2e">{truncate(firstSibling.title, 14)}</text>
+                  {extraSiblings > 0 && (
+                    <text x={N.sibling.x + N.sibling.w - 6} y={N.sibling.y - 4} textAnchor="end" fontSize="10" fontWeight="700" fill="#4a8a6e">+{extraSiblings}</text>
+                  )}
+                </g>
+              )}
+
+              {/* 현재 문서 */}
               <g>
-                <rect x={curX} y={curY} width={N.w} height={curH} rx={10} fill="#1A56DB" stroke="#1343B0" strokeWidth="2.5" />
-                <rect x={curX - 3} y={curY - 3} width={N.w + 6} height={curH + 6} rx={13} fill="none" stroke="#93C5FD" strokeWidth="1.5" opacity="0.5">
+                <rect x={N.current.x - 3} y={N.current.y - 3} width={N.current.w + 6} height={N.current.h + 6} rx="13" fill="none" stroke="#4a8a6e" strokeWidth="1.5" opacity="0.5">
                   <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite" />
                 </rect>
-                <text x={curX + N.w / 2} y={cy - 4} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff">현재 문서</text>
-                <text x={curX + N.w / 2} y={cy + 12} textAnchor="middle" fontSize="8.5" fill="rgba(255,255,255,.85)">{currentTitle.slice(0, 16)}</text>
+                <rect x={N.current.x} y={N.current.y} width={N.current.w} height={N.current.h} rx="10" fill="#1a3a2e" stroke="#0f2a20" strokeWidth="2" />
+                <text x={N.current.x + N.current.w / 2} y={N.current.y + 24} textAnchor="middle" fontSize="10" fontWeight="600" fill="rgba(255,255,255,.85)">현재 문서</text>
+                <text x={N.current.x + N.current.w / 2} y={N.current.y + 44} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">{truncate(currentTitle, 18)}</text>
               </g>
 
-              {/* Right-side nodes: prev, next, related — dynamically positioned */}
-              {rightNodes.map((node, i) => {
-                const ny = rightStartY + i * (N.h + GAP) + N.h / 2;
-                const isPrevNext = node.type === 'prev' || node.type === 'next';
-                const fill = isPrevNext ? '#F0FDF4' : '#F5F3FF';
-                const stroke = isPrevNext ? '#86EFAC' : '#C4B5FD';
-                const textColor = isPrevNext ? '#16A34A' : '#7C3AED';
-                const titleColor = isPrevNext ? '#15803D' : '#6D28D9';
-                const dash = node.type === 'related' ? '5 3' : '0';
+              {/* 이전 문서 */}
+              {prevDoc ? (
+                <g className="cursor-pointer" onClick={() => navigateToDoc(prevDoc.id)}>
+                  <rect x={N.prev.x} y={N.prev.y} width={N.prev.w} height={N.prev.h} rx="8" fill="#fff" stroke="#4a8a6e" strokeWidth="1.5" />
+                  <text x={N.prev.x + 16} y={N.prev.y + 20} fontSize="9" fontWeight="600" fill="#4a8a6e">← 이전 문서</text>
+                  <text x={N.prev.x + 16} y={N.prev.y + 38} fontSize="11" fontWeight="700" fill="#1a3a2e">{truncate(prevDoc.title, 32)}</text>
+                </g>
+              ) : (
+                <g>
+                  <rect x={N.prev.x} y={N.prev.y} width={N.prev.w} height={N.prev.h} rx="8" fill="#fff" stroke="#d6ddd7" strokeWidth="1.5" strokeDasharray="4 3" />
+                  <text x={N.prev.x + N.prev.w / 2} y={N.prev.y + 30} textAnchor="middle" fontSize="11" fill="#CBC9C0">이전 문서 없음</text>
+                </g>
+              )}
 
-                return (
-                  <g key={node.doc.id} className="cursor-pointer" onClick={() => navigateToDoc(node.doc.id)}>
-                    <line x1={curX + N.w} y1={cy} x2={rightX} y2={ny} stroke={stroke} strokeWidth={isPrevNext ? 2 : 1.5} strokeDasharray={dash} />
-                    <rect x={rightX} y={ny - N.h / 2} width={N.w} height={N.h} rx={N.rx} fill={fill} stroke={stroke} strokeWidth={isPrevNext ? 2 : 1.5} />
-                    <text x={rightX + N.w / 2} y={ny - 4} textAnchor="middle" fontSize="9" fontWeight="600" fill={textColor}>{node.label}</text>
-                    <text x={rightX + N.w / 2} y={ny + 10} textAnchor="middle" fontSize="9" fontWeight="600" fill={titleColor}>{node.doc.title.slice(0, 14)}</text>
-                  </g>
-                );
-              })}
+              {/* 다음 문서 */}
+              {nextDoc ? (
+                <g className="cursor-pointer" onClick={() => navigateToDoc(nextDoc.id)}>
+                  <rect x={N.next.x} y={N.next.y} width={N.next.w} height={N.next.h} rx="8" fill="#fff" stroke="#4a8a6e" strokeWidth="1.5" />
+                  <text x={N.next.x + 16} y={N.next.y + 20} fontSize="9" fontWeight="600" fill="#4a8a6e">다음 문서 →</text>
+                  <text x={N.next.x + 16} y={N.next.y + 38} fontSize="11" fontWeight="700" fill="#1a3a2e">{truncate(nextDoc.title, 32)}</text>
+                </g>
+              ) : (
+                <g>
+                  <rect x={N.next.x} y={N.next.y} width={N.next.w} height={N.next.h} rx="8" fill="#fff" stroke="#d6ddd7" strokeWidth="1.5" strokeDasharray="4 3" />
+                  <text x={N.next.x + N.next.w / 2} y={N.next.y + 30} textAnchor="middle" fontSize="11" fill="#CBC9C0">다음 문서 없음</text>
+                </g>
+              )}
             </svg>
           </div>
 
