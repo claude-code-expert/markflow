@@ -45,10 +45,6 @@
           },
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | grep -E '(^|\\|\\||&&|;)\\s*git\\s+(commit|push)' >/dev/null 2>&1 && echo '❌ git commit/push는 사용자의 명시적 요청 없이 실행할 수 없습니다.' >&2 && exit 2 || exit 0"
-          },
-          {
-            "type": "command",
             "command": "jq -r '.tool_input.command // \"\"' | grep -E '\\.(env|env\\.local|env\\.production)' >/dev/null 2>&1 && echo '❌ .env 파일은 사용자가 직접 관리합니다.' >&2 && exit 2 || exit 0"
           }
         ]
