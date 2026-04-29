@@ -23,4 +23,4 @@ PUBLIC_URL = "https://pub-1ae817f8a4814599bf1a8a838b4e5e15.r2.dev"
 
 
 # CORS 허용 오리진 (쉼표 구분)
-ALLOWED_ORIGINS = "http://localhost:3002,https://markflow.dev"
+ALLOWED_ORIGINS = "http://localhost:3002,https://markflow.dev,https://markflow-web.vercel.app"
