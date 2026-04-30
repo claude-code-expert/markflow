@@ -4,6 +4,7 @@ import {
   eq,
   and,
   or,
+  ne,
   inArray,
 } from '@markflow/db';
 import type { Db } from '@markflow/db';
@@ -71,14 +72,23 @@ export function createRelationService(db: Db) {
     const startNode = direction === 'prev' ? numDocId : numTargetId;
     const searchFor = direction === 'prev' ? numTargetId : numDocId;
 
-    // Batch preload: load all type='next' relations in a single query
+    // Batch preload: load all type='next' relations in a single query.
+    // Exclude edges that involve the current document — those will be cleared
+    // before the new relations are inserted, so including them produces false
+    // positives (e.g. re-saving an existing prev/next value triggers a cycle).
     const nextRelations = await db
       .select({
         sourceId: documentRelations.sourceId,
         targetId: documentRelations.targetId,
       })
       .from(documentRelations)
-      .where(eq(documentRelations.type, 'next'));
+      .where(
+        and(
+          eq(documentRelations.type, 'next'),
+          ne(documentRelations.sourceId, numDocId),
+          ne(documentRelations.targetId, numDocId),
+        ),
+      );
 
     // Build Map<sourceId, targetId> for O(1) lookup
     const nextMap = new Map<number, number>();

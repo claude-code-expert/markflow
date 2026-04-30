@@ -1,9 +1,10 @@
 # 이미지 업로드 설정 가이드
 
-> **버전:** 1.4.0
-> **최종 수정:** 2026-04-06
+> **버전:** 1.5.0
+> **최종 수정:** 2026-04-29
 > Cloudflare R2 Worker를 통한 이미지 업로드 설정 절차 및 화면 구성
 > **변경 이력:**
+> - v1.5.0 — CORS 동작(fail-closed) 정정, 운영 도메인(Vercel 등) 등록 절차, 트러블슈팅 섹션 추가
 > - v1.4.0 — 이미지 업로드 사용/미사용 토글 추가, 설정 페이지 UX 개선 (인라인 가이드 → 우측 패널), 에디터 연동 토글 제어
 > - v1.3.0 — 초판 작성
 
@@ -332,12 +333,33 @@ images/{timestamp}-{uuid}.{ext}
 
 ### CORS 설정
 
-`wrangler.toml`의 `ALLOWED_ORIGINS`로 제어합니다. 기본값은 전체 허용(`*`).
+`wrangler.toml`의 `ALLOWED_ORIGINS`로 제어하며, 동작은 **fail-closed**입니다.
+
+- `ALLOWED_ORIGINS` 미설정 시 모든 Origin이 차단됩니다(전체 허용 아님).
+- 와일드카드 `*`는 **지원하지 않습니다.** 허용할 Origin을 쉼표로 구분해 명시해야 합니다.
+- 매칭은 **정확 일치**(scheme + host + port)입니다. Vercel 프리뷰처럼 도메인이 가변인 경우 production 도메인만 명시하는 정책을 권장합니다.
 
 ```toml
-# 특정 도메인만 허용하려면:
-ALLOWED_ORIGINS = "https://markflow.dev,http://localhost:3002"
+# apps/worker/wrangler.toml
+ALLOWED_ORIGINS = "http://localhost:3002,https://markflow.dev,https://markflow-web.vercel.app"
 ```
+
+> 코드 위치: `apps/worker/src/helpers.ts` `corsHeaders()`
+
+#### 운영 도메인 추가 절차
+
+1. `apps/worker/wrangler.toml`의 `ALLOWED_ORIGINS`에 새 Origin을 쉼표로 구분해 추가
+2. **재배포 필수** (`[vars]`는 정적 변수라 파일 수정만으로는 반영되지 않음)
+   ```bash
+   cd apps/worker
+   npx wrangler deploy
+   ```
+3. preflight로 검증 (응답에 `access-control-allow-origin` 헤더가 보이면 정상)
+   ```bash
+   curl -i -X OPTIONS https://<worker-host>/upload \
+     -H "Origin: https://<your-domain>" \
+     -H "Access-Control-Request-Method: POST"
+   ```
 
 ### R2 무료 티어 한도
 
@@ -347,3 +369,44 @@ ALLOWED_ORIGINS = "https://markflow.dev,http://localhost:3002"
 | 읽기 | 1,000만 요청/월 |
 | 쓰기 | 100만 요청/월 |
 | 아웃바운드 | 무제한 (egress free) |
+
+---
+
+## 트러블슈팅
+
+### `CORS policy: No 'Access-Control-Allow-Origin' header is present` / `Failed to fetch`
+
+브라우저 콘솔에서 위 에러가 보이고 Worker 응답이 200인데 차단되는 경우.
+
+#### 원인
+
+- 요청 Origin이 Worker의 `ALLOWED_ORIGINS`에 등록돼 있지 않음. fail-closed 로직이 빈 `Access-Control-Allow-Origin` 헤더를 내려보내 브라우저가 응답을 차단합니다.
+- 또는 `wrangler.toml`은 수정했지만 Worker가 재배포되지 않은 상태.
+
+#### 점검 순서
+
+1. **현재 배포된 Worker가 어떤 Origin을 허용하는지 직접 확인**
+   ```bash
+   curl -i -X OPTIONS https://<worker-host>/upload \
+     -H "Origin: https://<your-domain>" \
+     -H "Access-Control-Request-Method: POST"
+   ```
+   응답에 `access-control-allow-origin: https://<your-domain>` 줄이 없으면 미허용 상태입니다.
+
+2. **`apps/worker/wrangler.toml`의 `ALLOWED_ORIGINS` 확인** — 운영 도메인이 들어 있는지.
+
+3. **재배포** — `cd apps/worker && npx wrangler deploy`. `[vars]`는 빌드 타임 정적 변수이므로 wrangler.toml 수정 후 반드시 재배포해야 적용됩니다.
+
+4. **재검증** — 1번의 curl을 다시 실행해 헤더가 정상 노출되는지 확인 후 브라우저 새로고침.
+
+### `net::ERR_FAILED 200 (OK)`
+
+Worker는 200을 반환했지만 브라우저가 CORS 단계에서 차단한 흔적입니다. 위 절차로 동일하게 해결됩니다.
+
+### `Unauthorized: invalid or missing bearer token`
+
+Worker에 `API_SECRET` Cloudflare Workers Secret이 설정돼 있는데 클라이언트가 Bearer 토큰을 함께 보내지 않거나 값이 다른 경우. Secret을 일치시키거나(필요하다면) 서버측 Secret을 unset해 주세요.
+
+### `bucket not found`
+
+R2 버킷 미생성. Step 3(`npx wrangler r2 bucket create markflow-images`)을 먼저 실행하세요.
