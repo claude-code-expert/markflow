@@ -59,12 +59,12 @@ markflow/
 │   ├── editor/          @markflow/editor — 독립 에디터 컴포넌트 (npm 배포 가능)
 │   └── db/              @markflow/db — Drizzle ORM 스키마 + 마이그레이션 + SCHEMA.sql
 ├── apps/
-│   ├── web/             @markflow/web — Next.js 16 프론트엔드 (App Router)
-│   ├── api/             @markflow/api — Fastify 5 백엔드 API
-│   ├── worker/          Cloudflare R2 이미지 업로드 Worker (선택)
-│   └── demo/            에디터 데모 앱
+│   ├── web/             @markflow/web — Next.js 16.2.1 프론트엔드 (App Router + API Routes)
+│   └── worker/          Cloudflare R2 이미지 업로드 Worker (선택)
 └── docs/                설계 문서, 프로토타입, ERD
 ```
+
+> v0.4.0부터 Fastify(`apps/api`)를 제거하고 Next.js App Router API Routes로 통합했습니다. 단일 Vercel 프로젝트로 배포됩니다.
 
 ## 로컬 에디터 기능 테스트
 
@@ -98,28 +98,27 @@ GRANT ALL PRIVILEGES ON DATABASE markflow TO markflow;
 
 ### 2. 환경 변수
 
-루트의 `.env.local` 파일에 설정되어 있습니다. 본인 환경에 맞게 수정하세요:
+`apps/web/.env.local` 파일을 생성하고 본인 환경에 맞게 설정하세요:
 
 ```env
 DATABASE_URL=postgresql://markflow:markflow@localhost:5432/markflow
 JWT_SECRET=dev-jwt-secret-change-in-production
 JWT_REFRESH_SECRET=dev-jwt-refresh-secret-change-in-production
-CORS_ORIGIN=http://localhost:3000,http://localhost:3001,http://localhost:3002
-HOST=0.0.0.0
-PORT=4000
+NEXT_PUBLIC_SITE_URL=http://localhost:3002
 ```
 
 ### 3. 설치 및 실행
 
 ```bash
 pnpm install
+pnpm --filter @markflow/db build       # DB 패키지 빌드 (최초 1회)
 pnpm --filter @markflow/editor build   # 에디터 빌드 (최초 1회)
 
 # DB 부트스트랩 — 둘 중 하나 선택
 psql "$DATABASE_URL" -f packages/db/SCHEMA.sql      # (a) 빈 DB에 한 번에 생성
 cd packages/db && pnpm drizzle-kit push && cd ../.. # (b) Drizzle로 점진 적용
 
-pnpm dev                                # API + Web 동시 실행
+pnpm dev                                # Web 서버 실행
 ```
 
 http://localhost:3002 에서 접속.
@@ -136,22 +135,15 @@ http://localhost:3002 에서 접속.
 
 ## 프로덕션 환경 변수
 
-### API 서버 (`apps/api`)
+### 웹앱 (`apps/web`)
+
+v0.4.0부터 API는 Next.js API Routes로 통합되었습니다. 환경 변수는 `apps/web`에만 설정합니다.
 
 | 변수 | 설명 | 생성 방법 |
 |------|------|----------|
 | `DATABASE_URL` | PostgreSQL 연결 URL | DB 호스팅 서비스에서 제공 (Supabase, Neon, RDS 등) |
 | `JWT_SECRET` | Access Token 서명 키 | `openssl rand -hex 32` |
 | `JWT_REFRESH_SECRET` | Refresh Token 서명 키 | `openssl rand -hex 32` (JWT_SECRET과 다른 값) |
-| `CORS_ORIGIN` | 프론트엔드 도메인 (쉼표 구분) | 예: `https://markflow.vercel.app` |
-| `HOST` | API 바인드 주소 | `0.0.0.0` |
-| `PORT` | API 포트 | 호스팅 플랫폼 기본값 또는 `4000` |
-
-### 웹앱 (`apps/web`)
-
-| 변수 | 설명 | 예시 |
-|------|------|------|
-| `NEXT_PUBLIC_API_URL` | API 서버 베이스 URL | `https://api.markflow.dev/api/v1` |
 | `NEXT_PUBLIC_SITE_URL` | 사이트 도메인 (sitemap/SEO) | `https://markflow.vercel.app` |
 | `NEXT_PUBLIC_R2_WORKER_URL` | (선택) 이미지 업로드 Worker | `https://r2-uploader.<id>.workers.dev` |
 
@@ -159,32 +151,33 @@ http://localhost:3002 에서 접속.
 
 ## 배포 아키텍처
 
-Fastify는 long-running 서버라서 Vercel Serverless에는 부적합합니다. 분리 배포를 권장합니다.
+v0.4.0부터 API가 Next.js API Routes로 통합되어 단일 Vercel 프로젝트로 배포됩니다.
 
 | 컴포넌트 | 권장 호스팅 |
 |---|---|
-| `apps/web` (Next.js) | **Vercel** — Root Directory `apps/web`, build 시 `@markflow/editor` 먼저 빌드 |
-| `apps/api` (Fastify) | **Railway / Render / Fly.io** — Docker 또는 Node 런타임 |
+| `apps/web` (Next.js + API Routes) | **Vercel** — Framework Preset: Next.js, Build Command: `pnpm --filter @markflow/db build && pnpm --filter @markflow/editor build && cd apps/web && next build`, Output Directory: `apps/web/.next` |
 | PostgreSQL | **Supabase / Neon / Vercel Postgres** |
 | `apps/worker` | **Cloudflare Workers** + R2 버킷 |
+
+> Vercel 배포 시 Root Directory는 비워두고 (프로젝트 루트), Framework Preset을 Next.js로 수동 지정해야 합니다. `apps/web`을 Root Directory로 설정하면 pnpm workspace 감지에 실패합니다.
 
 ## 명령어
 
 ```bash
-pnpm dev                             # 전체 실행 (API + Web)
+pnpm dev                             # Web 서버 실행 (포트 3002)
 pnpm build                           # 전체 빌드
 pnpm test                            # 전체 테스트
-pnpm --filter @markflow/api dev      # 백엔드만
-pnpm --filter @markflow/web dev      # 프론트엔드만
+pnpm --filter @markflow/web dev      # 웹앱만
 pnpm --filter @markflow/editor build # 에디터 패키지 빌드
-pnpm --filter @markflow/web test:e2e # E2E 테스트
+pnpm --filter @markflow/db build     # DB 패키지 빌드
+pnpm --filter @markflow/web test:e2e # E2E 테스트 (Playwright)
 ```
 
 ## 패키지
 
 ### @markflow/editor
 
-독립형 React Markdown 에디터 컴포넌트. 어떤 React 18+ 프로젝트에든 이식 가능.
+독립형 React Markdown 에디터 컴포넌트. React 18+ 또는 19+ 프로젝트에 이식 가능.
 
 - CodeMirror 6 (소스 편집기)
 - remark + rehype (마크다운 파싱/렌더링)
@@ -197,11 +190,7 @@ Drizzle ORM 기반 DB 스키마. 15개 테이블 (users, workspaces, workspace_m
 
 ### @markflow/web
 
-Next.js 16 프론트엔드. Zustand (상태), React Query (서버 상태), Tailwind CSS 4.
-
-### @markflow/api
-
-Fastify 5 백엔드 API. JWT 인증, RBAC (소유자/관리자/편집자/뷰어), 문서 CRUD + 버전 관리.
+Next.js 16.2.1 프론트엔드 + API Routes. React 19.2.4, Zustand 5 (상태), TanStack Query 5 (서버 상태), Tailwind CSS 4. JWT 인증, RBAC (소유자/관리자/편집자/뷰어), 문서 CRUD + 버전 관리 API 50개 포함.
 
 ## 문서
 
