@@ -59,12 +59,12 @@ markflow/
 │   ├── editor/          @markflow/editor — standalone editor component (publishable to npm)
 │   └── db/              @markflow/db — Drizzle ORM schema + migrations + SCHEMA.sql
 ├── apps/
-│   ├── web/             @markflow/web — Next.js 16 frontend (App Router)
-│   ├── api/             @markflow/api — Fastify 5 backend API
-│   ├── worker/          Cloudflare R2 image upload Worker (optional)
-│   └── demo/            Editor demo app
+│   ├── web/             @markflow/web — Next.js 16.2.1 frontend (App Router + API Routes)
+│   └── worker/          Cloudflare R2 image upload Worker (optional)
 └── docs/                Design docs, prototypes, ERD
 ```
+
+> Since v0.4.0, the Fastify server (`apps/api`) has been removed. All API logic is now handled by Next.js App Router Route Handlers, deployed as a single Vercel project.
 
 ## Local Editor Feature Tests
 
@@ -98,28 +98,27 @@ GRANT ALL PRIVILEGES ON DATABASE markflow TO markflow;
 
 ### 2. Environment Variables
 
-The `.env.local` file at the repo root holds the local config. Adjust to your environment:
+Create `apps/web/.env.local` and adjust to your environment:
 
 ```env
 DATABASE_URL=postgresql://markflow:markflow@localhost:5432/markflow
 JWT_SECRET=dev-jwt-secret-change-in-production
 JWT_REFRESH_SECRET=dev-jwt-refresh-secret-change-in-production
-CORS_ORIGIN=http://localhost:3000,http://localhost:3001,http://localhost:3002
-HOST=0.0.0.0
-PORT=4000
+NEXT_PUBLIC_SITE_URL=http://localhost:3002
 ```
 
 ### 3. Install & Run
 
 ```bash
 pnpm install
+pnpm --filter @markflow/db build       # Build the DB package (one-time)
 pnpm --filter @markflow/editor build   # Build the editor package (one-time)
 
 # Bootstrap the DB — pick one
 psql "$DATABASE_URL" -f packages/db/SCHEMA.sql      # (a) one-shot create on an empty DB
 cd packages/db && pnpm drizzle-kit push && cd ../.. # (b) incremental via Drizzle
 
-pnpm dev                                # Start API + Web together
+pnpm dev                                # Start the web server
 ```
 
 Visit http://localhost:3002.
@@ -136,22 +135,15 @@ Visit http://localhost:3002.
 
 ## Production Environment Variables
 
-### API server (`apps/api`)
+### Web app (`apps/web`)
+
+Since v0.4.0, the API is integrated into Next.js API Routes. All environment variables are set in `apps/web` only.
 
 | Variable | Description | How to generate |
 |----------|-------------|-----------------|
 | `DATABASE_URL` | PostgreSQL connection URL | Provided by your DB host (Supabase, Neon, RDS, etc.) |
 | `JWT_SECRET` | Access token signing key | `openssl rand -hex 32` |
 | `JWT_REFRESH_SECRET` | Refresh token signing key | `openssl rand -hex 32` (different from `JWT_SECRET`) |
-| `CORS_ORIGIN` | Frontend domain(s), comma-separated | e.g. `https://markflow.vercel.app` |
-| `HOST` | API bind address | `0.0.0.0` |
-| `PORT` | API port | Platform default or `4000` |
-
-### Web app (`apps/web`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | API server base URL | `https://api.markflow.dev/api/v1` |
 | `NEXT_PUBLIC_SITE_URL` | Site domain (sitemap/SEO) | `https://markflow.vercel.app` |
 | `NEXT_PUBLIC_R2_WORKER_URL` | (optional) Image upload Worker | `https://r2-uploader.<id>.workers.dev` |
 
@@ -159,32 +151,33 @@ Visit http://localhost:3002.
 
 ## Deployment Architecture
 
-Fastify is a long-running server, so it does not fit Vercel's serverless model. A split deployment is recommended.
+Since v0.4.0, the API is integrated into Next.js API Routes and the entire app deploys as a single Vercel project.
 
 | Component | Recommended host |
 |-----------|------------------|
-| `apps/web` (Next.js) | **Vercel** — set Root Directory to `apps/web`, ensure `@markflow/editor` builds first |
-| `apps/api` (Fastify) | **Railway / Render / Fly.io** — Docker or Node runtime |
+| `apps/web` (Next.js + API Routes) | **Vercel** — Framework Preset: Next.js, Build Command: `pnpm --filter @markflow/db build && pnpm --filter @markflow/editor build && cd apps/web && next build`, Output Directory: `apps/web/.next` |
 | PostgreSQL | **Supabase / Neon / Vercel Postgres** |
 | `apps/worker` | **Cloudflare Workers** + R2 bucket |
+
+> When deploying to Vercel, leave Root Directory empty (project root) and manually select the Next.js Framework Preset. Setting Root Directory to `apps/web` will break pnpm workspace detection.
 
 ## Commands
 
 ```bash
-pnpm dev                             # Run everything (API + Web)
+pnpm dev                             # Start the web server (port 3002)
 pnpm build                           # Build everything
 pnpm test                            # Run all tests
-pnpm --filter @markflow/api dev      # Backend only
-pnpm --filter @markflow/web dev      # Frontend only
+pnpm --filter @markflow/web dev      # Web app only
 pnpm --filter @markflow/editor build # Build the editor package
-pnpm --filter @markflow/web test:e2e # E2E tests
+pnpm --filter @markflow/db build     # Build the DB package
+pnpm --filter @markflow/web test:e2e # E2E tests (Playwright)
 ```
 
 ## Packages
 
 ### @markflow/editor
 
-Standalone React Markdown editor component. Drop it into any React 18+ project.
+Standalone React Markdown editor component. Drop it into any React 18+ or 19+ project.
 
 - CodeMirror 6 (source editor)
 - remark + rehype (markdown parse/render pipeline)
@@ -197,11 +190,7 @@ Drizzle ORM-based DB schema. 15 tables (users, workspaces, workspace_members, ca
 
 ### @markflow/web
 
-Next.js 16 frontend. Zustand (state), React Query (server state), Tailwind CSS 4.
-
-### @markflow/api
-
-Fastify 5 backend API. JWT auth, RBAC (owner/admin/editor/viewer), document CRUD + version history.
+Next.js 16.2.1 frontend + API Routes. React 19.2.4, Zustand 5 (state), TanStack Query 5 (server state), Tailwind CSS 4. JWT auth, RBAC (owner/admin/editor/viewer), document CRUD + version history with 50 API route handlers.
 
 ## Documents
 
