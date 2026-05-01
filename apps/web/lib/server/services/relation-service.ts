@@ -57,26 +57,28 @@ export function createRelationService(db: Db) {
   }
 
   /**
-   * Batch-preload cycle detection for prev/next chain.
-   * Loads all 'next' relations once, then traverses in-memory.
-   * Starting from `startId`, follows `next` relations and checks if we reach `targetId`.
-   * Also checks the reverse direction: from `targetId` following `next` relations.
+   * Cycle detection for the prev/next chain.
+   *
+   * Builds the FUTURE 'next' graph that will exist after `setRelations` finishes:
+   *   1. Load all current 'next' edges and drop the ones adjacent to `docId`.
+   *      Those edges are about to be removed by the deletion step (source=docId
+   *      for any type, or target=docId for type IN ('prev','next')), so they
+   *      must not influence detection — otherwise re-saving an existing prev /
+   *      next value triggers a false positive via the bidirectional pair.
+   *   2. Add the new 'next' edges introduced by this update:
+   *        - data.next  → direct edge docId → data.next
+   *        - data.prev  → bidirectional edge data.prev → docId
+   *
+   * Then walk the chain starting from `docId`. If it returns to `docId`,
+   * a cycle exists.
    */
   async function detectCycle(
     docId: string,
-    targetId: string,
-    direction: 'prev' | 'next',
+    data: SetRelationsInput,
   ): Promise<boolean> {
     const numDocId = Number(docId);
-    const numTargetId = Number(targetId);
-    const startNode = direction === 'prev' ? numDocId : numTargetId;
-    const searchFor = direction === 'prev' ? numTargetId : numDocId;
 
-    // Batch preload: load all type='next' relations in a single query.
-    // Exclude edges that involve the current document — those will be cleared
-    // before the new relations are inserted, so including them produces false
-    // positives (e.g. re-saving an existing prev/next value triggers a cycle).
-    const nextRelations = await db
+    const surviving = await db
       .select({
         sourceId: documentRelations.sourceId,
         targetId: documentRelations.targetId,
@@ -90,34 +92,25 @@ export function createRelationService(db: Db) {
         ),
       );
 
-    // Build Map<sourceId, targetId> for O(1) lookup
     const nextMap = new Map<number, number>();
-    for (const rel of nextRelations) {
+    for (const rel of surviving) {
       nextMap.set(rel.sourceId, rel.targetId);
     }
+    if (data.next) {
+      nextMap.set(numDocId, Number(data.next));
+    }
+    if (data.prev) {
+      nextMap.set(Number(data.prev), numDocId);
+    }
 
-    // Forward traversal: startNode -> ... -> searchFor?
+    let current: number | null = nextMap.get(numDocId) ?? null;
     const visited = new Set<number>();
-    let current: number | null = startNode;
     while (current !== null) {
-      if (visited.has(current)) break;
+      if (current === numDocId) return true;
+      if (visited.has(current)) return false;
       visited.add(current);
-      const next: number | null = nextMap.get(current) ?? null;
-      if (next === searchFor) return true;
-      current = next;
+      current = nextMap.get(current) ?? null;
     }
-
-    // Reverse traversal: searchFor -> ... -> startNode?
-    const visited2 = new Set<number>();
-    let current2: number | null = searchFor;
-    while (current2 !== null) {
-      if (visited2.has(current2)) break;
-      visited2.add(current2);
-      const next: number | null = nextMap.get(current2) ?? null;
-      if (next === startNode) return true;
-      current2 = next;
-    }
-
     return false;
   }
 
@@ -170,19 +163,11 @@ export function createRelationService(db: Db) {
       throw badRequest('INVALID_RELATION', 'prev and next cannot point to the same document');
     }
 
-    // Cycle detection BEFORE clearing existing relations
-    // (clearing first removes the edges needed for detection)
-    // Temporarily exclude current doc's outgoing relations to avoid false positives
-    // from its own existing prev/next, but keep other docs' relations intact.
-    if (data.prev) {
-      const hasCycle = await detectCycle(docId, data.prev, 'prev');
-      if (hasCycle) {
-        throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
-      }
-    }
-
-    if (data.next) {
-      const hasCycle = await detectCycle(docId, data.next, 'next');
+    // Cycle detection BEFORE clearing existing relations.
+    // detectCycle simulates the future graph (current edges minus the ones
+    // adjacent to this doc, plus the new prev/next edges this update introduces).
+    if (data.prev || data.next) {
+      const hasCycle = await detectCycle(docId, data);
       if (hasCycle) {
         throw badRequest('CIRCULAR_REFERENCE', 'Setting this relation would create a circular reference');
       }
